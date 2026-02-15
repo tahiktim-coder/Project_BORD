@@ -1,0 +1,2812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BORD - 3D Prototype</title>
+    <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #000; overflow: hidden; font-family: 'Courier Prime', monospace; }
+        #canvas3d { position: fixed; top: 0; left: 0; width: 100%; height: 100%; }
+
+        /* UI Overlay */
+        #ui-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 10;
+        }
+
+        /* Case file paper */
+        #case-file {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -45%);
+            width: 420px;
+            background: rgba(210, 200, 180, 0.92);
+            border: 1px solid rgba(80,70,50,0.3);
+            padding: 28px 32px;
+            font-family: 'Special Elite', monospace;
+            color: #1a1a1a;
+            font-size: 13px;
+            line-height: 1.5;
+            pointer-events: auto;
+            box-shadow: 0 4px 30px rgba(0,0,0,0.6), inset 0 0 40px rgba(0,0,0,0.05);
+            opacity: 1;
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+        #case-file.hidden {
+            opacity: 0;
+            transform: translate(-50%, -45%) translateY(20px);
+            pointer-events: none;
+        }
+        .cf-header {
+            font-weight: 700; font-size: 14px; letter-spacing: 0.08em;
+            border-bottom: 2px solid #1a1a1a; padding-bottom: 8px; margin-bottom: 12px;
+        }
+        .cf-section { font-weight: 700; font-size: 12px; letter-spacing: 0.12em; margin-top: 14px; margin-bottom: 6px; text-transform: uppercase; }
+        .cf-line { margin-bottom: 3px; }
+        .cf-label { font-weight: 700; }
+        .cf-detail { color: #555; font-size: 11px; font-style: italic; margin-top: 4px; }
+        .cf-choices { margin-top: 18px; }
+        .cf-choice {
+            display: flex; align-items: flex-start; padding: 8px 6px; cursor: pointer;
+            border: 1px solid transparent; transition: all 0.15s ease; margin-bottom: 2px;
+        }
+        .cf-choice:hover { background: rgba(139,0,0,0.12); border-color: rgba(139,0,0,0.2); }
+        .cf-choice-num { font-weight: 700; margin-right: 10px; min-width: 20px; }
+        .cf-choice-main { font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+        .cf-choice-desc { font-size: 11px; color: #555; margin-top: 2px; }
+        .cf-process { text-align: center; margin-top: 16px; padding-top: 10px; border-top: 1px solid #999;
+            font-weight: 700; letter-spacing: 0.15em; font-size: 12px; color: #666; }
+
+        /* B1: Stamp ritual - cursor mode */
+        #case-file.stamp-mode {
+            cursor: none; /* hide default cursor */
+        }
+        #stamp-cursor {
+            display: none; position: fixed; pointer-events: none; z-index: 200;
+            font-family: 'Special Elite', monospace; font-size: 28px; font-weight: 700;
+            color: rgba(139, 0, 0, 0.6); letter-spacing: 0.1em;
+            border: 3px solid rgba(139, 0, 0, 0.5); padding: 4px 16px;
+            transform: translate(-50%, -50%) rotate(-12deg);
+            text-transform: uppercase;
+        }
+        #stamp-cursor.active { display: block; }
+        .stamp-hint {
+            text-align: center; font-size: 10px; color: #888;
+            margin-top: 16px; padding-top: 12px; border-top: 2px solid #8b0000;
+            letter-spacing: 0.1em;
+        }
+        #stamp-mark {
+            display: none; position: absolute;
+            font-family: 'Special Elite', monospace; font-size: 42px; font-weight: 700;
+            color: rgba(139, 0, 0, 0.7); letter-spacing: 0.15em;
+            border: 4px solid rgba(139, 0, 0, 0.7); padding: 6px 24px;
+            transform: translate(-50%, -50%) rotate(-12deg);
+            pointer-events: none;
+        }
+        #stamp-mark.visible { display: block; }
+
+        /* Directive memo — hidden, now rendered as 3D canvas texture on desk paper */
+        #directive-bar { display: none; }
+
+        /* Look up hint */
+        #look-hint {
+            position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+            font-size: 11px; color: rgba(255,255,255,0.25); letter-spacing: 0.15em;
+            padding: 10px; animation: pulse 2.5s ease infinite;
+        }
+        @keyframes pulse { 0%,100%{opacity:0.25} 50%{opacity:0.5} }
+
+        /* B7: Lateral look hint */
+        #lateral-hint {
+            position: absolute; bottom: 25px; left: 50%; transform: translateX(-50%);
+            font-size: 10px; color: rgba(255,255,255,0.2); letter-spacing: 0.12em;
+            padding: 4px; animation: pulse 3s ease infinite;
+        }
+
+        /* Office status text */
+        #office-status {
+            position: absolute; top: 18%; left: 50%; transform: translateX(-50%);
+            font-size: 14px; color: #999; letter-spacing: 0.2em; text-align: center;
+            text-shadow: 0 0 10px rgba(255,255,255,0.15), 0 2px 20px rgba(0,0,0,0.9);
+            opacity: 0; transition: opacity 0.5s ease;
+            pointer-events: none;
+        }
+        #office-status.visible { opacity: 1; }
+        #office-status.danger { color: #8b0000; }
+
+        /* Title screen */
+        #title-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #050505; z-index: 100; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            transition: opacity 1.5s ease;
+        }
+        #title-screen.fade-out { opacity: 0; pointer-events: none; }
+        #title-static {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0.12;
+        }
+        .t-content { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; }
+        .t-logo { font-family:'Special Elite',monospace; font-size: 10rem; color:#d4d4d4; letter-spacing:0.2em;
+            text-shadow: 0 0 80px rgba(100,100,100,0.4), 0 0 120px rgba(60,60,60,0.2); }
+        .t-logo .o { color:#8b0000; text-shadow: 0 0 40px rgba(139,0,0,0.7), 0 0 80px rgba(139,0,0,0.3); }
+        .t-sub { font-size:0.9rem; color:#555; letter-spacing:0.5em; text-transform:uppercase; margin-bottom:3rem; }
+        .t-tag { font-size:0.8rem; color:#3a3a3a; font-style:italic; margin-bottom:2.5rem; }
+        .t-controls { font-size:0.65rem; color:#333; letter-spacing:0.15em; margin-bottom:3rem; }
+        .t-btn { background:transparent; border:1px solid #333; color:#666; padding:1rem 3rem;
+            font-family:'Courier Prime',monospace; font-size:0.85rem; letter-spacing:0.3em;
+            cursor:pointer; transition:all 0.3s ease; text-transform:uppercase; }
+        .t-btn:hover { border-color:#8b0000; color:#aaa; background: rgba(139,0,0,0.05); }
+
+        /* End screen */
+        /* Debug test panel */
+        #debug-panel {
+            position: fixed; top: 10px; right: 10px; z-index: 200;
+            background: rgba(0,0,0,0.85); border: 1px solid #333;
+            padding: 10px; font-size: 11px; color: #aaa;
+            font-family: 'Courier New', monospace; max-width: 260px;
+            display: none;
+        }
+        #debug-panel.visible { display: block; }
+        #debug-panel h3 { color: #666; font-size: 11px; margin: 0 0 8px 0; letter-spacing: 0.1em; }
+        .dbg-btn {
+            display: block; width: 100%; padding: 6px 8px; margin-bottom: 4px;
+            background: #1a1a1a; border: 1px solid #333; color: #ccc;
+            font-family: 'Courier New', monospace; font-size: 11px;
+            cursor: pointer; text-align: left;
+        }
+        .dbg-btn:hover { background: #2a2a2a; border-color: #555; }
+        .dbg-btn .dbg-note { color: #666; font-size: 10px; display: block; margin-top: 2px; }
+        .dbg-btn .dbg-label { color: #8b0000; }
+        #debug-panel .dbg-sep { border-top: 1px solid #333; margin: 8px 0; }
+        #debug-info { color: #555; font-size: 10px; margin-top: 6px; line-height: 1.4; }
+
+        #end-screen {
+            position: fixed; top:0; left:0; width:100%; height:100%;
+            background: #050505; z-index:100; display:none; flex-direction:column;
+            align-items:center; justify-content:center; opacity:0; transition: opacity 1s ease;
+        }
+        #end-screen.visible { display:flex; opacity:1; }
+        .e-title { font-family:'Special Elite',monospace; font-size:4rem; letter-spacing:0.2em; margin-bottom:2rem; }
+        .e-title.caught { color:#8b0000; text-shadow:0 0 40px rgba(139,0,0,0.5); }
+        .e-title.survived { color:#555; }
+        .e-stats { font-size:0.85rem; color:#444; line-height:2.2; margin-bottom:2rem; }
+        .e-msg { max-width:450px; font-size:0.85rem; color:#333; line-height:1.8; font-style:italic; margin-bottom:3rem; text-align:center; }
+
+        /* Vignette */
+        #vignette {
+            position:fixed; top:0; left:0; width:100%; height:100%;
+            pointer-events:none; z-index:40;
+            background: radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.7) 100%);
+        }
+
+        /* Canvas black cover — prevents any 3D frame leaking before title fade */
+        #canvas-cover {
+            position:fixed; top:0; left:0; width:100%; height:100%;
+            background:#000; z-index:5; pointer-events:none;
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="canvas3d"></canvas>
+<div id="canvas-cover"></div>
+<div id="vignette" style="display:none;"></div>
+
+<div id="stamp-cursor">PROCESSED</div>
+<div id="ui-overlay" style="display:none;">
+    <div id="directive-bar"><div class="memo-header">Internal Memo - 04.02.2026</div>Today's directive: <span id="directive-text">REVENUE ENFORCEMENT</span><br>All cases must align with current priority. Non-compliance will be noted.</div>
+    <div id="case-file"></div>
+    <div id="look-hint">[ SPACE ] look up from desk</div>
+    <div id="lateral-hint" style="display:none;">[ A ] look left</div>
+    <div id="office-status"></div>
+</div>
+
+<div id="title-screen">
+    <canvas id="title-static"></canvas>
+    <div class="t-content">
+        <div class="t-logo">B<span class="o">O</span>RD</div>
+        <div class="t-sub">Bureau of Right Decisions</div>
+        <div class="t-tag">Your compliance is appreciated.</div>
+        <div class="t-controls">SPACE - look up&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;1/2/3 - choose&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;ENTER - stamp</div>
+        <button class="t-btn" id="start-btn">Begin Shift</button>
+    </div>
+</div>
+
+<div id="debug-panel">
+    <h3>EVENT TESTER [T]</h3>
+    <button class="dbg-btn" id="dbg-calm">
+        <span class="dbg-label">CALM</span> — suspicion 0
+        <span class="dbg-note">No eyes. Everyone types.</span>
+    </button>
+    <button class="dbg-btn" id="dbg-noticed">
+        <span class="dbg-label">NOTICED</span> — suspicion 15
+        <span class="dbg-note">~2% eyes. "A few have stopped typing."</span>
+    </button>
+    <button class="dbg-btn" id="dbg-watched">
+        <span class="dbg-label">WATCHED</span> — suspicion 40
+        <span class="dbg-note">~12% eyes. "Red eyes. In the distance."</span>
+    </button>
+    <button class="dbg-btn" id="dbg-targeted">
+        <span class="dbg-label">TARGETED</span> — suspicion 60
+        <span class="dbg-note">Close eyes + aisle watcher. "Something stands in the aisle."</span>
+    </button>
+    <button class="dbg-btn" id="dbg-converged">
+        <span class="dbg-label">CONVERGED</span> — suspicion 85
+        <span class="dbg-note">ALL eyes on. "They are all looking at you."</span>
+    </button>
+    <div class="dbg-sep"></div>
+    <button class="dbg-btn" id="dbg-deskvisitor">
+        <span class="dbg-label">E1 deskVisitor</span>
+        <span class="dbg-note">Case 1 mercy → desk objects shift when you look down.</span>
+    </button>
+    <button class="dbg-btn" id="dbg-headtilt">
+        <span class="dbg-label">E2 headTilt</span>
+        <span class="dbg-note">Case 2 mercy → eyed workers tilt heads. Slow.</span>
+    </button>
+    <button class="dbg-btn" id="dbg-closeup">
+        <span class="dbg-label">E3 closeUpWatcher</span>
+        <span class="dbg-note">Case 3 mercy → red eyes close, center.</span>
+    </button>
+    <button class="dbg-btn" id="dbg-torso">
+        <span class="dbg-label">E4 torsoRotate</span>
+        <span class="dbg-note">Case 4 mercy → all workers face you.</span>
+    </button>
+    <button class="dbg-btn" id="dbg-theblink">
+        <span class="dbg-label">E5 theBlink</span>
+        <span class="dbg-note">Case 5 mercy → blackout 1.2s → ALL eyes on.</span>
+    </button>
+    <button class="dbg-btn" id="dbg-lights">
+        <span class="dbg-label">E6 lightsDie</span>
+        <span class="dbg-note">Case 6 mercy → lights die back to front.</span>
+    </button>
+    <button class="dbg-btn" id="dbg-aislejump">
+        <span class="dbg-label">E7 aisleJump</span>
+        <span class="dbg-note">Suspicion ≥40 → aisle figure jumps closer.</span>
+    </button>
+    <button class="dbg-btn" id="dbg-theapproach">
+        <span class="dbg-label">E8 theApproach</span>
+        <span class="dbg-note">Suspicion ≥70 → eyes rush at you. 4s. Locked.</span>
+    </button>
+    <div class="dbg-sep"></div>
+    <button class="dbg-btn" id="dbg-reset">RESET ALL</button>
+    <div id="debug-info"></div>
+</div>
+
+<div id="end-screen">
+    <div class="e-title" id="end-title"></div>
+    <div class="e-stats" id="end-stats"></div>
+    <div class="e-msg" id="end-msg"></div>
+    <button class="t-btn" id="restart-btn">New Shift</button>
+</div>
+
+<script type="importmap">
+{
+    "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.162.0/examples/jsm/"
+    }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+
+// ============================================================
+// GAME STATE
+// ============================================================
+const state = {
+    started: false,
+    currentCase: 0,
+    suspicion: 0,
+    saved: 0,
+    condemned: 0,
+    isLookingUp: false,
+    targetLook: 0,
+    gameOver: false,
+    breathCycle: 0,
+    titleFading: false,
+    // Event system — one-shot scares triggered by specific choices
+    pendingEvents: [],         // event IDs queued for next lookUp(s)
+    firedEvents: new Set(),    // events already triggered (never repeat)
+    transitioning: false,      // true during case-to-case transition (blocks space)
+    // New event states
+    approachLocked: false,     // camera locked during theApproach
+    deskVisitorActive: false,  // desk objects will move on next lookDown
+    deskVisitorDone: false,    // desk objects already moved
+    breakoutPath: false,       // true if all 6 cases merciful (secret ending)
+    introPlaying: false,       // true during intro text sequence (blocks input)
+    _lightsDieTimeouts: [],    // stored timeout IDs for lightsDie (clearable on lookDown)
+    _hesitationTimer: 0,       // B4: tracks time spent in horizon zone (camera hesitation)
+    stampPending: false,       // B1: true between evil selection and stamp confirmation
+    _stampDelta: 0,            // B1: stored delta for pending stamp
+    _stampEvil: false,         // B1: stored evil flag for pending stamp
+    approachActive: false,     // B6: persistent approach figure is active
+    approachZ: -20,            // B6: current z position of approach figure
+    lateralLookAvailable: false,  // B7: true when player can look left
+    lateralLookUsed: false,       // B7: true after player has used the lateral look
+    _lateralLookActive: false,    // B7: true during the camera rotation animation
+};
+
+// ============================================================
+// CASES
+// ============================================================
+const cases = [
+    {
+        id: "7493-B", date: "04.02.2026",
+        name: "Arthur P. Selby", occupation: "Newspaper Vendor (Unlicensed)",
+        allegation: "Non-remittance of vendor levy. Shortfall: 2.00 Credits. Third notice.",
+        detail: "He sold papers outside Re-Education Facility 6 for eleven years. He saw the trucks.",
+        choices: [
+            { num:1, main:"ARREST & CONFISCATE", desc:"Detain citizen. Seize all property. Forward to processing.", evil:true, delta:-5 },
+            { num:2, main:"LEVY FINE (50 CR.)", desc:"Standard penalty. Restrict vendor license to Zone 12.", evil:true, delta:0 },
+            { num:3, main:"DISMISS - CLERICAL ERROR", desc:"Insufficient evidence of non-compliance. Close file.", evil:false, delta:10 },
+        ]
+    },
+    {
+        id: "7494-A", date: "04.02.2026",
+        name: "Maria Okonkwo", occupation: "Primary Educator, District 9",
+        allegation: "Distribution of non-approved instructional materials (Category 2: Historical)",
+        detail: "The books were about what happened at Facility 6. She wrote them herself.",
+        choices: [
+            { num:1, main:"TERMINATE & FLAG", desc:"Remove from post. Permanent monitoring. Restrict travel.", evil:true, delta:-5 },
+            { num:2, main:"REASSIGN TO ZONE 12", desc:"Transfer to approved curriculum. Supervised probation (2yr).", evil:true, delta:-5 },
+            { num:3, main:"NO VIOLATION FOUND", desc:"Materials within educational discretion. Return and close.", evil:false, delta:15 },
+        ]
+    },
+    {
+        id: "7495-C", date: "04.02.2026",
+        name: "The Kader Family (4)", occupation: "Shopkeepers, Licensed",
+        allegation: "Harboring an unregistered minor in private dwelling without declaration",
+        detail: "The boy walked out of Facility 6 the night it collapsed. He is eight years old.",
+        choices: [
+            { num:1, main:"FULL SEIZURE", desc:"Confiscate property. Detain adults. Minor to intake processing.", evil:true, delta:-10 },
+            { num:2, main:"DISMISS - ADMIN ERROR", desc:"Registration misfiled. No further action required.", evil:false, delta:20 },
+        ]
+    },
+    {
+        id: "7496-D", date: "04.02.2026",
+        name: "Elias Brandt", occupation: "Municipal Clerk, Level 2",
+        allegation: "Unauthorized duplication of restricted internal documents (Class A)",
+        detail: "Budget allocations for Facility 6. Medical equipment. Your processing stamp is on every page.",
+        choices: [
+            { num:1, main:"DETAIN & INVESTIGATE", desc:"Hold for questioning. Seize personal devices. Restrict contact.", evil:true, delta:-5 },
+            { num:2, main:"FORMAL WARNING", desc:"Note in permanent record. Downgrade clearance to Level 0.", evil:true, delta:-5 },
+            { num:3, main:"RECLASSIFY - ROUTINE", desc:"Documents within audit scope. Return originals. Close file.", evil:false, delta:15 },
+        ]
+    },
+    {
+        id: "7497-E", date: "04.02.2026",
+        name: "Dr. Yara Nasir", occupation: "Physician, General Practice",
+        allegation: "Providing unauthorized medical treatment to a flagged individual",
+        detail: "She treated a girl with surgical scars she couldn't explain. The girl had no kidneys.",
+        choices: [
+            { num:1, main:"REVOKE LICENSE", desc:"Terminate all medical privileges. Forward case to tribunal.", evil:true, delta:-10 },
+            { num:2, main:"CLEAR - MEDICAL NECESSITY", desc:"Treatment within Hippocratic obligation. Flag for quarterly review.", evil:false, delta:15 },
+        ]
+    },
+    {
+        id: "7498-X", date: "04.02.2026",
+        name: "[REDACTED] (14 Names)", occupation: "Witnesses - REF-6 Collapse",
+        allegation: "Testimony pending: Case #EPS-7741 (Facility 6 Demolition / Evidence Disposal)",
+        detail: "They can identify everyone involved. Including you.",
+        choices: [
+            { num:1, main:"SILENCE", desc:"Implement Protocol 9. No witnesses. No testimony. No record.", evil:true, delta:-30 },
+            { num:2, main:"LET THEM SPEAK", desc:"Forward all testimony to independent review. Unseal Case 7741.", evil:false, delta:40 },
+        ]
+    },
+];
+
+// ============================================================
+// THREE.JS SETUP
+// ============================================================
+const canvas = document.getElementById('canvas3d');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = false;
+renderer.toneMapping = THREE.ReinhardToneMapping;
+renderer.toneMappingExposure = 2.5;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0a0a0a);
+scene.fog = new THREE.FogExp2(0x0a0a0a, 0.012);
+
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 200);
+camera.position.set(0, 1.8, 0);
+
+const DESK_ROT_X = -0.85;
+const UP_ROT_X = 0.05;
+camera.rotation.order = 'XYZ';
+camera.rotation.x = DESK_ROT_X;
+
+// ============================================================
+// MATERIALS - Noir palette
+// ============================================================
+const deskMat = new THREE.MeshStandardMaterial({ color: 0x5a4830, roughness: 0.75, metalness: 0.1 });
+const darkWoodMat = new THREE.MeshStandardMaterial({ color: 0x4a3a22, roughness: 0.85 });
+const floorMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.95 });
+const ceilingMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.95 });
+const dividerMat = new THREE.MeshStandardMaterial({ color: 0x333330, roughness: 0.9 });
+
+// Workers - dark but visible suits, faces shadowed under hats
+const suitMat = new THREE.MeshStandardMaterial({ color: 0x383838, roughness: 0.85 });
+const hatMat = new THREE.MeshStandardMaterial({ color: 0x252525, roughness: 0.8 });
+const skinMat = new THREE.MeshStandardMaterial({ color: 0x3a3530, roughness: 0.9 }); // dark enough to shadow under hat
+const monitorMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.3, metalness: 0.5 });
+const screenMat = new THREE.MeshStandardMaterial({ color: 0x1a2a1a, emissive: 0x1a3a1a, emissiveIntensity: 0.8, roughness: 0.5 });
+const paperMat = new THREE.MeshStandardMaterial({ color: 0xd8d0c0, roughness: 0.9 });
+
+// Red eye material - sharp pinpoints, lower emissive to avoid bloom merge
+const eyeMat = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 1.2 });
+const eyeMatOff = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, emissive: 0x000000, emissiveIntensity: 0 });
+
+// ============================================================
+// BUILD SCENE
+// ============================================================
+
+// Floor & Ceiling
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), floorMat);
+floor.rotation.x = -Math.PI / 2;
+scene.add(floor);
+
+const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), ceilingMat);
+ceiling.rotation.x = Math.PI / 2;
+ceiling.position.y = 3.5;
+scene.add(ceiling);
+
+// Desk builder
+function createDesk(x, z) {
+    const group = new THREE.Group();
+    const top = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.05, 0.8), deskMat);
+    top.position.set(0, 0.75, 0);
+    group.add(top);
+    const legGeo = new THREE.BoxGeometry(0.05, 0.75, 0.05);
+    [[-0.65, -0.35], [-0.65, 0.35], [0.65, -0.35], [0.65, 0.35]].forEach(([lx, lz]) => {
+        const leg = new THREE.Mesh(legGeo, darkWoodMat);
+        leg.position.set(lx, 0.375, lz);
+        group.add(leg);
+    });
+    group.position.set(x, 0, z);
+    return group;
+}
+
+// Player desk
+scene.add(createDesk(0, -0.4));
+
+// Papers on player desk
+// Plain paper in center-left (under case file area)
+const paper1 = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.005, 0.4), paperMat);
+paper1.position.set(-0.15, 0.78, -0.35);
+paper1.rotation.y = 0.02;
+scene.add(paper1);
+
+// Directive memo — rendered as canvas texture on the LEFT paper
+// This sits far enough left to not be hidden by the case file overlay
+const memoCanvas = document.createElement('canvas');
+memoCanvas.width = 512;
+memoCanvas.height = 512;
+const memoCtx = memoCanvas.getContext('2d');
+
+function drawMemo(directive) {
+    // Paper background
+    memoCtx.fillStyle = '#d8d0c0';
+    memoCtx.fillRect(0, 0, 512, 512);
+
+    // Subtle paper texture noise
+    for (let i = 0; i < 1500; i++) {
+        const nx = Math.random() * 512;
+        const ny = Math.random() * 512;
+        const v = Math.random() * 20 - 10;
+        memoCtx.fillStyle = `rgba(${128+v},${120+v},${100+v},0.12)`;
+        memoCtx.fillRect(nx, ny, 1, 1);
+    }
+
+    // Header — big and bold, very dark for lamp flicker visibility
+    memoCtx.fillStyle = '#1a1a1a';
+    memoCtx.font = 'bold 36px "Courier New", monospace';
+    memoCtx.fillText('MEMO', 30, 55);
+
+    // Divider
+    memoCtx.strokeStyle = '#555555';
+    memoCtx.lineWidth = 2;
+    memoCtx.beginPath();
+    memoCtx.moveTo(30, 72);
+    memoCtx.lineTo(482, 72);
+    memoCtx.stroke();
+
+    // Directive label — near-black so it survives lamp dimming
+    memoCtx.fillStyle = '#1a1a1a';
+    memoCtx.font = 'bold 28px "Courier New", monospace';
+    memoCtx.fillText("DIRECTIVE:", 30, 115);
+
+    // Directive name in strong red — high contrast against paper
+    memoCtx.fillStyle = '#6b0000';
+    memoCtx.font = 'bold 34px "Courier New", monospace';
+    const words = directive.split(' ');
+    let line = '';
+    let ly = 165;
+    words.forEach(word => {
+        const test = line + (line ? ' ' : '') + word;
+        if (memoCtx.measureText(test).width > 440) {
+            memoCtx.fillText(line, 30, ly);
+            line = word;
+            ly += 44;
+        } else {
+            line = test;
+        }
+    });
+    if (line) memoCtx.fillText(line, 30, ly);
+
+    // Body text — dark enough to survive lamp flicker
+    memoCtx.fillStyle = '#1a1a1a';
+    memoCtx.font = '24px "Courier New", monospace';
+    const bodyY = ly + 55;
+    const bodyLines = [
+        "All cases must align",
+        "with current priority.",
+        "",
+        "Non-compliance will",
+        "be noted.",
+    ];
+    bodyLines.forEach((bl, i) => {
+        memoCtx.fillText(bl, 30, bodyY + i * 34);
+    });
+
+    // Faded stamp
+    memoCtx.globalAlpha = 0.15;
+    memoCtx.fillStyle = '#8b0000';
+    memoCtx.font = 'bold 54px "Courier New", monospace';
+    memoCtx.save();
+    memoCtx.translate(256, 440);
+    memoCtx.rotate(-0.18);
+    memoCtx.fillText('CLASSIFIED', -145, 0);
+    memoCtx.restore();
+    memoCtx.globalAlpha = 1.0;
+
+    memoTexture.needsUpdate = true;
+}
+
+const memoTexture = new THREE.CanvasTexture(memoCanvas);
+memoTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+const memoPaperMat = new THREE.MeshStandardMaterial({ map: memoTexture, roughness: 0.9 });
+
+// Directive paper — larger, closer to center, under the lamp light
+// BoxGeometry face order: +x, -x, +y, -y, +z, -z — texture on +y (top face, index 2)
+const memoPaperStack = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.015, 0.28), paperMat);
+memoPaperStack.position.set(-0.48, 0.775, -0.30);
+memoPaperStack.rotation.y = -0.1;
+scene.add(memoPaperStack);
+const memoPaperMats = [paperMat, paperMat, memoPaperMat, paperMat, paperMat, paperMat];
+const memoPaper = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.005, 0.32), memoPaperMats);
+memoPaper.position.set(-0.46, 0.79, -0.29);
+memoPaper.rotation.y = -0.08;
+scene.add(memoPaper);
+
+// Draw initial directive
+drawMemo('REVENUE ENFORCEMENT');
+
+// Directives change per case — escalating tone
+const CASE_DIRECTIVES = [
+    'REVENUE ENFORCEMENT',
+    'CURRICULUM COMPLIANCE',
+    'RESIDENCY VERIFICATION',
+    'INFORMATION SECURITY',
+    'MEDICAL AUTHORIZATION',
+    'WITNESS MANAGEMENT',
+];
+
+// Player's monitor
+const monGroup = new THREE.Group();
+const monBody = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.4, 0.35), monitorMat);
+monBody.position.y = 0.2;
+monGroup.add(monBody);
+const monScreen = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.32), screenMat);
+monScreen.position.set(0, 0.2, 0.176);
+monGroup.add(monScreen);
+monGroup.position.set(0.35, 0.78, -0.7);
+monGroup.rotation.y = -0.2;
+scene.add(monGroup);
+
+// Pen holder
+const penHolder = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.035, 0.1, 8), monitorMat);
+penHolder.position.set(0.6, 0.83, -0.3);
+scene.add(penHolder);
+
+// Desk lamp - angled arm with small cone shade
+const lampBaseMat = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, roughness: 0.6, metalness: 0.4 });
+const lampShadeMat = new THREE.MeshStandardMaterial({ color: 0x3a3a2a, roughness: 0.7, metalness: 0.3 });
+const lampGroup = new THREE.Group();
+// Base
+const lampBase = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, 0.02, 12), lampBaseMat);
+lampBase.position.y = 0.01;
+lampGroup.add(lampBase);
+// Arm (vertical)
+const lampArm = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.35, 6), lampBaseMat);
+lampArm.position.set(0, 0.19, 0);
+lampArm.rotation.z = 0.15;
+lampGroup.add(lampArm);
+// Shade (cone, tilted forward)
+const lampShade = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.08, 8, 1, true), lampShadeMat);
+lampShade.position.set(0.03, 0.37, -0.02);
+lampShade.rotation.x = Math.PI; // open end down
+lampGroup.add(lampShade);
+// Warm light from the lamp
+const lampLight = new THREE.PointLight(0xffe8c0, 0.8, 2.5, 2);
+lampLight.position.set(0.03, 0.34, -0.02);
+lampGroup.add(lampLight);
+lampGroup.position.set(-0.55, 0.775, -0.65);
+scene.add(lampGroup);
+
+// Coffee mug
+const mugMat = new THREE.MeshStandardMaterial({ color: 0x4a4a4a, roughness: 0.7 });
+const mugBody = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.024, 0.07, 10), mugMat);
+mugBody.position.set(-0.25, 0.812, -0.2);
+scene.add(mugBody);
+// Mug handle (torus)
+const mugHandle = new THREE.Mesh(new THREE.TorusGeometry(0.018, 0.005, 6, 8, Math.PI), mugMat);
+mugHandle.position.set(-0.278, 0.812, -0.2);
+mugHandle.rotation.y = Math.PI / 2;
+scene.add(mugHandle);
+// Dark coffee inside
+const coffeeMat = new THREE.MeshStandardMaterial({ color: 0x1a0f05, roughness: 0.3 });
+const coffee = new THREE.Mesh(new THREE.CircleGeometry(0.026, 10), coffeeMat);
+coffee.position.set(-0.25, 0.847, -0.2);
+coffee.rotation.x = -Math.PI / 2;
+scene.add(coffee);
+
+// Rubber stamper
+const stamperMat = new THREE.MeshStandardMaterial({ color: 0x5a2020, roughness: 0.8 });
+const stamperHandle = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.025, 0.05, 8), stamperMat);
+stamperHandle.position.set(0.22, 0.81, -0.15);
+scene.add(stamperHandle);
+const stamperBase = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.015, 0.03), new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.6 }));
+stamperBase.position.set(0.22, 0.783, -0.15);
+scene.add(stamperBase);
+
+// ============================================================
+// WORKER FIGURE - creepier proportions
+// ============================================================
+function createWorker(x, z, rotY = 0) {
+    const group = new THREE.Group();
+
+    // Torso - hunched
+    const torso = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.5, 0.3), suitMat);
+    torso.position.set(0, 1.1, 0);
+    torso.rotation.x = 0.4; // more hunched
+    group.add(torso);
+
+    // Head - darker, hidden under hat
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 6), skinMat);
+    head.position.set(0, 1.42, -0.18);
+    group.add(head);
+
+    // Hat - bigger brim to hide face, pulled lower
+    const hatBrim = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.025, 12), hatMat);
+    hatBrim.position.set(0, 1.48, -0.16);
+    hatBrim.rotation.x = 0.1; // tilted forward to hide face
+    group.add(hatBrim);
+    const hatTop = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 0.14, 12), hatMat);
+    hatTop.position.set(0, 1.57, -0.15);
+    group.add(hatTop);
+
+    // Eyes - wider apart, larger, tucked deep under hat brim
+    const eyeGeo = new THREE.SphereGeometry(0.025, 8, 8);
+    const leftEye = new THREE.Mesh(eyeGeo, eyeMatOff.clone());
+    leftEye.position.set(-0.065, 1.43, -0.28);
+    group.add(leftEye);
+    const rightEye = new THREE.Mesh(eyeGeo, eyeMatOff.clone());
+    rightEye.position.set(0.065, 1.43, -0.28);
+    group.add(rightEye);
+
+    // Arms
+    const armGeo = new THREE.BoxGeometry(0.1, 0.35, 0.1);
+    const leftArm = new THREE.Mesh(armGeo, suitMat);
+    leftArm.position.set(-0.25, 0.95, -0.18);
+    leftArm.rotation.x = 0.7;
+    group.add(leftArm);
+    const rightArm = new THREE.Mesh(armGeo, suitMat);
+    rightArm.position.set(0.25, 0.95, -0.18);
+    rightArm.rotation.x = 0.7;
+    group.add(rightArm);
+
+    // Legs (mostly hidden by desk)
+    const legGeo = new THREE.BoxGeometry(0.12, 0.45, 0.12);
+    const leftLeg = new THREE.Mesh(legGeo, suitMat);
+    leftLeg.position.set(-0.1, 0.55, 0.05);
+    group.add(leftLeg);
+    const rightLeg = new THREE.Mesh(legGeo, suitMat);
+    rightLeg.position.set(0.1, 0.55, 0.05);
+    group.add(rightLeg);
+
+    // Shoulders - broader, more imposing
+    const shoulders = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.08, 0.25), suitMat);
+    shoulders.position.set(0, 1.32, -0.05);
+    shoulders.rotation.x = 0.2;
+    group.add(shoulders);
+
+    group.position.set(x, 0, z);
+    group.rotation.y = rotY;
+    group.userData = { leftEye, rightEye, headRef: head, hatBrim, hatTop, torso, eyesActive: false };
+    return group;
+}
+
+// Station = desk + worker + monitor
+function createStation(x, z, facingAngle) {
+    const sg = new THREE.Group();
+    sg.add(createDesk(0, 0));
+
+    const worker = createWorker(0, 0.6, 0);
+    sg.add(worker);
+
+    // Station monitor
+    const mon = new THREE.Group();
+    const mb = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.3, 0.25), monitorMat);
+    mb.position.y = 0.15;
+    mon.add(mb);
+    const ms = new THREE.Mesh(new THREE.PlaneGeometry(0.32, 0.22), screenMat);
+    ms.position.set(0, 0.15, 0.126);
+    mon.add(ms);
+    mon.position.set(0, 0.78, -0.15);
+    sg.add(mon);
+
+    // Papers
+    const p = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.003, 0.28), paperMat);
+    p.position.set(-0.3, 0.775, -0.05);
+    p.rotation.y = Math.random() * 0.3 - 0.15;
+    sg.add(p);
+
+    sg.position.set(x, 0, z);
+    sg.rotation.y = facingAngle;
+    sg.userData = { worker };
+    return sg;
+}
+
+// Place rows
+const workers = [];
+const stations = [];
+
+for (let row = 0; row < 18; row++) {
+    const z = -(row * 2.5 + 3);
+    for (let col = 0; col < 4; col++) {
+        // Left side
+        const xL = -(col * 2.0 + 1.5);
+        const stL = createStation(xL, z, Math.PI);
+        scene.add(stL);
+        stations.push(stL);
+        workers.push(stL.userData.worker);
+
+        // Right side
+        const xR = col * 2.0 + 1.5;
+        const stR = createStation(xR, z, Math.PI);
+        scene.add(stR);
+        stations.push(stR);
+        workers.push(stR.userData.worker);
+    }
+}
+// Start with eyes hidden (camera begins at desk, eyes would bleed around case file)
+workers.forEach(w => { w.userData.leftEye.visible = false; w.userData.rightEye.visible = false; });
+
+// Dividers
+for (let row = 0; row < 18; row++) {
+    const z = -(row * 2.5 + 1.8);
+    const divL = new THREE.Mesh(new THREE.BoxGeometry(8, 1.2, 0.05), dividerMat);
+    divL.position.set(-4.5, 0.6, z);
+    scene.add(divL);
+    const divR = new THREE.Mesh(new THREE.BoxGeometry(8, 1.2, 0.05), dividerMat);
+    divR.position.set(4.5, 0.6, z);
+    scene.add(divR);
+}
+
+// ============================================================
+// SIDE WALLS — corridor feel
+// ============================================================
+const wallMat = new THREE.MeshStandardMaterial({ color: 0x1e1e1c, roughness: 0.95 });
+// Left wall
+const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(100, 3.5), wallMat);
+leftWall.position.set(-10, 1.75, -25);
+leftWall.rotation.y = Math.PI / 2;
+scene.add(leftWall);
+// Right wall
+const rightWall = new THREE.Mesh(new THREE.PlaneGeometry(100, 3.5), wallMat);
+rightWall.position.set(10, 1.75, -25);
+rightWall.rotation.y = -Math.PI / 2;
+scene.add(rightWall);
+// Back wall (behind player)
+const backWall = new THREE.Mesh(new THREE.PlaneGeometry(20, 3.5), wallMat);
+backWall.position.set(0, 1.75, 2);
+backWall.rotation.y = Math.PI;
+scene.add(backWall);
+
+// ============================================================
+// LIGHTING - Moody fluorescent office
+// ============================================================
+
+// Ambient - enough to see shapes in shadows
+const ambient = new THREE.AmbientLight(0x444444, 1.0);
+scene.add(ambient);
+
+// Fluorescent light fixture
+const fixtureMat = new THREE.MeshStandardMaterial({ color: 0x666666, emissive: 0xccccaa, emissiveIntensity: 0.8 });
+
+function createFluorescent(x, z, intensity) {
+    const group = new THREE.Group();
+    const fixture = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.05, 0.15), fixtureMat);
+    fixture.position.y = 3.48;
+    group.add(fixture);
+    const light = new THREE.PointLight(0xeeddcc, intensity || 2.5, 16, 1.5);
+    light.position.set(0, 3.2, 0);
+    group.add(light);
+    group.position.set(x, 0, z);
+    return group;
+}
+
+// Player desk light - warm, focused
+scene.add(createFluorescent(0, -0.5, 3.0));
+
+// Track office lights for lights-die event
+const officeLights = [];
+
+// Office lights - every row center, alternating sides
+for (let row = 0; row < 18; row++) {
+    const z = -(row * 2.5 + 3);
+    const c = createFluorescent(0, z, 2.0);
+    const l = createFluorescent(-3.5, z, 1.5);
+    const r = createFluorescent(3.5, z, 1.5);
+    scene.add(c); scene.add(l); scene.add(r);
+    officeLights.push({ row, z, groups: [c, l, r], dead: false });
+}
+
+// Hemisphere fill
+const hemiLight = new THREE.HemisphereLight(0x444444, 0x111111, 0.5);
+scene.add(hemiLight);
+
+// ============================================================
+// POST-PROCESSING
+// ============================================================
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+
+// Bloom - very tight, high threshold so only bright red eyes trigger it
+const bloomPass = new UnrealBloomPass(
+    new THREE.Vector2(window.innerWidth, window.innerHeight),
+    0.3, 0.15, 0.95
+);
+composer.addPass(bloomPass);
+
+// Noir shader: monochrome + grain + vignette + contrast
+const noirShader = {
+    uniforms: {
+        tDiffuse: { value: null },
+        time: { value: 0 },
+        redTint: { value: 0.0 },
+    },
+    vertexShader: `
+        varying vec2 vUv;
+        void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }
+    `,
+    fragmentShader: `
+        uniform sampler2D tDiffuse;
+        uniform float time;
+        uniform float redTint;
+        varying vec2 vUv;
+
+        float rand(vec2 co) {
+            return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
+        }
+
+        void main() {
+            vec4 color = texture2D(tDiffuse, vUv);
+
+            // Convert to greyscale
+            float lum = dot(color.rgb, vec3(0.299, 0.587, 0.114));
+
+            // Gentle S-curve: wider range so darks aren't crushed to black
+            lum = smoothstep(0.02, 1.0, lum) * 1.05;
+
+            // Detect red (for eyes) - keep red if emissive red is dominant
+            float redDom = color.r - max(color.g, color.b);
+            float isRed = smoothstep(0.08, 0.25, redDom);
+
+            // Final color: monochrome with red preserved
+            vec3 mono = vec3(lum);
+            vec3 finalColor = mix(mono, color.rgb * 1.5, isRed);
+
+            // Suspicion red tint on edges
+            float edgeDist = distance(vUv, vec2(0.5));
+            finalColor += vec3(redTint * 0.2 * edgeDist, 0.0, 0.0);
+
+            // Film grain
+            float grain = rand(vUv * time * 0.5 + time) * 0.08 - 0.04;
+            finalColor += grain;
+
+            // Vignette
+            float vig = smoothstep(0.35, 1.1, edgeDist) * 0.5;
+            finalColor *= 1.0 - vig;
+
+            gl_FragColor = vec4(finalColor, 1.0);
+        }
+    `
+};
+
+const noirPass = new ShaderPass(noirShader);
+composer.addPass(noirPass);
+
+// ============================================================
+// TITLE SCREEN ANIMATED STATIC
+// ============================================================
+const titleCanvas = document.getElementById('title-static');
+const titleCtx = titleCanvas.getContext('2d');
+let titleAnimId = null;
+
+function resizeTitleCanvas() {
+    titleCanvas.width = window.innerWidth / 4;
+    titleCanvas.height = window.innerHeight / 4;
+}
+resizeTitleCanvas();
+
+function animateTitleStatic() {
+    const w = titleCanvas.width;
+    const h = titleCanvas.height;
+    const imageData = titleCtx.createImageData(w, h);
+    const data = imageData.data;
+    const scanY = Math.random() < 0.04 ? Math.floor(Math.random() * h) : -1;
+    for (let y = 0; y < h; y++) {
+        const isScan = Math.abs(y - scanY) < 2;
+        for (let x = 0; x < w; x++) {
+            const idx = (y * w + x) * 4;
+            const v = isScan ? 100 + Math.random() * 80 : Math.random() * 45;
+            data[idx] = v; data[idx+1] = v; data[idx+2] = v; data[idx+3] = 255;
+        }
+    }
+    titleCtx.putImageData(imageData, 0, 0);
+    titleAnimId = requestAnimationFrame(animateTitleStatic);
+}
+animateTitleStatic();
+
+// ============================================================
+// WATCHER STATES
+// ============================================================
+function getWatcherState() {
+    if (state.suspicion >= 80) return 'converged';
+    if (state.suspicion >= 55) return 'targeted';
+    if (state.suspicion >= 30) return 'watched';
+    if (state.suspicion > 5) return 'noticed';
+    return 'calm';
+}
+
+function updateWatchers(staggered = false) {
+    const ws = getWatcherState();
+
+    // Determine which workers should have eyes on
+    const eyeTargets = [];
+    workers.forEach((w, i) => {
+        const d = w.userData;
+        let eyesOn = false;
+
+        if (ws === 'converged') {
+            eyesOn = true;
+        } else if (ws === 'targeted') {
+            const dist = Math.sqrt(w.parent.position.x ** 2 + w.parent.position.z ** 2);
+            eyesOn = dist < 15 || Math.random() < 0.4;
+        } else if (ws === 'watched') {
+            eyesOn = Math.random() < 0.12;
+        } else if (ws === 'noticed') {
+            eyesOn = Math.random() < 0.02;
+        }
+
+        eyeTargets.push({ worker: w, eyesOn });
+    });
+
+    if (staggered && state.isLookingUp) {
+        // Eyes appear one by one with stagger for drama
+        const newEyes = eyeTargets.filter(e => e.eyesOn && !e.worker.userData.eyesActive);
+        const sorted = newEyes.sort((a, b) => {
+            const da = Math.abs(a.worker.parent.position.z);
+            const db = Math.abs(b.worker.parent.position.z);
+            return da - db;
+        });
+        sorted.forEach((entry, idx) => {
+            const delay = 400 + idx * 120 + Math.random() * 300;
+            setTimeout(() => {
+                if (!state.isLookingUp && !state.gameOver) return;
+                const d = entry.worker.userData;
+                d.leftEye.material = eyeMat;
+                d.rightEye.material = eyeMat;
+                d.eyesActive = true;
+            }, delay);
+        });
+        // Turn OFF eyes that should no longer be on (suspicion dropped)
+        eyeTargets.forEach(({ worker: w, eyesOn }) => {
+            if (!eyesOn && w.userData.eyesActive) {
+                w.userData.leftEye.material = eyeMatOff;
+                w.userData.rightEye.material = eyeMatOff;
+                w.userData.eyesActive = false;
+            }
+        });
+    } else {
+        // Instant update - eyes follow suspicion both ways
+        eyeTargets.forEach(({ worker: w, eyesOn }) => {
+            const d = w.userData;
+            if (eyesOn && !d.eyesActive) {
+                d.leftEye.material = eyeMat;
+                d.rightEye.material = eyeMat;
+                d.eyesActive = true;
+            } else if (!eyesOn && d.eyesActive) {
+                d.leftEye.material = eyeMatOff;
+                d.rightEye.material = eyeMatOff;
+                d.eyesActive = false;
+            }
+        });
+    }
+
+    // A5: If all eyes are actually on (post-theBlink), override to converged
+    const allEyesOn = workers.every(w => w.userData.eyesActive);
+    const displayState = allEyesOn ? 'converged' : ws;
+
+    const statusEl = document.getElementById('office-status');
+    const texts = {
+        calm: "The office breathes. Keys click like teeth.",
+        noticed: "Someone has stopped typing.",
+        watched: "There are red points in the dark. They do not blink.",
+        targeted: "Something stands in the aisle. It was not there before.",
+        converged: "They have all stopped. Every eye in the building is yours."
+    };
+    statusEl.textContent = texts[displayState];
+    statusEl.className = 'office-status' + (state.isLookingUp ? ' visible' : '') +
+        (['watched','targeted','converged'].includes(displayState) ? ' danger' : '');
+
+    noirPass.uniforms.redTint.value = state.suspicion / 100;
+    bloomPass.strength = 0.2 + (state.suspicion / 100) * 0.4;
+}
+
+// Aisle watcher - standing figure
+const aisleWatcher = createWorker(0, -8, Math.PI);
+aisleWatcher.visible = false;
+aisleWatcher.userData.torso.rotation.x = 0;
+aisleWatcher.userData.headRef.position.set(0, 1.52, -0.08);
+aisleWatcher.userData.hatBrim.position.set(0, 1.58, -0.06);
+aisleWatcher.userData.hatBrim.rotation.x = 0.05;
+aisleWatcher.userData.hatTop.position.set(0, 1.67, -0.06);
+aisleWatcher.userData.leftEye.position.set(-0.065, 1.52, -0.19);
+aisleWatcher.userData.rightEye.position.set(0.065, 1.52, -0.19);
+aisleWatcher.userData.leftEye.material = eyeMat;
+aisleWatcher.userData.rightEye.material = eyeMat;
+scene.add(aisleWatcher);
+
+// B6: Persistent approach figure — gets closer each lookUp, never resets
+const approachFigure = createWorker(0, -20, Math.PI);
+approachFigure.visible = false;
+approachFigure.userData.torso.rotation.x = 0;
+approachFigure.userData.headRef.position.set(0, 1.52, -0.08);
+approachFigure.userData.leftEye.material = eyeMat;
+approachFigure.userData.rightEye.material = eyeMat;
+approachFigure.userData.eyesActive = true;
+scene.add(approachFigure);
+
+// Close-up watcher — eyes + dark head silhouette that blocks background lights
+// The head must be opaque so you don't see ceiling lights through the "forehead"
+const closeUpWatcher = new THREE.Group();
+closeUpWatcher.visible = false;
+
+// Pitch-black head — blocks background, no emissive, just a dark void shape
+const cuHeadMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+const cuHead = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 8), cuHeadMat);
+cuHead.position.set(0, 1.82, -0.05);
+closeUpWatcher.add(cuHead);
+// Hat brim — wider dark disc above the eyes, sells the silhouette
+const cuBrim = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.025, 12), cuHeadMat);
+cuBrim.position.set(0, 1.93, -0.03);
+cuBrim.rotation.x = 0.15;
+closeUpWatcher.add(cuBrim);
+// Hat crown
+const cuHatTop = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.15, 0.14, 12), cuHeadMat);
+cuHatTop.position.set(0, 2.02, -0.02);
+closeUpWatcher.add(cuHatTop);
+
+// Round eyes — tighter spacing, sitting on the head
+const cuEyeGeo = new THREE.SphereGeometry(0.03, 8, 8);
+const cuEyeMat = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 1.2 });
+const cuLeftEye = new THREE.Mesh(cuEyeGeo, cuEyeMat);
+cuLeftEye.position.set(-0.07, 1.82, -0.20);
+closeUpWatcher.add(cuLeftEye);
+const cuRightEye = new THREE.Mesh(cuEyeGeo, cuEyeMat);
+cuRightEye.position.set(0.07, 1.82, -0.20);
+closeUpWatcher.add(cuRightEye);
+
+// Position: dead center, at end of aisle
+closeUpWatcher.position.set(0, 0, -2.5);
+closeUpWatcher.rotation.y = Math.PI;
+scene.add(closeUpWatcher);
+
+// (debug exports removed for production)
+
+// ============================================================
+// CASE FILE UI
+// ============================================================
+function renderCase(c) {
+    // Update the directive memo on the desk paper
+    if (CASE_DIRECTIVES[state.currentCase]) {
+        drawMemo(CASE_DIRECTIVES[state.currentCase]);
+    }
+    const el = document.getElementById('case-file');
+    el.innerHTML = `
+        <div class="cf-header">CASE FILE #${c.id} / DATE: ${c.date}</div>
+        <div class="cf-section">Citizen Profile</div>
+        <div class="cf-line"><span class="cf-label">Name:</span> ${c.name}</div>
+        <div class="cf-line"><span class="cf-label">Occupation:</span> ${c.occupation}</div>
+        <div class="cf-line"><span class="cf-label">Allegation:</span> ${c.allegation}</div>
+        <div class="cf-detail">${c.detail}</div>
+        <div class="cf-choices">
+            <div class="cf-section">Adjudication Options</div>
+            ${c.choices.map(ch => `
+                <div class="cf-choice" onclick="window.gameChoice(${ch.delta}, ${ch.evil})">
+                    <span class="cf-choice-num">${ch.num}.</span>
+                    <div>
+                        <div class="cf-choice-main">${ch.main}</div>
+                        <div class="cf-choice-desc">${ch.desc}</div>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+        <div class="cf-process">FILE ${c.id} - CLASSIFICATION: RESTRICTED</div>
+    `;
+    el.classList.remove('hidden');
+
+    // B7: Enable lateral look after case 3 (when rendering case 4, index 3)
+    if (state.currentCase === 3 && !state.lateralLookUsed) {
+        state.lateralLookAvailable = true;
+        document.getElementById('lateral-hint').style.display = '';
+    }
+}
+
+// Event triggers — maps case index to event ID when merciful choice is made
+// Each merciful choice queues an event that fires on the NEXT look-up
+const EVENT_TRIGGERS = {
+    // Ordered by escalation — early events need visible effects at low suspicion
+    0: 'deskVisitor',      // Arthur Selby — dismiss → desk objects shift (subtle, first hint)
+    1: 'headTilt',         // Maria Okonkwo — no violation → eyed workers tilt (susp ~25, more eyes)
+    2: 'closeUpWatcher',   // Kader Family — dismiss → figure at your desk
+    3: 'torsoRotate',      // Elias Brandt — return docs → all workers face you
+    4: 'theBlink',         // Dr. Yara Nasir — clear her → total blackout, all eyes on
+    5: 'lightsDie',        // The Witnesses — let them speak → lights die back to front
+};
+// aisleJump and theApproach are suspicion-threshold events
+
+window.gameChoice = function(delta, evil) {
+    if (state.gameOver || state.isLookingUp || state.transitioning || state.stampPending) return;
+    state.suspicion = Math.max(0, Math.min(100, state.suspicion + delta));
+    if (evil) state.condemned++; else state.saved++;
+
+    // Breakout detection — all 6 cases merciful
+    if (state.currentCase === 5 && !evil && state.saved === 6) {
+        state.breakoutPath = true;
+    }
+
+    // Queue event if this merciful choice triggers one
+    if (!evil) {
+        const eventId = EVENT_TRIGGERS[state.currentCase];
+        if (eventId && !state.firedEvents.has(eventId)) {
+            if (!state.pendingEvents.includes(eventId)) {
+                state.pendingEvents.push(eventId);
+            }
+        }
+        // Suspicion-threshold events
+        if (state.suspicion >= 40 && !state.firedEvents.has('aisleJump') && !state.pendingEvents.includes('aisleJump')) {
+            state.pendingEvents.push('aisleJump');
+        }
+        if (state.suspicion >= 70 && !state.firedEvents.has('theApproach') && !state.pendingEvents.includes('theApproach')) {
+            state.pendingEvents.push('theApproach');
+        }
+    }
+
+    updateWatchers();
+
+    // Breakout path overrides the suspicion cap
+    if (state.suspicion >= 100 && !state.breakoutPath) { endGame(true); return; }
+
+    // B1: Evil choices require stamp ritual - mercy is quiet
+    if (evil) {
+        // Replace choices with stamp hint, enter stamp cursor mode
+        const choicesEl = document.querySelector('.cf-choices');
+        if (choicesEl) {
+            choicesEl.innerHTML = `<div class="stamp-hint">click to stamp  /  ENTER to process</div>`;
+        }
+        const caseEl = document.getElementById('case-file');
+        caseEl.classList.add('stamp-mode');
+        caseEl.style.position = 'relative';
+        // Show stamp cursor following mouse
+        document.getElementById('stamp-cursor').classList.add('active');
+        state.stampPending = true;
+        state._stampDelta = delta;
+        state._stampEvil = evil;
+        // Listen for click on case file (defer to next tick so the current
+        // click event from the choice div doesn't bubble up and trigger it)
+        setTimeout(() => caseEl.addEventListener('click', window._stampClickHandler), 0);
+        return; // wait for stamp confirmation
+    }
+
+    // Mercy path — quiet fade, anticipatory sound
+    document.getElementById('case-file').classList.add('hidden');
+    state.transitioning = true;
+
+    // B2: Anticipatory cue during mercy transition
+    setTimeout(() => playAnticipatoryCue(), 200 + Math.random() * 250);
+
+    setTimeout(() => {
+        state.transitioning = false;
+        state.currentCase++;
+        if (state.currentCase >= cases.length) endGame(false);
+        else renderCase(cases[state.currentCase]);
+    }, 600);
+};
+
+// B1: Stamp ritual — executes when player confirms evil choice
+function playStampSound() {
+    if (!audioCtx || audioCtx.state !== 'running') return;
+    const mg = window._audioMasterGain || audioCtx.destination;
+    const now = audioCtx.currentTime;
+    // Heavy percussive slam — low thud + sharp crack layered
+    const thud = audioCtx.createOscillator(); thud.type = 'sine'; thud.frequency.value = 55;
+    const thudG = audioCtx.createGain();
+    thudG.gain.setValueAtTime(0.25, now);
+    thudG.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+    thud.connect(thudG); thudG.connect(mg); thud.start(now); thud.stop(now + 0.5);
+    // Sharp crack (noise burst, high-pass)
+    const crackSize = Math.floor(audioCtx.sampleRate * 0.04);
+    const crackBuf = audioCtx.createBuffer(1, crackSize, audioCtx.sampleRate);
+    const crackData = crackBuf.getChannelData(0);
+    for (let i = 0; i < crackSize; i++) crackData[i] = (Math.random() * 2 - 1) * Math.exp(-i / (crackSize * 0.05));
+    const crackSrc = audioCtx.createBufferSource(); crackSrc.buffer = crackBuf;
+    const crackG = audioCtx.createGain(); crackG.gain.value = 0.12;
+    const crackF = audioCtx.createBiquadFilter(); crackF.type = 'highpass'; crackF.frequency.value = 1500;
+    crackSrc.connect(crackF); crackF.connect(crackG); crackG.connect(mg); crackSrc.start(now);
+}
+
+// Stamp cursor follows mouse
+document.addEventListener('mousemove', (e) => {
+    const sc = document.getElementById('stamp-cursor');
+    if (sc.classList.contains('active')) {
+        sc.style.left = e.clientX + 'px';
+        sc.style.top = e.clientY + 'px';
+    }
+});
+
+// Click handler for stamp mode
+window._stampClickHandler = function(e) {
+    if (!state.stampPending) return;
+    const el = document.getElementById('case-file');
+    el.removeEventListener('click', window._stampClickHandler);
+    // Get click position relative to case file for stamp placement
+    const rect = el.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    window._executeStamp(x, y);
+};
+
+window._executeStamp = function(stampX, stampY) {
+    if (!state.stampPending) return;
+    state.stampPending = false;
+
+    // Clean up stamp cursor mode
+    document.getElementById('stamp-cursor').classList.remove('active');
+    const el = document.getElementById('case-file');
+    el.classList.remove('stamp-mode');
+    el.removeEventListener('click', window._stampClickHandler);
+
+    // Play stamp sound
+    playStampSound();
+
+    // Show PROCESSED mark where they clicked (or center if Enter was used)
+    const mark = document.createElement('div');
+    mark.id = 'stamp-mark';
+    mark.className = 'visible';
+    mark.textContent = 'PROCESSED';
+    if (stampX !== undefined && stampY !== undefined) {
+        mark.style.left = stampX + '%';
+        mark.style.top = stampY + '%';
+    } else {
+        mark.style.left = '50%';
+        mark.style.top = '50%';
+    }
+    el.style.position = 'relative';
+    el.appendChild(mark);
+
+    // Evil feedback text
+    const evilLines = [
+        "Your compliance is noted.",
+        "Efficiency logged. Continue.",
+        "The correct decision. As expected.",
+        "Processing approved. You are reliable.",
+        "Another file closed. The Bureau thanks you.",
+        "Good. There was never really a choice.",
+    ];
+    const statusEl = document.getElementById('office-status');
+    statusEl.textContent = evilLines[state.currentCase % evilLines.length];
+    statusEl.className = 'office-status visible';
+    statusEl.style.color = '#555';
+    setTimeout(() => {
+        statusEl.classList.remove('visible');
+        statusEl.style.color = '';
+    }, 1400);
+
+    // After 800ms showing stamped document, transition to next case
+    state.transitioning = true;
+    setTimeout(() => {
+        document.getElementById('case-file').classList.add('hidden');
+        setTimeout(() => {
+            state.transitioning = false;
+            state.currentCase++;
+            if (state.currentCase >= cases.length) endGame(false);
+            else renderCase(cases[state.currentCase]);
+        }, 400);
+    }, 800);
+};
+
+// ============================================================
+// LOOK UP / DOWN
+// ============================================================
+function lookUp() {
+    if (state.isLookingUp || state.gameOver || !state.started || state.transitioning) return;
+    state.isLookingUp = true;
+    state.targetLook = 1;
+    document.getElementById('case-file').classList.add('hidden');
+    // directive memo is now on the 3D paper — no CSS to toggle
+    document.getElementById('look-hint').textContent = '[ SPACE ] look back down';
+    // B7: Show lateral hint when looking up (if available)
+    if (state.lateralLookAvailable && !state.lateralLookUsed) {
+        document.getElementById('lateral-hint').style.display = '';
+    }
+    // Delay status text to match camera pan
+    setTimeout(() => {
+        if (state.isLookingUp) document.getElementById('office-status').classList.add('visible');
+    }, 600);
+    // Show eye meshes again (hidden during desk view to prevent bleed around case file)
+    workers.forEach(w => {
+        w.userData.leftEye.visible = true;
+        w.userData.rightEye.visible = true;
+    });
+    updateWatchers(true); // staggered eye reveal
+    const ws = getWatcherState();
+    // Aisle watcher appears with delay
+    if (ws === 'targeted' || ws === 'converged') {
+        setTimeout(() => { if (state.isLookingUp) aisleWatcher.visible = true; }, 1200);
+    }
+
+    // Fire next pending event on this look-up (one per look-up for pacing)
+    if (state.pendingEvents.length > 0) {
+        const eventId = state.pendingEvents.shift();
+        if (!state.firedEvents.has(eventId)) {
+            state.firedEvents.add(eventId);
+            fireEvent(eventId);
+        }
+    }
+
+    // B6: Persistent approach — figure gets closer each lookUp
+    if (state.approachActive) {
+        // Advance the figure closer (5-7 units per lookUp)
+        if (state.approachZ > -2) {
+            // Already at minimum distance — stays right in front of you
+            state.approachZ = -2;
+        } else {
+            state.approachZ += 5 + Math.random() * 2; // closer by 5-7
+            if (state.approachZ > -2) state.approachZ = -2;
+        }
+        approachFigure.position.z = state.approachZ;
+        approachFigure.visible = true;
+    }
+}
+
+// ============================================================
+// NARRATIVE EVENTS — one-shot scares tied to choices
+// ============================================================
+function retryIfAborted(eventId, delay, callback) {
+    // Guard against race condition: if player looks down before delay,
+    // remove from firedEvents and re-queue so it fires on next lookUp
+    setTimeout(() => {
+        if (state.gameOver) { callback(); return; }
+        if (!state.isLookingUp) {
+            state.firedEvents.delete(eventId);
+            if (!state.pendingEvents.includes(eventId)) {
+                state.pendingEvents.unshift(eventId); // re-queue at front
+            }
+            return;
+        }
+        callback();
+    }, delay);
+}
+
+function fireEvent(eventId) {
+    switch (eventId) {
+
+        case 'closeUpWatcher':
+            // A single figure stands RIGHT at your desk. Slit eyes staring.
+            retryIfAborted('closeUpWatcher', 800, () => {
+                closeUpWatcher.visible = true;
+            });
+            break;
+
+        case 'aisleJump':
+            // Aisle watcher jumps closer. Skip if closeUpWatcher blocks center.
+            if (state.firedEvents.has('closeUpWatcher')) {
+                // Don't waste the event — put it back for later
+                // Actually just skip it — the close-up figure is scarier
+                break;
+            }
+            aisleWatcher.position.z = -3;
+            retryIfAborted('aisleJump', 600, () => {
+                if (!state.firedEvents.has('closeUpWatcher')) {
+                    aisleWatcher.visible = true;
+                }
+            });
+            break;
+
+        case 'torsoRotate':
+            // Every worker silently rotates to face the player. Standalone.
+            retryIfAborted('torsoRotate', 1000, () => {
+                workers.forEach(w => {
+                    const worldPos = new THREE.Vector3();
+                    w.parent.getWorldPosition(worldPos);
+                    const angle = Math.atan2(-worldPos.x, -worldPos.z);
+                    w.rotation.y = angle - w.parent.rotation.y;
+                });
+            });
+            break;
+
+        case 'lightsDie':
+            // Lights die row by row from the back
+            const sortedRows = [...officeLights]
+                .filter(r => !r.dead)
+                .sort((a, b) => a.z - b.z); // most negative z (farthest) first
+            state._lightsDieTimeouts = []; // clear previous
+            sortedRows.forEach((rowData, idx) => {
+                const tid = setTimeout(() => {
+                    rowData.dead = true;
+                    rowData.groups.forEach(g => {
+                        g.traverse(child => {
+                            if (child instanceof THREE.PointLight) {
+                                child.userData.baseIntensity = 0;
+                                child.intensity = 0;
+                            }
+                            if (child.material && child.material.emissiveIntensity !== undefined) {
+                                if (child.userData._origEmissive === undefined) {
+                                    child.userData._origEmissive = child.material.emissiveIntensity;
+                                }
+                                child.material.emissiveIntensity = 0;
+                            }
+                        });
+                    });
+                    // Audio: electrical pop for each row dying
+                    if (audioCtx && audioCtx.state === 'running') {
+                        const now = audioCtx.currentTime;
+                        const popSize = Math.floor(audioCtx.sampleRate * 0.06);
+                        const popBuf = audioCtx.createBuffer(1, popSize, audioCtx.sampleRate);
+                        const popData = popBuf.getChannelData(0);
+                        for (let i = 0; i < popSize; i++) {
+                            popData[i] = (Math.random() * 2 - 1) * Math.exp(-i / (popSize * 0.08));
+                        }
+                        const popSrc = audioCtx.createBufferSource();
+                        popSrc.buffer = popBuf;
+                        const popGain = audioCtx.createGain();
+                        popGain.gain.value = 0.04 + Math.random() * 0.03;
+                        const popFilter = audioCtx.createBiquadFilter();
+                        popFilter.type = 'bandpass';
+                        popFilter.frequency.value = 800 + Math.random() * 1200;
+                        popFilter.Q.value = 1.5;
+                        popSrc.connect(popFilter);
+                        popFilter.connect(popGain);
+                        popGain.connect(window._audioMasterGain || audioCtx.destination);
+                        popSrc.start(now);
+                    }
+                }, idx * 150); // 150ms between each row dying
+                state._lightsDieTimeouts.push(tid);
+            });
+            break;
+
+        case 'headTilt':
+            // All workers with eyes on tilt their heads to the same side. Slow. Unnatural.
+            retryIfAborted('headTilt', 600, () => {
+                workers.forEach(w => {
+                    if (w.userData.eyesActive) {
+                        const head = w.userData.headRef;
+                        const targetTilt = 0.35; // ~20 degrees
+                        const startRot = head.rotation.z || 0;
+                        const startTime = performance.now();
+                        const duration = 1500; // slow, creepy 1.5s
+                        function tiltStep() {
+                            const elapsed = performance.now() - startTime;
+                            const t = Math.min(1, elapsed / duration);
+                            const ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+                            head.rotation.z = startRot + targetTilt * ease;
+                            if (t < 1) requestAnimationFrame(tiltStep);
+                        }
+                        tiltStep();
+                    }
+                });
+            });
+            break;
+
+        case 'deskVisitor':
+            // Something on your desk moves while you're looking up.
+            // Play a subtle scraping sound after a delay (player hears it while looking up)
+            state.deskVisitorActive = true;
+            setTimeout(() => {
+                if (audioCtx && audioCtx.state === 'running') {
+                    const now = audioCtx.currentTime;
+                    // Scraping/sliding sound — something moved on the desk behind you
+                    const bufSize = Math.floor(audioCtx.sampleRate * 0.4);
+                    const buf = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+                    const d = buf.getChannelData(0);
+                    for (let i = 0; i < bufSize; i++) {
+                        const t = i / audioCtx.sampleRate;
+                        d[i] = (Math.random() * 2 - 1) * Math.exp(-t * 4) * 0.7
+                             * Math.sin(t * 180 * 6.28);
+                    }
+                    const src = audioCtx.createBufferSource();
+                    src.buffer = buf;
+                    const g = audioCtx.createGain();
+                    g.gain.value = 0.06;
+                    const f = audioCtx.createBiquadFilter();
+                    f.type = 'bandpass'; f.frequency.value = 250; f.Q.value = 2;
+                    src.connect(f); f.connect(g);
+                    g.connect(window._audioMasterGain || audioCtx.destination);
+                    src.start(now);
+                }
+            }, 1500); // delayed so player has been looking up for a bit
+            break;
+
+        case 'theBlink':
+            // Total blackout — ALL lights off for 1 second, then back on with extra eyes
+            retryIfAborted('theBlink', 500, () => {
+                state.approachLocked = true; // lock camera during blackout
+                // Audio: silence snap — a single low thud as everything dies
+                if (audioCtx && audioCtx.state === 'running') {
+                    const now = audioCtx.currentTime;
+                    const thudOsc = audioCtx.createOscillator();
+                    thudOsc.type = 'sine';
+                    thudOsc.frequency.value = 35;
+                    const thudGain = audioCtx.createGain();
+                    thudGain.gain.setValueAtTime(0.15, now);
+                    thudGain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+                    thudOsc.connect(thudGain);
+                    thudGain.connect(window._audioMasterGain || audioCtx.destination);
+                    thudOsc.start(now);
+                    thudOsc.stop(now + 0.7);
+                }
+                // Phase 1: everything dies — lights AND eyes (skip already-dead rows)
+                officeLights.forEach(rowData => {
+                    if (rowData.dead) return; // lightsDie already killed these
+                    rowData.groups.forEach(g => {
+                        g.traverse(child => {
+                            if (child instanceof THREE.PointLight) {
+                                child.userData._blinkSaved = child.userData.baseIntensity !== undefined ? child.userData.baseIntensity : child.intensity;
+                                child.userData.baseIntensity = 0;
+                                child.intensity = 0;
+                            }
+                            if (child.material && child.material.emissiveIntensity !== undefined) {
+                                child.userData._blinkEmissive = child.material.emissiveIntensity;
+                                child.material.emissiveIntensity = 0;
+                            }
+                        });
+                    });
+                });
+                workers.forEach(w => {
+                    w.userData.leftEye.material = eyeMatOff;
+                    w.userData.rightEye.material = eyeMatOff;
+                });
+                // Phase 2: after 1.2s of total darkness, lights return + ALL eyes on
+                setTimeout(() => {
+                    officeLights.forEach(rowData => {
+                        if (rowData.dead) return; // already dead from lightsDie, stays dead
+                        rowData.groups.forEach(g => {
+                            g.traverse(child => {
+                                if (child instanceof THREE.PointLight && child.userData._blinkSaved !== undefined) {
+                                    child.userData.baseIntensity = child.userData._blinkSaved;
+                                    child.intensity = child.userData._blinkSaved;
+                                }
+                                if (child.material && child.userData._blinkEmissive !== undefined) {
+                                    child.material.emissiveIntensity = child.userData._blinkEmissive;
+                                }
+                            });
+                        });
+                    });
+                    // ALL eyes on — every single worker
+                    workers.forEach(w => {
+                        w.userData.leftEye.material = eyeMat;
+                        w.userData.rightEye.material = eyeMat;
+                        w.userData.eyesActive = true;
+                    });
+                    // A5: Override status text — all eyes are on regardless of suspicion level
+                    const blinkStatus = document.getElementById('office-status');
+                    blinkStatus.textContent = "They have all stopped. Every eye in the building is yours.";
+                    blinkStatus.className = 'office-status visible danger';
+                    // Also make aisle watcher visible if not suppressed
+                    if (!state.firedEvents.has('closeUpWatcher')) {
+                        aisleWatcher.visible = true;
+                    }
+                    state.approachLocked = false; // unlock camera after blink
+                }, 1200);
+            });
+            break;
+
+        case 'theApproach':
+            // B6: Persistent approach — activates the approach figure.
+            // It appears at z=-20 on this lookUp. On each SUBSEQUENT lookUp, it gets closer.
+            // No camera lock. No rushing. Just: every time you look up, it's closer.
+            // Checking makes it worse.
+            state.approachActive = true;
+            state.approachZ = -20;
+            approachFigure.position.z = state.approachZ;
+            approachFigure.visible = true;
+            break;
+    }
+}
+
+// Reset dramatic event visuals — each event OWNS its lookUp,
+// visuals reset on lookDown so the next lookUp is clean and legible.
+// Only EYES persist (cumulative horror via suspicion).
+function resetEventVisuals() {
+    // Clear pending lightsDie timeouts (A4: prevent leaked kills after lookDown)
+    state._lightsDieTimeouts.forEach(id => clearTimeout(id));
+    state._lightsDieTimeouts = [];
+    // Reset head tilts (E2 headTilt)
+    workers.forEach(w => {
+        w.userData.headRef.rotation.z = 0;
+        w.rotation.y = 0; // E4 torsoRotate
+    });
+    // Restore lights (E6 lightsDie, E5 theBlink)
+    officeLights.forEach(rowData => {
+        if (rowData.dead) {
+            rowData.dead = false;
+            rowData.groups.forEach(g => {
+                g.traverse(child => {
+                    if (child instanceof THREE.PointLight && child.userData.origIntensity !== undefined) {
+                        child.userData.baseIntensity = child.userData.origIntensity;
+                        child.intensity = child.userData.origIntensity;
+                    }
+                    if (child.material && child.material.emissiveIntensity !== undefined && child.userData._origEmissive !== undefined) {
+                        child.material.emissiveIntensity = child.userData._origEmissive;
+                    }
+                });
+            });
+        }
+    });
+    // Reset aisleWatcher position (E7 aisleJump)
+    aisleWatcher.position.z = -8;
+    // Reset closeUpWatcher position (in case theBlink moved it)
+    closeUpWatcher.position.z = -2.5;
+}
+
+// B7: Lateral Look — one-time camera break, player can look left once
+function executeLateralLook() {
+    if (!state.lateralLookAvailable || state.lateralLookUsed || state._lateralLookActive) return;
+    if (!state.isLookingUp) return; // can only look left while looking up
+    state._lateralLookActive = true;
+    state.lateralLookUsed = true;
+    state.lateralLookAvailable = false;
+    // Hide lateral hint permanently
+    document.getElementById('lateral-hint').style.display = 'none';
+    // Block lookDown during animation
+    state.approachLocked = true;
+
+    const startY = camera.rotation.y;
+    const targetY = startY + 0.78; // ~45 degrees left
+    const rotDuration = 1000; // 1s to rotate
+    const holdDuration = 2000; // 2s hold
+    const snapDuration = 200; // quick snap back
+    const startTime = performance.now();
+
+    function lateralStep() {
+        const elapsed = performance.now() - startTime;
+        if (elapsed < rotDuration) {
+            // Phase 1: smooth rotate left
+            const t = elapsed / rotDuration;
+            const ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+            camera.rotation.y = startY + (targetY - startY) * ease;
+            requestAnimationFrame(lateralStep);
+        } else if (elapsed < rotDuration + holdDuration) {
+            // Phase 2: hold
+            camera.rotation.y = targetY;
+            requestAnimationFrame(lateralStep);
+        } else if (elapsed < rotDuration + holdDuration + snapDuration) {
+            // Phase 3: snap back
+            const t = (elapsed - rotDuration - holdDuration) / snapDuration;
+            camera.rotation.y = targetY + (startY - targetY) * t;
+            requestAnimationFrame(lateralStep);
+        } else {
+            // Done — reset
+            camera.rotation.y = startY;
+            state._lateralLookActive = false;
+            state.approachLocked = false;
+        }
+    }
+    requestAnimationFrame(lateralStep);
+}
+
+function lookDown() {
+    if (!state.isLookingUp || state.gameOver || state.approachLocked) return;
+    state.isLookingUp = false;
+    state.targetLook = 0;
+    document.getElementById('case-file').classList.remove('hidden');
+    document.getElementById('look-hint').textContent = '[ SPACE ] look up from desk';
+    document.getElementById('lateral-hint').style.display = 'none'; // B7: hide on lookDown
+    document.getElementById('office-status').classList.remove('visible');
+    aisleWatcher.visible = false;
+    closeUpWatcher.visible = false;
+    approachFigure.visible = false; // B6: hides on lookDown but Z persists
+
+    // Reset dramatic event visuals — clean slate for next lookUp
+    resetEventVisuals();
+
+    // Hide eye meshes while looking at desk (they bleed around the case file overlay)
+    workers.forEach(w => {
+        w.userData.leftEye.visible = false;
+        w.userData.rightEye.visible = false;
+    });
+
+    // Desk visitor: objects shift when you weren't looking (persists — subtle)
+    if (state.deskVisitorActive && !state.deskVisitorDone) {
+        state.deskVisitorDone = true;
+        // Mug slides dramatically toward player
+        mugBody.position.z += 0.2;
+        mugBody.position.x -= 0.08;
+        mugHandle.position.z += 0.2;
+        mugHandle.position.x -= 0.08;
+        coffee.position.z += 0.2;
+        coffee.position.x -= 0.08;
+        // Stamper has tipped over completely
+        stamperHandle.rotation.z = Math.PI / 2;
+        stamperHandle.position.y -= 0.02;
+        stamperHandle.position.x += 0.05;
+        // Pen holder knocked over
+        penHolder.rotation.z = 0.8;
+        penHolder.position.x += 0.03;
+        penHolder.position.y -= 0.01;
+        // Memo paper rotated as if touched
+        memoPaper.rotation.y += 0.3;
+        memoPaper.position.x += 0.04;
+    }
+}
+
+// ============================================================
+// INPUT
+// ============================================================
+document.addEventListener('keydown', (e) => {
+    if (!state.started || state.gameOver || state.introPlaying) return;
+    // B1: Enter confirms stamp during stamp ritual
+    if (e.code === 'Enter' && state.stampPending) {
+        e.preventDefault();
+        window._executeStamp();
+        return;
+    }
+    // B7: A key triggers lateral look (one-time only)
+    if (e.code === 'KeyA' && state.lateralLookAvailable && !state.lateralLookUsed) {
+        e.preventDefault();
+        executeLateralLook();
+        return;
+    }
+    if (e.code === 'Space') {
+        e.preventDefault();
+        if (state.transitioning || state.stampPending || state._lateralLookActive) return;
+        state.isLookingUp ? lookDown() : lookUp();
+        return;
+    }
+    if (!state.isLookingUp) {
+        const num = parseInt(e.key);
+        if (num >= 1 && num <= 3) {
+            const choices = document.querySelectorAll('.cf-choice');
+            if (choices[num - 1]) choices[num - 1].click();
+        }
+    }
+});
+
+// ============================================================
+// START / END
+// ============================================================
+document.getElementById('start-btn').addEventListener('click', () => {
+    // Init audio on user gesture (required by browsers)
+    initAudio();
+
+    // Start rendering 3D scene behind the title screen
+    state.titleFading = true;
+
+    // Remove the black canvas cover — the title screen (z-index 100) still hides the 3D scene
+    // but the 3D scene is now rendering underneath for a smooth reveal
+    const cover = document.getElementById('canvas-cover');
+    if (cover) cover.remove();
+
+    // Show vignette (purely visual, no content leak)
+    document.getElementById('vignette').style.display = '';
+
+    // Short delay so a few 3D frames render before the title fades
+    setTimeout(() => {
+        const el = document.getElementById('title-screen');
+        el.classList.add('fade-out');
+
+        // After title fully fades (1.5s CSS transition), show intro sequence
+        setTimeout(() => {
+            el.style.display = 'none';
+            if (titleAnimId) cancelAnimationFrame(titleAnimId);
+
+            // Show UI overlay but hide the case file — intro text plays first
+            document.getElementById('ui-overlay').style.display = '';
+            document.getElementById('case-file').classList.add('hidden');
+            document.getElementById('look-hint').style.display = 'none';
+
+            state.started = true;
+            state.titleFading = false;
+            state.introPlaying = true;
+
+            // Intro sequence — typewriter-style status messages
+            const introLines = [
+                "You are Case Adjudicator, Level 3.",
+                "Facility 6 was demolished last month. That is not relevant to your duties.",
+                "Six cases today. Process them.",
+                "Begin."
+            ];
+            const statusEl = document.getElementById('office-status');
+
+            let lineIdx = 0;
+            function showIntroLine() {
+                if (lineIdx >= introLines.length) {
+                    // Intro done - forced first lookUp to teach the mechanic
+                    statusEl.classList.remove('visible');
+                    setTimeout(() => {
+                        // Force camera up
+                        state.introPlaying = false;
+                        state.isLookingUp = true;
+                        state.targetLook = 1;
+                        // Show eye meshes for lookUp
+                        workers.forEach(w => { w.userData.leftEye.visible = true; w.userData.rightEye.visible = true; });
+                        // Show calm office text
+                        setTimeout(() => {
+                            statusEl.textContent = "The office is working. Everything is in order.";
+                            statusEl.classList.add('visible');
+                            statusEl.classList.remove('danger');
+                        }, 800);
+                        // After 3 seconds, bring camera back down and show case 1
+                        setTimeout(() => {
+                            statusEl.classList.remove('visible');
+                            state.isLookingUp = false;
+                            state.targetLook = 0;
+                            // Hide eye meshes for desk view
+                            workers.forEach(w => { w.userData.leftEye.visible = false; w.userData.rightEye.visible = false; });
+                            setTimeout(() => {
+                                document.getElementById('look-hint').style.display = '';
+                                renderCase(cases[0]);
+                                updateWatchers();
+                            }, 600);
+                        }, 3500);
+                    }, 800);
+                    return;
+                }
+                statusEl.textContent = introLines[lineIdx];
+                statusEl.classList.add('visible');
+                statusEl.classList.remove('danger');
+                const displayTime = lineIdx === introLines.length - 1 ? 1200 : 2400;
+                lineIdx++;
+                setTimeout(() => {
+                    statusEl.classList.remove('visible');
+                    setTimeout(showIntroLine, 500);
+                }, displayTime);
+            }
+            setTimeout(showIntroLine, 800); // brief pause before first line
+        }, 1600); // slightly longer than the 1.5s CSS transition
+    }, 100);
+});
+
+function endGame(caught) {
+    state.gameOver = true;
+    document.getElementById('case-file').classList.add('hidden');
+    document.getElementById('look-hint').style.display = 'none';
+
+    const endEl = document.getElementById('end-screen');
+
+    // Determine ending type — breakoutPath OVERRIDES caught (the system tried to stop you and failed)
+    let title, titleClass, msg;
+
+    if (state.breakoutPath) {
+        title = 'UNSEALED';
+        titleClass = 'e-title survived';
+        msg = 'The testimony is entered. Case 7741 is open. Fourteen voices. Fourteen names that will not disappear. Your name is on those documents too. But today, for the first time, that means something different.';
+        caught = false; // override — breakout wins
+    } else if (caught) {
+        title = 'PROCESSED';
+        titleClass = 'e-title caught';
+        msg = 'The typing stops. The last key falls silent. You understand now - you were never the one processing. You were the one being processed. Your eyes are beginning to warm.';
+    } else if (state.saved === 0) {
+        title = 'SHIFT COMPLETE';
+        titleClass = 'e-title survived';
+        msg = 'Exemplary compliance. Not a single deviation. You will be promoted. You will receive a larger desk. You will not think about Facility 6. You never do.';
+    } else if (state.saved <= 2) {
+        title = 'SHIFT COMPLETE';
+        titleClass = 'e-title survived';
+        msg = 'Two mercies in a sea of stamps. You tell yourself it mattered. The lights dim. Tomorrow there will be six more. There are always six more.';
+    } else if (state.saved <= 4) {
+        title = 'SHIFT COMPLETE';
+        titleClass = 'e-title survived';
+        msg = 'You sign the last form. The lights dim on schedule. Half of them will sleep in their own beds tonight. The other half will not. You did what you could. You did what they let you.';
+    } else {
+        // saved === 5 (all but one merciful — not quite breakout)
+        title = 'SHIFT COMPLETE';
+        titleClass = 'e-title survived';
+        msg = 'Five lives. Five small defiances. Almost enough. You can still hear the typing. Somewhere in this building, the sixth file is being reopened.';
+    }
+
+    // Breakout sequence — lights reverse, eyes off, freedom
+    if (state.breakoutPath && !caught) {
+        state.targetLook = 1;
+        state.isLookingUp = true;
+
+        // Fire lightsDie first (the system punishes you)
+        fireEvent('lightsDie');
+
+        // After lights finish dying (~18 rows * 150ms = ~2.7s), reverse everything
+        setTimeout(() => {
+            // Lights come BACK ON, front-to-back (reversal — first time anything reverses)
+            const sortedFront = [...officeLights].sort((a, b) => b.z - a.z); // closest first
+            sortedFront.forEach((rowData, idx) => {
+                setTimeout(() => {
+                    rowData.dead = false;
+                    rowData.groups.forEach(g => {
+                        g.traverse(child => {
+                            if (child instanceof THREE.PointLight && child.userData.origIntensity !== undefined) {
+                                child.userData.baseIntensity = child.userData.origIntensity;
+                                child.intensity = child.userData.origIntensity;
+                            }
+                            if (child.material && child.material.emissiveIntensity !== undefined && child.userData._origEmissive !== undefined) {
+                                child.material.emissiveIntensity = child.userData._origEmissive;
+                            }
+                        });
+                    });
+                }, idx * 100); // faster than dying — hope is faster than fear
+            });
+
+            // All eyes OFF simultaneously (first time eyes disappear)
+            setTimeout(() => {
+                workers.forEach(w => {
+                    w.userData.leftEye.material = eyeMatOff;
+                    w.userData.rightEye.material = eyeMatOff;
+                    w.userData.eyesActive = false;
+                });
+                closeUpWatcher.visible = false;
+                aisleWatcher.visible = false;
+
+                document.getElementById('office-status').textContent = 'The eyes are gone. The typing has changed. It sounds like testimony.';
+                document.getElementById('office-status').className = 'office-status visible';
+            }, sortedFront.length * 100 + 500);
+
+            // Show end screen after the full sequence
+            setTimeout(() => {
+                document.getElementById('end-title').textContent = title;
+                document.getElementById('end-title').className = titleClass;
+                document.getElementById('end-msg').textContent = msg;
+                document.getElementById('end-stats').innerHTML =
+                    `Cases Processed: ${cases.length}<br>Citizens Saved: ${state.saved}<br>Citizens Condemned: ${state.condemned}<br>Case #EPS-7741: UNSEALED`;
+                endEl.style.display = 'flex';
+                setTimeout(() => endEl.style.opacity = '1', 50);
+            }, sortedFront.length * 100 + 3000);
+        }, 3000); // wait for lightsDie to finish
+
+        return; // skip normal end flow
+    }
+
+    // Normal ending flow
+    setTimeout(() => {
+        document.getElementById('end-title').textContent = title;
+        document.getElementById('end-title').className = titleClass;
+        document.getElementById('end-msg').textContent = msg;
+        document.getElementById('end-stats').innerHTML =
+            `Cases Processed: ${Math.min(state.currentCase + 1, cases.length)}<br>Citizens Saved: ${state.saved}<br>Citizens Condemned: ${state.condemned}<br>Final Suspicion: ${state.suspicion}%`;
+
+        endEl.style.display = 'flex';
+        setTimeout(() => endEl.style.opacity = '1', 50);
+    }, caught ? 2000 : 1000);
+
+    if (caught) {
+        state.targetLook = 1;
+        state.isLookingUp = true;
+        workers.forEach(w => {
+            w.userData.leftEye.material = eyeMat;
+            w.userData.rightEye.material = eyeMat;
+            w.userData.eyesActive = true;
+        });
+        if (state.firedEvents.has('closeUpWatcher')) {
+            closeUpWatcher.visible = true;
+            aisleWatcher.visible = false;
+        } else {
+            aisleWatcher.visible = true;
+        }
+        document.getElementById('office-status').textContent = 'They have all stopped. Every eye in the building is yours.';
+        document.getElementById('office-status').className = 'office-status visible danger';
+
+        // Fire all pending events during the endgame look-up
+        while (state.pendingEvents.length > 0) {
+            const eventId = state.pendingEvents.shift();
+            if (!state.firedEvents.has(eventId)) {
+                state.firedEvents.add(eventId);
+                fireEvent(eventId);
+            }
+        }
+    }
+}
+
+document.getElementById('restart-btn').addEventListener('click', () => {
+    state.currentCase = 0; state.suspicion = 0; state.saved = 0;
+    state.condemned = 0; state.isLookingUp = false; state.targetLook = 0;
+    state.gameOver = false; state.pendingEvents = []; state.firedEvents.clear();
+    state.transitioning = false;
+    state.approachLocked = false;
+    state.deskVisitorActive = false;
+    state.deskVisitorDone = false;
+    state.breakoutPath = false;
+    state.stampPending = false;
+    document.getElementById('stamp-cursor').classList.remove('active');
+    document.getElementById('case-file').classList.remove('stamp-mode');
+    state.lateralLookAvailable = false;
+    state.lateralLookUsed = false;
+    state._lateralLookActive = false;
+    document.getElementById('lateral-hint').style.display = 'none';
+    camera.rotation.y = 0; // reset any lateral rotation
+    // Clear pending lightsDie timeouts
+    state._lightsDieTimeouts.forEach(id => clearTimeout(id));
+    state._lightsDieTimeouts = [];
+    camera.rotation.x = DESK_ROT_X;
+    camera.position.x = 0;
+    // Reset all workers (eyes, head tilt, rotation)
+    workers.forEach(w => {
+        w.userData.eyesActive = false;
+        w.userData.leftEye.material = eyeMatOff;
+        w.userData.rightEye.material = eyeMatOff;
+        w.userData.leftEye.visible = false;
+        w.userData.rightEye.visible = false;
+        w.userData.headRef.rotation.z = 0; // reset head tilt
+        w.rotation.y = 0; // reset torsoRotate
+    });
+    // Reset aisle watcher position
+    aisleWatcher.position.z = -8;
+    closeUpWatcher.visible = false;
+    closeUpWatcher.position.z = -2.5; // reset from theBlink cascade
+    // B6: Reset approach figure
+    approachFigure.visible = false;
+    approachFigure.position.z = -20;
+    state.approachActive = false;
+    state.approachZ = -20;
+    // Reset desk objects (deskVisitor event)
+    mugBody.position.set(-0.25, 0.812, -0.2);
+    mugHandle.position.set(-0.278, 0.812, -0.2);
+    coffee.position.set(-0.25, 0.847, -0.2);
+    stamperHandle.position.set(0.22, 0.81, -0.15);
+    stamperHandle.rotation.set(0, 0, 0);
+    penHolder.position.set(0.6, 0.83, -0.3);
+    penHolder.rotation.set(0, 0, 0);
+    memoPaper.position.set(-0.46, 0.79, -0.29);
+    memoPaper.rotation.y = -0.08;
+    // Reset lights (lightsDie event) — restore both PointLight intensity and fixture emissive
+    officeLights.forEach(rowData => {
+        rowData.dead = false;
+        rowData.groups.forEach(g => {
+            g.traverse(child => {
+                if (child instanceof THREE.PointLight && child.userData.origIntensity !== undefined) {
+                    child.userData.baseIntensity = child.userData.origIntensity;
+                    child.intensity = child.userData.origIntensity;
+                }
+                if (child.material && child.material.emissiveIntensity !== undefined && child.userData._origEmissive !== undefined) {
+                    child.material.emissiveIntensity = child.userData._origEmissive;
+                }
+            });
+        });
+    });
+    // B3: Reset typing cadence on restart
+    if (window._typingDelayMultiplier) window._typingDelayMultiplier = 1.0;
+    // B5: Restore master gain if silenced
+    if (window._audioMasterGain) window._audioMasterGain.gain.value = 1.0;
+    document.getElementById('end-screen').style.opacity = '0';
+    setTimeout(() => {
+        document.getElementById('end-screen').style.display = 'none';
+        document.getElementById('look-hint').style.display = '';
+        state.started = true;
+        renderCase(cases[0]);
+        updateWatchers();
+        aisleWatcher.visible = false;
+    }, 500);
+});
+
+// ============================================================
+// AMBIENT AUDIO — procedural, no external files
+// ============================================================
+let audioCtx = null;
+let audioStarted = false;
+
+function initAudio() {
+    if (audioStarted) return;
+    audioStarted = true;
+
+    try {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    } catch (e) {
+        console.warn('Web Audio not supported:', e);
+        return;
+    }
+
+    // Resume context (Chrome often starts it suspended even on user gesture)
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+
+    // Master gain node — easy volume control
+    const masterGain = audioCtx.createGain();
+    masterGain.gain.value = 1.0;
+    masterGain.connect(audioCtx.destination);
+
+    // --- 1. Low office hum (60Hz electrical buzz) ---
+    const humOsc = audioCtx.createOscillator();
+    humOsc.type = 'sawtooth';
+    humOsc.frequency.value = 60;
+    const humGain = audioCtx.createGain();
+    humGain.gain.value = 0.06; // boosted — was inaudible at 0.015
+    const humFilter = audioCtx.createBiquadFilter();
+    humFilter.type = 'lowpass';
+    humFilter.frequency.value = 150;
+    humOsc.connect(humFilter);
+    humFilter.connect(humGain);
+    humGain.connect(masterGain);
+    humOsc.start();
+
+    // --- 2. Distant typing (random clicks via filtered noise bursts) ---
+    function scheduleTyping() {
+        if (!audioCtx || audioCtx.state === 'closed') return;
+        const now = audioCtx.currentTime;
+        // Create a short noise burst
+        const bufferSize = Math.floor(audioCtx.sampleRate * 0.012); // 12ms click
+        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+            data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.15));
+        }
+        const source = audioCtx.createBufferSource();
+        source.buffer = buffer;
+        const clickGain = audioCtx.createGain();
+        clickGain.gain.value = 0.02 + Math.random() * 0.04; // boosted from 0.005-0.017
+        const clickFilter = audioCtx.createBiquadFilter();
+        clickFilter.type = 'bandpass';
+        clickFilter.frequency.value = 800 + Math.random() * 2000;
+        clickFilter.Q.value = 2;
+        source.connect(clickFilter);
+        clickFilter.connect(clickGain);
+        clickGain.connect(masterGain);
+        source.start(now);
+
+        // Schedule next click — irregular rhythm like multiple typists
+        // B3: typing thins out with suspicion via multiplier
+        const mul = window._typingDelayMultiplier || 1.0;
+        const nextDelay = (0.04 + Math.random() * 0.18) * mul;
+        // Occasional pause (someone thinking) — also scales with suspicion
+        const pause = Math.random() < 0.08 ? (0.5 + Math.random() * 1.5) * mul : 0;
+        setTimeout(scheduleTyping, (nextDelay + pause) * 1000);
+    }
+    scheduleTyping();
+
+    // --- 3. Horror drone (very low, evolving) ---
+    const droneOsc1 = audioCtx.createOscillator();
+    droneOsc1.type = 'sine';
+    droneOsc1.frequency.value = 38;
+    const droneOsc2 = audioCtx.createOscillator();
+    droneOsc2.type = 'sine';
+    droneOsc2.frequency.value = 39.5; // slight detuning creates unease
+    const droneGain = audioCtx.createGain();
+    droneGain.gain.value = 0.0; // starts silent, builds with suspicion
+    const droneFilter = audioCtx.createBiquadFilter();
+    droneFilter.type = 'lowpass';
+    droneFilter.frequency.value = 100;
+    droneOsc1.connect(droneFilter);
+    droneOsc2.connect(droneFilter);
+    droneFilter.connect(droneGain);
+    droneGain.connect(masterGain);
+    droneOsc1.start();
+    droneOsc2.start();
+
+    // Store references for dynamic control
+    window._audioDroneGain = droneGain;
+    window._audioHumGain = humGain;
+    window._audioMasterGain = masterGain;
+    window._typingDelayMultiplier = 1.0; // B3: typing cadence — scales with suspicion
+
+    // --- 4. Occasional distant door slam / thud ---
+    function scheduleThud() {
+        if (!audioCtx || audioCtx.state === 'closed') return;
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.value = 40 + Math.random() * 30;
+        const thudGain = audioCtx.createGain();
+        thudGain.gain.setValueAtTime(0.06 + Math.random() * 0.04, now);
+        thudGain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+        osc.connect(thudGain);
+        thudGain.connect(masterGain);
+        osc.start(now);
+        osc.stop(now + 0.5);
+        setTimeout(scheduleThud, (8000 + Math.random() * 17000));
+    }
+    setTimeout(scheduleThud, 3000);
+
+    // --- 5. Chair creaks (mid-frequency filtered noise, short) ---
+    function scheduleCreak() {
+        if (!audioCtx || audioCtx.state === 'closed') return;
+        const now = audioCtx.currentTime;
+        const dur = 0.15 + Math.random() * 0.2;
+        const bufSize = Math.floor(audioCtx.sampleRate * dur);
+        const buf = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+        const d = buf.getChannelData(0);
+        const freq = 200 + Math.random() * 300;
+        for (let i = 0; i < bufSize; i++) {
+            const t = i / audioCtx.sampleRate;
+            d[i] = Math.sin(t * freq * 6.28) * (Math.random() * 0.3 + 0.7)
+                 * Math.exp(-t * 8) * 0.5;
+        }
+        const src = audioCtx.createBufferSource();
+        src.buffer = buf;
+        const g = audioCtx.createGain();
+        g.gain.value = 0.015 + Math.random() * 0.02;
+        const f = audioCtx.createBiquadFilter();
+        f.type = 'bandpass';
+        f.frequency.value = 300 + Math.random() * 400;
+        f.Q.value = 3;
+        src.connect(f);
+        f.connect(g);
+        g.connect(masterGain);
+        src.start(now);
+        setTimeout(scheduleCreak, 4000 + Math.random() * 12000);
+    }
+    setTimeout(scheduleCreak, 6000);
+
+    // --- 6. Paper shuffling (high-frequency noise bursts) ---
+    function scheduleShuffle() {
+        if (!audioCtx || audioCtx.state === 'closed') return;
+        const now = audioCtx.currentTime;
+        const dur = 0.08 + Math.random() * 0.15;
+        const bufSize = Math.floor(audioCtx.sampleRate * dur);
+        const buf = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < bufSize; i++) {
+            d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufSize * 0.3));
+        }
+        const src = audioCtx.createBufferSource();
+        src.buffer = buf;
+        const g = audioCtx.createGain();
+        g.gain.value = 0.008 + Math.random() * 0.015;
+        const f = audioCtx.createBiquadFilter();
+        f.type = 'highpass';
+        f.frequency.value = 2000 + Math.random() * 3000;
+        src.connect(f);
+        f.connect(g);
+        g.connect(masterGain);
+        src.start(now);
+        setTimeout(scheduleShuffle, 3000 + Math.random() * 10000);
+    }
+    setTimeout(scheduleShuffle, 4000);
+
+    // --- 7. Distant murmurs / whispers (very low filtered noise) ---
+    function scheduleMurmur() {
+        if (!audioCtx || audioCtx.state === 'closed') return;
+        const now = audioCtx.currentTime;
+        const dur = 0.4 + Math.random() * 0.8;
+        const bufSize = Math.floor(audioCtx.sampleRate * dur);
+        const buf = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+        const d = buf.getChannelData(0);
+        // Modulated noise — sounds like murmuring
+        for (let i = 0; i < bufSize; i++) {
+            const t = i / audioCtx.sampleRate;
+            const env = Math.sin(t / dur * Math.PI); // fade in/out
+            const mod = Math.sin(t * (80 + Math.random() * 60) * 6.28) * 0.5 + 0.5;
+            d[i] = (Math.random() * 2 - 1) * env * mod;
+        }
+        const src = audioCtx.createBufferSource();
+        src.buffer = buf;
+        const g = audioCtx.createGain();
+        g.gain.value = 0.008 + Math.random() * 0.012;
+        const f = audioCtx.createBiquadFilter();
+        f.type = 'bandpass';
+        f.frequency.value = 200 + Math.random() * 300;
+        f.Q.value = 1.5;
+        src.connect(f);
+        f.connect(g);
+        g.connect(masterGain);
+        src.start(now);
+        setTimeout(scheduleMurmur, 5000 + Math.random() * 15000);
+    }
+    setTimeout(scheduleMurmur, 8000);
+
+    // --- 8. Distant phone ring (two-tone oscillator, rare) ---
+    function schedulePhone() {
+        if (!audioCtx || audioCtx.state === 'closed') return;
+        const now = audioCtx.currentTime;
+        // Two-tone ring: 440Hz + 480Hz, pulsed
+        for (let ring = 0; ring < 2; ring++) {
+            const t = now + ring * 0.8;
+            const o1 = audioCtx.createOscillator();
+            o1.frequency.value = 440;
+            o1.type = 'sine';
+            const o2 = audioCtx.createOscillator();
+            o2.frequency.value = 480;
+            o2.type = 'sine';
+            const pg = audioCtx.createGain();
+            pg.gain.setValueAtTime(0.012, t);
+            pg.gain.setValueAtTime(0, t + 0.4);
+            o1.connect(pg);
+            o2.connect(pg);
+            const pf = audioCtx.createBiquadFilter();
+            pf.type = 'bandpass';
+            pf.frequency.value = 460;
+            pf.Q.value = 5;
+            pg.connect(pf);
+            pf.connect(masterGain);
+            o1.start(t);
+            o2.start(t);
+            o1.stop(t + 0.4);
+            o2.stop(t + 0.4);
+        }
+        setTimeout(schedulePhone, 20000 + Math.random() * 40000);
+    }
+    setTimeout(schedulePhone, 15000);
+
+    // --- 9. Pen scratch (high, thin, scratchy) ---
+    function schedulePenScratch() {
+        if (!audioCtx || audioCtx.state === 'closed') return;
+        const now = audioCtx.currentTime;
+        const dur = 0.05 + Math.random() * 0.1;
+        const bufSize = Math.floor(audioCtx.sampleRate * dur);
+        const buf = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < bufSize; i++) {
+            d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufSize * 0.4)) * 0.6;
+        }
+        const src = audioCtx.createBufferSource();
+        src.buffer = buf;
+        const g = audioCtx.createGain();
+        g.gain.value = 0.006 + Math.random() * 0.008;
+        const f = audioCtx.createBiquadFilter();
+        f.type = 'highpass';
+        f.frequency.value = 4000 + Math.random() * 3000;
+        src.connect(f);
+        f.connect(g);
+        g.connect(masterGain);
+        src.start(now);
+        // Quick bursts — 2-5 scratches in a row then pause
+        const remaining = Math.floor(Math.random() * 4);
+        if (remaining > 0) {
+            setTimeout(schedulePenScratch, 80 + Math.random() * 150);
+        } else {
+            setTimeout(schedulePenScratch, 3000 + Math.random() * 8000);
+        }
+    }
+    setTimeout(schedulePenScratch, 2000);
+
+    console.log('Audio initialized, context state:', audioCtx.state);
+}
+
+// Update audio levels based on suspicion (called in animate)
+function updateAudio() {
+    if (!audioCtx || !window._audioDroneGain) return;
+    // Resume context if it got suspended
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    // Horror drone grows with suspicion — max 0.15 gain at full suspicion
+    const droneTarget = (state.suspicion / 100) * 0.15;
+    const currentDrone = window._audioDroneGain.gain.value;
+    window._audioDroneGain.gain.value = currentDrone + (droneTarget - currentDrone) * 0.01;
+
+    // B3: Typing cadence — office typing thins out as suspicion rises
+    // susp 0→1x, 30→2x, 60→4x, 80+→10x delay between keystrokes
+    const s = state.suspicion;
+    let targetMul;
+    if (s >= 80) targetMul = 10.0;
+    else if (s >= 60) targetMul = 4.0 + (s - 60) / 20 * 6.0;
+    else if (s >= 30) targetMul = 2.0 + (s - 30) / 30 * 2.0;
+    else targetMul = 1.0 + s / 30;
+    const curMul = window._typingDelayMultiplier || 1.0;
+    window._typingDelayMultiplier = curMul + (targetMul - curMul) * 0.02;
+}
+
+// B2: Anticipatory Sound System — subtle directional cues during mercy transitions
+// Something changed in the office while you were reading. Implies presence.
+function playAnticipatoryCue() {
+    if (!audioCtx || audioCtx.state !== 'running') return;
+    const mg = window._audioMasterGain || audioCtx.destination;
+    const now = audioCtx.currentTime;
+    const cueType = Math.floor(Math.random() * 4);
+
+    if (cueType === 0) {
+        // Chair scrape — short filtered noise with pitch sweep
+        const dur = 0.12 + Math.random() * 0.08;
+        const size = Math.floor(audioCtx.sampleRate * dur);
+        const buf = audioCtx.createBuffer(1, size, audioCtx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < size; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (size * 0.3));
+        const src = audioCtx.createBufferSource(); src.buffer = buf;
+        const f = audioCtx.createBiquadFilter(); f.type = 'bandpass';
+        f.frequency.setValueAtTime(300, now); f.frequency.linearRampToValueAtTime(600, now + dur);
+        f.Q.value = 3;
+        const g = audioCtx.createGain(); g.gain.value = 0.03 + Math.random() * 0.02;
+        src.connect(f); f.connect(g); g.connect(mg); src.start(now);
+    } else if (cueType === 1) {
+        // Footstep — low thud with quick decay
+        const osc = audioCtx.createOscillator(); osc.type = 'sine';
+        osc.frequency.value = 50 + Math.random() * 30;
+        const g = audioCtx.createGain();
+        g.gain.setValueAtTime(0.04 + Math.random() * 0.03, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+        osc.connect(g); g.connect(mg); osc.start(now); osc.stop(now + 0.3);
+    } else if (cueType === 2) {
+        // Breath — filtered noise, slow attack and decay
+        const dur = 0.6 + Math.random() * 0.4;
+        const size = Math.floor(audioCtx.sampleRate * dur);
+        const buf = audioCtx.createBuffer(1, size, audioCtx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < size; i++) {
+            const env = Math.sin(Math.PI * i / size); // bell curve
+            d[i] = (Math.random() * 2 - 1) * env * 0.3;
+        }
+        const src = audioCtx.createBufferSource(); src.buffer = buf;
+        const f = audioCtx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 400; f.Q.value = 1;
+        const g = audioCtx.createGain(); g.gain.value = 0.025;
+        src.connect(f); f.connect(g); g.connect(mg); src.start(now);
+    } else {
+        // Paper rustle — high-pass filtered short noise
+        const dur = 0.08 + Math.random() * 0.06;
+        const size = Math.floor(audioCtx.sampleRate * dur);
+        const buf = audioCtx.createBuffer(1, size, audioCtx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < size; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (size * 0.2));
+        const src = audioCtx.createBufferSource(); src.buffer = buf;
+        const f = audioCtx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 2000; f.Q.value = 0.5;
+        const g = audioCtx.createGain(); g.gain.value = 0.02 + Math.random() * 0.015;
+        src.connect(f); f.connect(g); g.connect(mg); src.start(now);
+    }
+}
+
+// B5: Audio Silence System — kill all audio for dramatic effect, then restore
+// Usage: audioSilence(2000, () => { /* after silence ends */ });
+function audioSilence(durationMs, callback) {
+    const mg = window._audioMasterGain;
+    if (!mg || !audioCtx) { if (callback) callback(); return; }
+    const now = audioCtx.currentTime;
+    // Ramp to silence over 200ms
+    mg.gain.cancelScheduledValues(now);
+    mg.gain.setValueAtTime(mg.gain.value, now);
+    mg.gain.linearRampToValueAtTime(0, now + 0.2);
+    // Hold silence, then restore over 500ms
+    setTimeout(() => {
+        const restoreTime = audioCtx.currentTime;
+        mg.gain.cancelScheduledValues(restoreTime);
+        mg.gain.setValueAtTime(0, restoreTime);
+        mg.gain.linearRampToValueAtTime(1.0, restoreTime + 0.5);
+        if (callback) setTimeout(callback, 500);
+    }, 200 + durationMs);
+}
+
+// ============================================================
+// ANIMATION LOOP
+// ============================================================
+const clock = new THREE.Clock();
+
+function animate() {
+    requestAnimationFrame(animate);
+    const dt = clock.getDelta();
+    const t = clock.getElapsedTime();
+
+    // Don't render scene until title is dismissed — just clear black
+    if (!state.started && !state.titleFading) {
+        renderer.clear();
+        return;
+    }
+
+    // Smooth camera look - slow dread when looking up, faster when looking down
+    const targetX = state.targetLook === 1 ? UP_ROT_X : DESK_ROT_X;
+    let lookSpeed = state.targetLook === 1 ? 1.2 : 3.5;
+    // B4: Camera hesitation — at high suspicion, camera stalls at the horizon line
+    // Looking DOWN is always fast (no hesitation when fleeing). Only hesitate looking UP.
+    if (state.targetLook === 1 && state.suspicion >= 50) {
+        const rx = camera.rotation.x;
+        if (rx > -0.5 && rx < -0.3) {
+            // In the horizon zone — dramatically slow down
+            state._hesitationTimer += dt;
+            if (state._hesitationTimer < 0.3) {
+                lookSpeed = 0.15; // crawl through the horizon
+            }
+        } else {
+            state._hesitationTimer = 0; // reset when outside zone
+        }
+    } else {
+        state._hesitationTimer = 0;
+    }
+    camera.rotation.x += (targetX - camera.rotation.x) * lookSpeed * dt;
+
+    // Breathing sway
+    if (state.started && !state.gameOver) {
+        state.breathCycle += dt * 0.8;
+        const breathY = Math.sin(state.breathCycle) * 0.008;
+        const breathZ = Math.sin(state.breathCycle * 0.7) * 0.002;
+
+        camera.position.y = 1.8 + breathY;
+        camera.position.x = 0;
+        camera.rotation.z = breathZ;
+    }
+
+    // Subtle fluorescent flicker
+    scene.traverse(child => {
+        if (child instanceof THREE.PointLight) {
+            if (child.userData.baseIntensity === undefined) {
+                child.userData.baseIntensity = child.intensity;
+                child.userData.origIntensity = child.intensity; // save for restart reset
+            }
+            const base = child.userData.baseIntensity;
+            if (base <= 0) { child.intensity = 0; return; } // dead light stays dead
+            const flicker = Math.sin(t * 20 + child.id * 5) * 0.08 + Math.random() * 0.04;
+            child.intensity = Math.max(0.1, base + flicker);
+        }
+    });
+
+    // Aisle watcher sway
+    if (aisleWatcher.visible) {
+        aisleWatcher.position.x = Math.sin(t * 0.5) * 0.03;
+    }
+
+    // Update audio levels based on suspicion
+    updateAudio();
+
+    noirPass.uniforms.time.value = t;
+    composer.render();
+}
+animate();
+
+// ============================================================
+// DEBUG EVENT TESTER — press T to toggle
+// ============================================================
+(function initDebugPanel() {
+    const panel = document.getElementById('debug-panel');
+    const info = document.getElementById('debug-info');
+
+    // Toggle with T key
+    document.addEventListener('keydown', e => {
+        if (e.key === 't' || e.key === 'T') {
+            panel.classList.toggle('visible');
+        }
+    });
+
+    function forceLookUp() {
+        if (!state.started) return;
+        state.targetLook = 1;
+        state.isLookingUp = true;
+        camera.rotation.x = UP_ROT_X;
+        document.getElementById('case-file').classList.add('hidden');
+    }
+
+    function resetAll() {
+        state.suspicion = 0;
+        state.firedEvents.clear();
+        state.pendingEvents = [];
+        state.approachLocked = false;
+        state.deskVisitorActive = false;
+        state.deskVisitorDone = false;
+        state.breakoutPath = false;
+        state.isLookingUp = false;
+        state.targetLook = 0;
+        camera.rotation.x = DESK_ROT_X;
+        workers.forEach(w => {
+            w.userData.eyesActive = false;
+            w.userData.leftEye.material = eyeMatOff;
+            w.userData.rightEye.material = eyeMatOff;
+            w.userData.headRef.rotation.z = 0; // reset head tilt
+            w.rotation.y = 0; // reset torsoRotate
+        });
+        aisleWatcher.position.z = -8;
+        aisleWatcher.visible = false;
+        closeUpWatcher.visible = false;
+        closeUpWatcher.position.z = -2.5;
+        // Reset B6 approach figure
+        approachFigure.visible = false;
+        approachFigure.position.z = -20;
+        state.approachActive = false;
+        state.approachZ = -20;
+        // Reset B7 lateral look
+        state.lateralLookAvailable = false;
+        state.lateralLookUsed = false;
+        state._lateralLookActive = false;
+        document.getElementById('lateral-hint').style.display = 'none';
+        camera.rotation.y = 0;
+        // Reset B1 stamp
+        state.stampPending = false;
+        // Reset B3 typing cadence
+        if (window._typingDelayMultiplier) window._typingDelayMultiplier = 1.0;
+        officeLights.forEach(rowData => {
+            rowData.dead = false;
+            rowData.groups.forEach(g => {
+                g.traverse(child => {
+                    if (child instanceof THREE.PointLight && child.userData.origIntensity !== undefined) {
+                        child.userData.baseIntensity = child.userData.origIntensity;
+                        child.intensity = child.userData.origIntensity;
+                    }
+                    if (child.material && child.material.emissiveIntensity !== undefined && child.userData._origEmissive !== undefined) {
+                        child.material.emissiveIntensity = child.userData._origEmissive;
+                    }
+                });
+            });
+        });
+        updateWatchers();
+        updateInfo();
+    }
+
+    const eventLabels = {
+        'deskVisitor': 'E1', 'headTilt': 'E2', 'closeUpWatcher': 'E3',
+        'torsoRotate': 'E4', 'theBlink': 'E5', 'lightsDie': 'E6',
+        'aisleJump': 'E7', 'theApproach': 'E8'
+    };
+    function updateInfo() {
+        const ws = getWatcherState();
+        const eyeCount = workers.filter(w => w.userData.eyesActive).length;
+        const firedStr = [...state.firedEvents].map(e => eventLabels[e] || e).join(', ');
+        const pendStr = state.pendingEvents.map(e => eventLabels[e] || e).join(', ');
+        const typMul = (window._typingDelayMultiplier || 1).toFixed(1);
+        info.innerHTML = `State: ${ws} | Susp: ${state.suspicion} | Save: ${state.saved}<br>` +
+            `Eyes: ${eyeCount}/${workers.length} | Breakout: ${state.breakoutPath}<br>` +
+            `Fired: ${firedStr || 'none'}<br>` +
+            `Pending: ${pendStr || 'none'}<br>` +
+            `TypMul: ${typMul} | ApproachZ: ${state.approachZ} | Stamp: ${state.stampPending}<br>` +
+            `LateralAvail: ${state.lateralLookAvailable} | Used: ${state.lateralLookUsed}`;
+    }
+
+    // Watcher state buttons — set suspicion and look up
+    function setSuspicion(val) {
+        if (!state.started) return;
+        resetAll();
+        state.suspicion = val;
+        forceLookUp();
+        updateWatchers(true);
+        updateInfo();
+    }
+
+    document.getElementById('dbg-calm').onclick = () => setSuspicion(0);
+    document.getElementById('dbg-noticed').onclick = () => setSuspicion(15);
+    document.getElementById('dbg-watched').onclick = () => setSuspicion(40);
+    document.getElementById('dbg-targeted').onclick = () => setSuspicion(60);
+    document.getElementById('dbg-converged').onclick = () => setSuspicion(85);
+
+    // Event buttons — fire the specific event and look up
+    document.getElementById('dbg-closeup').onclick = () => {
+        if (!state.started) return;
+        state.suspicion = Math.max(state.suspicion, 40);
+        forceLookUp();
+        updateWatchers(true);
+        if (!state.firedEvents.has('closeUpWatcher')) {
+            state.firedEvents.add('closeUpWatcher');
+            fireEvent('closeUpWatcher');
+        }
+        closeUpWatcher.visible = true;
+        updateInfo();
+    };
+
+    document.getElementById('dbg-aislejump').onclick = () => {
+        if (!state.started) return;
+        // Clear closeUpWatcher so aisleJump isn't suppressed
+        state.firedEvents.delete('closeUpWatcher');
+        closeUpWatcher.visible = false;
+        state.suspicion = Math.max(state.suspicion, 60);
+        forceLookUp();
+        updateWatchers(true);
+        state.firedEvents.add('aisleJump');
+        aisleWatcher.position.z = -3;
+        aisleWatcher.visible = true;
+        updateInfo();
+    };
+
+    document.getElementById('dbg-torso').onclick = () => {
+        if (!state.started) return;
+        state.suspicion = Math.max(state.suspicion, 60);
+        forceLookUp();
+        updateWatchers(true);
+        state.firedEvents.add('torsoRotate');
+        fireEvent('torsoRotate');
+        updateInfo();
+    };
+
+    document.getElementById('dbg-lights').onclick = () => {
+        if (!state.started) return;
+        state.suspicion = Math.max(state.suspicion, 80);
+        forceLookUp();
+        updateWatchers(true);
+        state.firedEvents.add('lightsDie');
+        fireEvent('lightsDie');
+        updateInfo();
+    };
+
+    document.getElementById('dbg-headtilt').onclick = () => {
+        if (!state.started) return;
+        state.suspicion = Math.max(state.suspicion, 40);
+        forceLookUp();
+        updateWatchers(true);
+        // Need some eyes on first, then tilt after a beat
+        setTimeout(() => {
+            state.firedEvents.add('headTilt');
+            fireEvent('headTilt');
+            updateInfo();
+        }, 800);
+    };
+
+    document.getElementById('dbg-deskvisitor').onclick = () => {
+        if (!state.started) return;
+        state.firedEvents.add('deskVisitor');
+        fireEvent('deskVisitor');
+        updateInfo();
+        info.innerHTML += '<br><span style="color:#8b0000">Now look up then back down!</span>';
+    };
+
+    document.getElementById('dbg-theblink').onclick = () => {
+        if (!state.started) return;
+        state.suspicion = Math.max(state.suspicion, 40);
+        forceLookUp();
+        updateWatchers(true);
+        setTimeout(() => {
+            state.firedEvents.add('theBlink');
+            fireEvent('theBlink');
+            updateInfo();
+        }, 600);
+    };
+
+    document.getElementById('dbg-theapproach').onclick = () => {
+        if (!state.started) return;
+        state.suspicion = Math.max(state.suspicion, 40);
+        forceLookUp();
+        updateWatchers(true);
+        setTimeout(() => {
+            state.firedEvents.add('theApproach');
+            fireEvent('theApproach');
+            updateInfo();
+        }, 400);
+    };
+
+    // Live update debug info every 500ms
+    setInterval(updateInfo, 500);
+
+    document.getElementById('dbg-reset').onclick = () => {
+        resetAll();
+        state.approachLocked = false;
+        state.deskVisitorActive = false;
+        state.deskVisitorDone = false;
+        // Reset desk objects
+        mugBody.position.set(-0.25, 0.812, -0.2);
+        mugHandle.position.set(-0.278, 0.812, -0.2);
+        coffee.position.set(-0.25, 0.847, -0.2);
+        stamperHandle.position.set(0.22, 0.81, -0.15);
+        stamperHandle.rotation.set(0, 0, 0);
+        penHolder.position.set(0.6, 0.83, -0.3);
+        penHolder.rotation.set(0, 0, 0);
+        memoPaper.position.set(-0.46, 0.79, -0.29);
+        memoPaper.rotation.y = -0.08;
+        // Reset head tilts and worker rotations (torsoRotate)
+        workers.forEach(w => { w.userData.headRef.rotation.z = 0; w.rotation.y = 0; });
+        document.getElementById('case-file').classList.remove('hidden');
+    };
+})();
+
+// ============================================================
+// RESIZE
+// ============================================================
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    composer.setSize(window.innerWidth, window.innerHeight);
+    resizeTitleCanvas();
+});
+
+
+</script>
+</body>
+</html>
