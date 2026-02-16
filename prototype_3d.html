@@ -1380,6 +1380,9 @@ function lookUp() {
         setTimeout(() => { if (state.isLookingUp) aisleWatcher.visible = true; }, 1200);
     }
 
+    // Re-apply persistent visuals from already-fired events
+    reapplyFiredEventVisuals();
+
     // Fire next pending event on this look-up (one per look-up for pacing)
     if (state.pendingEvents.length > 0) {
         const eventId = state.pendingEvents.shift();
@@ -1652,6 +1655,47 @@ function fireEvent(eventId) {
 // Reset dramatic event visuals — each event OWNS its lookUp,
 // visuals reset on lookDown so the next lookUp is clean and legible.
 // Only EYES persist (cumulative horror via suspicion).
+// Re-apply persistent visual effects from events that already fired
+// Called on each lookUp so visuals survive the lookDown reset
+function reapplyFiredEventVisuals() {
+    if (state.firedEvents.has('headTilt')) {
+        // Workers with active eyes tilt their heads
+        workers.forEach(w => {
+            if (w.userData.eyesActive) {
+                w.userData.headRef.rotation.z = (Math.random() - 0.5) * 0.4;
+            }
+        });
+    }
+    if (state.firedEvents.has('torsoRotate')) {
+        // All workers rotate to face the player
+        workers.forEach(w => {
+            const dx = -w.position.x;
+            const dz = -w.position.z;
+            w.rotation.y = Math.atan2(dx, dz);
+        });
+    }
+    if (state.firedEvents.has('lightsDie')) {
+        // Lights stay dead (re-kill them)
+        officeLights.forEach(rowData => {
+            rowData.dead = true;
+            rowData.groups.forEach(g => {
+                g.traverse(child => {
+                    if (child instanceof THREE.PointLight) {
+                        child.userData.baseIntensity = 0;
+                        child.intensity = 0;
+                    }
+                    if (child.material && child.material.emissiveIntensity !== undefined) {
+                        child.material.emissiveIntensity = 0;
+                    }
+                });
+            });
+        });
+    }
+    if (state.firedEvents.has('closeUpWatcher')) {
+        closeUpWatcher.visible = true;
+    }
+}
+
 function resetEventVisuals() {
     // Clear pending lightsDie timeouts (A4: prevent leaked kills after lookDown)
     state._lightsDieTimeouts.forEach(id => clearTimeout(id));
@@ -2174,7 +2218,7 @@ function initAudio() {
         const source = audioCtx.createBufferSource();
         source.buffer = buffer;
         const clickGain = audioCtx.createGain();
-        clickGain.gain.value = 0.02 + Math.random() * 0.04; // boosted from 0.005-0.017
+        clickGain.gain.value = 0.04 + Math.random() * 0.06; // boosted for audibility
         const clickFilter = audioCtx.createBiquadFilter();
         clickFilter.type = 'bandpass';
         clickFilter.frequency.value = 800 + Math.random() * 2000;
