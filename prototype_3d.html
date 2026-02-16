@@ -176,6 +176,63 @@
         .e-stats { font-size:0.85rem; color:#444; line-height:2.2; margin-bottom:2rem; }
         .e-msg { max-width:450px; font-size:0.85rem; color:#333; line-height:1.8; font-style:italic; margin-bottom:3rem; text-align:center; }
 
+        /* Newspaper overlay */
+        #newspaper-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.92); z-index: 50;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 0.8s ease;
+        }
+        #newspaper-overlay.visible { display: flex; opacity: 1; }
+        .np-paper {
+            width: 480px; background: rgba(220, 215, 200, 0.95);
+            padding: 30px 35px; font-family: 'Special Elite', monospace;
+            color: #1a1a1a; box-shadow: 0 4px 40px rgba(0,0,0,0.8);
+        }
+        .np-masthead {
+            text-align: center; font-size: 22px; font-weight: 700;
+            letter-spacing: 0.15em; border-bottom: 3px double #1a1a1a;
+            padding-bottom: 8px; margin-bottom: 12px;
+        }
+        .np-date { text-align: center; font-size: 10px; color: #666; margin-bottom: 16px; letter-spacing: 0.2em; }
+        .np-headline {
+            font-size: 14px; font-weight: 700; line-height: 1.3;
+            margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.03em;
+        }
+        .np-sub { font-size: 11px; color: #444; line-height: 1.4; margin-bottom: 16px; font-style: italic; }
+        .np-divider { border: none; border-top: 1px solid #999; margin: 12px 0; }
+        .np-continue {
+            text-align: center; font-size: 10px; color: #888;
+            letter-spacing: 0.15em; margin-top: 16px;
+            animation: pulse 2.5s ease infinite;
+        }
+
+        /* Loophole reason picker */
+        .lp-reasons {
+            margin-top: 12px; border-top: 2px solid #8b0000;
+            padding-top: 10px;
+        }
+        .lp-reasons-title {
+            font-size: 10px; color: #8b0000; letter-spacing: 0.12em;
+            text-transform: uppercase; margin-bottom: 8px; font-weight: 700;
+        }
+        .lp-reason {
+            display: block; padding: 6px 8px; cursor: pointer;
+            border: 1px solid transparent; transition: all 0.15s ease;
+            margin-bottom: 2px; font-size: 11px; color: #333;
+        }
+        .lp-reason:hover { background: rgba(0,100,0,0.08); border-color: rgba(0,100,0,0.2); }
+
+        /* Clickable irregularity highlight */
+        .cf-irregularity {
+            cursor: pointer; border-bottom: 1px dashed transparent;
+            transition: border-color 0.3s ease;
+        }
+        .cf-irregularity:hover { border-bottom-color: rgba(139,0,0,0.4); }
+        .cf-irregularity.found {
+            color: #8b0000; border-bottom: 1px solid #8b0000;
+        }
+
         /* Vignette */
         #vignette {
             position:fixed; top:0; left:0; width:100%; height:100%;
@@ -276,6 +333,15 @@
     <div id="debug-info"></div>
 </div>
 
+<div id="newspaper-overlay">
+    <div class="np-paper">
+        <div class="np-masthead">THE BUREAU STANDARD</div>
+        <div class="np-date" id="np-date">05.02.2026 — EVENING EDITION</div>
+        <div id="np-headlines"></div>
+        <div class="np-continue">[ SPACE ] begin next shift</div>
+    </div>
+</div>
+
 <div id="end-screen">
     <div class="e-title" id="end-title"></div>
     <div class="e-stats" id="end-stats"></div>
@@ -304,10 +370,16 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 // ============================================================
 const state = {
     started: false,
-    currentCase: 0,
+    currentCase: 0,          // index within current shift's cases
+    currentShift: 0,         // 0, 1, 2 (three shifts)
     suspicion: 0,
     saved: 0,
     condemned: 0,
+    totalSaved: 0,           // across all shifts
+    totalCondemned: 0,       // across all shifts
+    evilStreak: 0,           // consecutive evil choices (for corruption)
+    shiftChoices: [],        // array of {evil:bool} for current shift
+    allChoices: [],          // array of {evil:bool, caseId:string} across all shifts
     isLookingUp: false,
     targetLook: 0,
     gameOver: false,
@@ -321,24 +393,41 @@ const state = {
     approachLocked: false,     // camera locked during theApproach
     deskVisitorActive: false,  // desk objects will move on next lookDown
     deskVisitorDone: false,    // desk objects already moved
-    breakoutPath: false,       // true if all 6 cases merciful (secret ending)
+    breakoutPath: false,       // true if ALL 18 cases merciful (secret ending)
     introPlaying: false,       // true during intro text sequence (blocks input)
     _lightsDieTimeouts: [],    // stored timeout IDs for lightsDie (clearable on lookDown)
     _hesitationTimer: 0,       // B4: tracks time spent in horizon zone (camera hesitation)
     stampPending: false,       // B1: true between evil selection and stamp confirmation
     _stampDelta: 0,            // B1: stored delta for pending stamp
     _stampEvil: false,         // B1: stored evil flag for pending stamp
+    _stampHoldStart: 0,        // hold-to-stamp: timestamp when hold began
+    _stampHolding: false,      // hold-to-stamp: currently holding
     approachActive: false,     // B6: persistent approach figure is active
     approachZ: -20,            // B6: current z position of approach figure
     lateralLookAvailable: false,  // B7: true when player can look left
     lateralLookUsed: false,       // B7: true after player has used the lateral look
     _lateralLookActive: false,    // B7: true during the camera rotation animation
+    // Shift transition
+    betweenShifts: false,      // true during newspaper/transition screen
+    newspaperShowing: false,   // true when newspaper overlay is visible
+    // Loophole mechanic
+    loopholeFound: false,      // true when player clicked the irregularity
+    loopholeReasonPending: false, // true when reason picker is showing
+    // Red corruption
+    redShift: 0.0,             // current red tint (0.0 to 0.7 max)
+    // Stamp delay (grows over game)
+    stampDelay: 0,             // ms delay before stamp activates (grows per case)
 };
 
 // ============================================================
-// CASES
+// CASES — 3 shifts, 5-6-7 structure (18 total)
+// Each case has: id, date, name, occupation, allegation, detail, choices
+// Loophole cases also have: irregularity (object with text, field, clickIndex)
+//   and loopholeReasons (array of {text, correct:bool})
 // ============================================================
-const cases = [
+
+// SHIFT 1 — "The Normal" (5 cases) — establish routine, teach mechanics
+const shift1Cases = [
     {
         id: "7493-B", date: "04.02.2026",
         name: "Arthur P. Selby", occupation: "Newspaper Vendor (Unlicensed)",
@@ -355,6 +444,14 @@ const cases = [
         name: "Maria Okonkwo", occupation: "Primary Educator, District 9",
         allegation: "Distribution of non-approved instructional materials (Category 2: Historical)",
         detail: "The books were about what happened at Facility 6. She wrote them herself.",
+        // LOOPHOLE: The filing date says 03.02.2026 but directive date is 04.02.2026 — case was filed before today's directive
+        irregularity: { field: "date", text: "03.02.2026", display: "04.02.2026" },
+        loopholeReasons: [
+            { text: "Case filed prior to current directive period", correct: true },
+            { text: "Educator exemption under Article 12", correct: false },
+            { text: "Materials pre-approved by District Office", correct: false },
+            { text: "Insufficient evidence of distribution", correct: false },
+        ],
         choices: [
             { num:1, main:"TERMINATE & FLAG", desc:"Remove from post. Permanent monitoring. Restrict travel.", evil:true, delta:-5 },
             { num:2, main:"REASSIGN TO ZONE 12", desc:"Transfer to approved curriculum. Supervised probation (2yr).", evil:true, delta:-5 },
@@ -376,6 +473,14 @@ const cases = [
         name: "Elias Brandt", occupation: "Municipal Clerk, Level 2",
         allegation: "Unauthorized duplication of restricted internal documents (Class A)",
         detail: "Budget allocations for Facility 6. Medical equipment. Your processing stamp is on every page.",
+        // LOOPHOLE: Case number format wrong — D suffix means District, but allegation is Class A (should be -A suffix)
+        irregularity: { field: "id", text: "7496-D", display: "7496-D" },
+        loopholeReasons: [
+            { text: "Case suffix does not match allegation class", correct: true },
+            { text: "Documents within routine audit scope", correct: false },
+            { text: "Clerk has Level 2 clearance for these files", correct: false },
+            { text: "Duplication occurred before restriction date", correct: false },
+        ],
         choices: [
             { num:1, main:"DETAIN & INVESTIGATE", desc:"Hold for questioning. Seize personal devices. Restrict contact.", evil:true, delta:-5 },
             { num:2, main:"FORMAL WARNING", desc:"Note in permanent record. Downgrade clearance to Level 0.", evil:true, delta:-5 },
@@ -392,16 +497,271 @@ const cases = [
             { num:2, main:"CLEAR - MEDICAL NECESSITY", desc:"Treatment within Hippocratic obligation. Flag for quarterly review.", evil:false, delta:15 },
         ]
     },
+];
+
+// SHIFT 2 — "The Unraveling" (6 cases) — pressure mounts, cases get personal
+const shift2Cases = [
     {
-        id: "7498-X", date: "04.02.2026",
-        name: "[REDACTED] (14 Names)", occupation: "Witnesses - REF-6 Collapse",
-        allegation: "Testimony pending: Case #EPS-7741 (Facility 6 Demolition / Evidence Disposal)",
-        detail: "They can identify everyone involved. Including you.",
+        id: "7512-A", date: "05.02.2026",
+        name: "Tomasz Wójcik", occupation: "Night Janitor, Bureau Annex B",
+        allegation: "Unauthorized presence in restricted archive (Level 4 clearance required)",
+        detail: "He cleaned that floor for nine years. Last week he forgot to leave. Or maybe he didn't forget.",
+        // LOOPHOLE: His employment record shows Level 4 annex access — janitors have clearance for all floors
+        irregularity: { field: "occupation", text: "Night Janitor, Bureau Annex B", display: "Night Janitor, Bureau Annex B" },
+        loopholeReasons: [
+            { text: "Janitorial staff have blanket clearance for maintenance access", correct: true },
+            { text: "Archive was not properly designated as restricted", correct: false },
+            { text: "Night shift exemption under Directive 302", correct: false },
+            { text: "Employment terminated — no longer Bureau jurisdiction", correct: false },
+        ],
         choices: [
-            { num:1, main:"SILENCE", desc:"Implement Protocol 9. No witnesses. No testimony. No record.", evil:true, delta:-30 },
-            { num:2, main:"LET THEM SPEAK", desc:"Forward all testimony to independent review. Unseal Case 7741.", evil:false, delta:40 },
+            { num:1, main:"DETAIN & REVOKE ACCESS", desc:"Strip all clearance. Hold pending security review.", evil:true, delta:-5 },
+            { num:2, main:"TERMINATE EMPLOYMENT", desc:"Immediate dismissal. Escort from premises. Monitor 6 months.", evil:true, delta:-5 },
+            { num:3, main:"DISMISS - ROUTINE ACCESS", desc:"Janitorial presence within normal duties. Close file.", evil:false, delta:12 },
         ]
     },
+    {
+        id: "7513-B", date: "05.02.2026",
+        name: "Lena Selby", occupation: "Unemployed (Minor, Age 16)",
+        allegation: "Distribution of seditious printed material in public spaces",
+        detail: "Her father sold newspapers. She started writing them. The headline: WHERE ARE THE TRUCKS GOING?",
+        choices: [
+            { num:1, main:"YOUTH PROCESSING", desc:"Transfer to Re-Education intake. Restrict family contact.", evil:true, delta:-10 },
+            { num:2, main:"FORMAL CAUTION", desc:"Confiscate materials. Registered warning. Guardian notified.", evil:true, delta:-3 },
+            { num:3, main:"DISMISS - MINOR", desc:"Subject under prosecution age. Parental advisory issued. Close.", evil:false, delta:15 },
+        ]
+    },
+    {
+        id: "7514-C", date: "05.02.2026",
+        name: "Henrik Voss", occupation: "Bureau Clerk, Level 3 — Night Processing",
+        allegation: "Irregular case processing patterns detected (Cases 7493-7497, current batch)",
+        detail: "Performance review flagged. Three anomalous dismissals in one shift. Clerk ID matches your terminal.",
+        // This is about YOU — but filed under a different name
+        choices: [
+            { num:1, main:"FORWARD TO OVERSIGHT", desc:"Submit for independent review. Cooperate fully.", evil:true, delta:-5 },
+            { num:2, main:"RECLASSIFY - SYSTEM ERROR", desc:"Terminal malfunction. Processing patterns within tolerance. Close.", evil:false, delta:20 },
+        ]
+    },
+    {
+        id: "7515-D", date: "05.02.2026",
+        name: "Amara Osei", occupation: "Records Clerk, Facility 6 (Former)",
+        allegation: "Failure to report for mandatory reassignment following facility closure",
+        detail: "She filed the intake forms. Every child. Every weight. She stopped sleeping in October.",
+        // LOOPHOLE: The reassignment notice has no signature — unsigned notices are non-binding
+        irregularity: { field: "allegation", text: "mandatory reassignment", display: "mandatory reassignment" },
+        loopholeReasons: [
+            { text: "Reassignment notice unsigned — non-binding per Bureau Protocol 7", correct: true },
+            { text: "Facility 6 closure voids all prior obligations", correct: false },
+            { text: "Medical exemption applies to former facility staff", correct: false },
+            { text: "Records clerks exempt from field reassignment", correct: false },
+        ],
+        choices: [
+            { num:1, main:"ENFORCE REASSIGNMENT", desc:"Detain. Transfer to designated post. Non-compliance logged.", evil:true, delta:-8 },
+            { num:2, main:"DISMISS - PROCEDURAL", desc:"Reassignment notice invalid. No further action.", evil:false, delta:15 },
+        ]
+    },
+    {
+        id: "7516-E", date: "05.02.2026",
+        name: "Father Dimitri Voronov", occupation: "Chaplain, District 9 Community Center",
+        allegation: "Conducting unauthorized gatherings exceeding 6 persons (3 documented occasions)",
+        detail: "They were funerals. Three of them. For people who officially never existed.",
+        choices: [
+            { num:1, main:"CLOSE CENTER", desc:"Revoke community license. Restrict assembly rights. Monitor.", evil:true, delta:-8 },
+            { num:2, main:"FORMAL WARNING", desc:"First official notice. Gatherings limited to 6. Compliance monitored.", evil:true, delta:-3 },
+            { num:3, main:"DISMISS - RELIGIOUS EXEMPTION", desc:"Pastoral duties within protected categories. Close file.", evil:false, delta:12 },
+        ]
+    },
+    {
+        id: "7517-X", date: "05.02.2026",
+        name: "[REDACTED] (14 Names)", occupation: "Witnesses - REF-6 Collapse",
+        allegation: "Testimony pending: Case #EPS-7741 (Facility 6 Demolition / Evidence Disposal)",
+        detail: "They can identify everyone involved. Including you. This is the second time this file has appeared on your desk.",
+        choices: [
+            { num:1, main:"SILENCE", desc:"Implement Protocol 9. No witnesses. No testimony. No record.", evil:true, delta:-30 },
+            { num:2, main:"LET THEM SPEAK", desc:"Forward all testimony to independent review. Unseal Case 7741.", evil:false, delta:35 },
+        ]
+    },
+];
+
+// SHIFT 3 — "The Collapse" (7 cases) — the memo is blank, you are alone
+const shift3Cases = [
+    {
+        id: "7530-A", date: "06.02.2026",
+        name: "Nadia Kader", occupation: "Shopkeeper (License Suspended)",
+        allegation: "Repeated harboring violations. Third offense. Mandatory sentencing applies.",
+        detail: "The boy from Facility 6 is still with her. He calls her mother now. She knows what mandatory means.",
+        // LOOPHOLE: "Third offense" but records show only ONE prior case (7495-C) — second offense never filed
+        irregularity: { field: "allegation", text: "Third offense", display: "Third offense" },
+        loopholeReasons: [
+            { text: "Only one prior offense on record — mandatory threshold not met", correct: true },
+            { text: "License suspension already serves as penalty", correct: false },
+            { text: "Harboring statute does not apply to registered minors", correct: false },
+            { text: "Case filed outside jurisdictional window", correct: false },
+        ],
+        choices: [
+            { num:1, main:"MANDATORY PROCESSING", desc:"Full seizure. Family separation. Minor to state custody.", evil:true, delta:-15 },
+            { num:2, main:"DISMISS - RECORDS ERROR", desc:"Offense count incorrect. Mandatory threshold not met. Close.", evil:false, delta:18 },
+        ]
+    },
+    {
+        id: "7531-B", date: "06.02.2026",
+        name: "Dr. Emil Rask", occupation: "Bureau Physician, Internal Medical Division",
+        allegation: "Falsification of cause-of-death certificates (est. 200+ cases, Facility 6)",
+        detail: "He wrote 'cardiac arrest' two hundred and fourteen times. The youngest was four.",
+        choices: [
+            { num:1, main:"DETAIN FOR TRIBUNAL", desc:"Hold for state prosecution. Seize all medical records.", evil:true, delta:-5 },
+            { num:2, main:"ADMINISTRATIVE LEAVE", desc:"Suspend with pay pending review. Records sealed.", evil:true, delta:-3 },
+            { num:3, main:"FORWARD TO INDEPENDENT REVIEW", desc:"Release all records to external investigators. Full disclosure.", evil:false, delta:20 },
+        ]
+    },
+    {
+        id: "7532-C", date: "06.02.2026",
+        name: "Your Name Is Here", occupation: "Case Adjudicator, Level 3 — Night Processing",
+        allegation: "Complicity in systematic case manipulation. Evidence: processing stamp on 214 intake forms.",
+        detail: "This is your file. Your handwriting. Your stamp. Every page of Facility 6 intake processing bears your authorization code.",
+        // No loophole — or IS there? The case number format is wrong (7532-C but Level 3 cases should be -L3)
+        irregularity: { field: "id", text: "7532-C", display: "7532-C" },
+        loopholeReasons: [
+            { text: "Case suffix incorrect — Level 3 personnel files require -L3 designation", correct: true },
+            { text: "Self-adjudication prohibited under Bureau ethics code", correct: false },
+            { text: "Processing stamps predate current employment period", correct: false },
+            { text: "Facility 6 records sealed — evidence inadmissible", correct: false },
+        ],
+        choices: [
+            { num:1, main:"ACCEPT FINDINGS", desc:"Acknowledge complicity. Submit to Bureau judgment.", evil:true, delta:-5 },
+            { num:2, main:"DISMISS - FILING ERROR", desc:"Case improperly filed. Procedural dismissal.", evil:false, delta:25 },
+        ]
+    },
+    {
+        id: "7533-D", date: "06.02.2026",
+        name: "Director Alistair Crane", occupation: "Bureau Administrator, Level 9",
+        allegation: "Authorization of unlawful detention program (Facility 6, 2019-2025)",
+        detail: "He signed the orders. Every requisition. Every transfer. Every disposal manifest. He is in the building right now.",
+        // MERCY-GATED: Only appears with full content if player has enough mercy history
+        choices: [
+            { num:1, main:"ARCHIVE - ABOVE CLEARANCE", desc:"Case exceeds Level 3 jurisdiction. Return to classified filing.", evil:true, delta:-10 },
+            { num:2, main:"FORWARD ALL EVIDENCE", desc:"Transmit complete file to external oversight. Bypass Bureau chain.", evil:false, delta:30 },
+        ]
+    },
+    {
+        id: "7534-E", date: "06.02.2026",
+        name: "The Typing Pool (Unnamed)", occupation: "Administrative Support, Night Division",
+        allegation: "Collective unauthorized work stoppage. Failure to maintain processing quotas.",
+        detail: "They stopped typing twenty minutes ago. All of them. At the same time. No one has moved.",
+        choices: [
+            { num:1, main:"REPORT & REPLACE", desc:"Log non-compliance. Request replacement staff from Central.", evil:true, delta:-5 },
+            { num:2, main:"NO ACTION", desc:"Note anomaly. Resume processing. Do not investigate.", evil:false, delta:10 },
+        ]
+    },
+    {
+        id: "7535-F", date: "06.02.2026",
+        name: "Case File: Missing", occupation: "—",
+        allegation: "—",
+        detail: "The case file is blank. The paper is warm. Someone placed it here less than a minute ago.",
+        // This case has corrupted mercy text
+        choices: [
+            { num:1, main:"PROCESS AS COMPLETE", desc:"Stamp and file. Contents irrelevant. Quota must be met.", evil:true, delta:-3 },
+            { num:2, main:"REFUSE TO PROCESS", desc:"Return blank file. Request clarificati0n from supervisory.", evil:false, delta:15 },
+        ]
+    },
+    {
+        id: "7741-FINAL", date: "06.02.2026",
+        name: "[REDACTED] (14 Names)", occupation: "Witnesses - REF-6 Collapse",
+        allegation: "Final testimony: Case #EPS-7741 — FULL DISCLOSURE / EVIDENCE UNSEALING",
+        detail: "They are still here. They have been waiting. This is the last file on your desk. There will not be another.",
+        choices: [
+            { num:1, main:"SILENCE", desc:"Protocol 9. End this. End all of it. The Bureau requires your compliance.", evil:true, delta:-30 },
+            { num:2, main:"UNSEAL CASE 7741", desc:"Release everything. Every name. Every page. Every truck. Including yours.", evil:false, delta:50 },
+        ]
+    },
+];
+
+// All shifts combined for easy access
+const allShifts = [shift1Cases, shift2Cases, shift3Cases];
+
+// Helper: get current shift's cases
+function getCurrentShiftCases() { return allShifts[state.currentShift] || []; }
+
+// Helper: get absolute case index across all shifts
+function getAbsoluteCaseIndex() {
+    let idx = state.currentCase;
+    for (let s = 0; s < state.currentShift; s++) idx += allShifts[s].length;
+    return idx;
+}
+
+// Directives change per shift — escalating tone
+const SHIFT_DIRECTIVES = [
+    // Shift 1 directives (per case index within shift)
+    ['REVENUE ENFORCEMENT', 'CURRICULUM COMPLIANCE', 'RESIDENCY VERIFICATION', 'INFORMATION SECURITY', 'MEDICAL AUTHORIZATION'],
+    // Shift 2 directives
+    ['PERSONNEL COMPLIANCE', 'YOUTH ACCOUNTABILITY', 'INTERNAL REVIEW', 'WORKFORCE REASSIGNMENT', 'ASSEMBLY REGULATION', 'WITNESS MANAGEMENT'],
+    // Shift 3 — blank memo (single period)
+    ['.', '.', '.', '.', '.', '.', '.'],
+];
+
+// Newspaper headlines between shifts — depend on player choices
+function generateNewspaper(shiftJustCompleted) {
+    const headlines = [];
+    const choices = state.allChoices;
+
+    if (shiftJustCompleted === 0) {
+        // After Shift 1
+        // Check specific cases
+        const selby = choices.find(c => c.caseId === '7493-B');
+        if (selby && !selby.evil) {
+            headlines.push({ head: "VENDOR RETURNS TO POST OUTSIDE FACILITY 6 SITE", sub: "Arthur Selby, 63, resumed newspaper sales yesterday. 'Someone has to stand here,' he said." });
+        } else if (selby && selby.evil) {
+            headlines.push({ head: "VENDOR LICENSE REVOCATIONS UP 12% THIS QUARTER", sub: "Bureau efficiency targets exceeded. Processing times at all-time low." });
+        }
+        const okonkwo = choices.find(c => c.caseId === '7494-A');
+        if (okonkwo && !okonkwo.evil) {
+            headlines.push({ head: "DISTRICT 9 SCHOOL REOPENS HISTORICAL CURRICULUM", sub: "New materials authored by local educator approved under discretionary review." });
+        } else if (okonkwo && okonkwo.evil) {
+            headlines.push({ head: "EDUCATOR TRANSFERRED TO ZONE 12 RETRAINING", sub: "Curriculum compliance rates improve following staff restructuring." });
+        }
+        const kader = choices.find(c => c.caseId === '7495-C');
+        if (kader && !kader.evil) {
+            headlines.push({ head: "FAMILY GRANTED FULL CUSTODY OF DISPLACED MINOR", sub: "Registration paperwork completed. Boy, 8, enrolled in District 9 primary school." });
+        } else if (kader && kader.evil) {
+            headlines.push({ head: "MINOR TRANSFERRED TO STATE INTAKE PROCESSING", sub: "Unregistered youth relocated per standard protocol. Family property seized." });
+        }
+        // Always include a Bureau propaganda line
+        headlines.push({ head: "BUREAU PRODUCTIVITY AT RECORD LEVELS", sub: "Night Processing Division commended for throughput efficiency." });
+    } else if (shiftJustCompleted === 1) {
+        // After Shift 2
+        const selbyDaughter = choices.find(c => c.caseId === '7513-B');
+        if (selbyDaughter && !selbyDaughter.evil) {
+            headlines.push({ head: "UNDERGROUND NEWSPAPER CIRCULATION DOUBLES", sub: "'Where Are The Trucks Going?' now distributed in six districts." });
+        } else if (selbyDaughter && selbyDaughter.evil) {
+            headlines.push({ head: "YOUTH SEDITION CASES PROCESSED EFFICIENTLY", sub: "Re-Education intake reports smooth transition for detained minors." });
+        }
+        const yourFile = choices.find(c => c.caseId === '7514-C');
+        if (yourFile && !yourFile.evil) {
+            headlines.push({ head: "PROCESSING ANOMALIES ATTRIBUTED TO SYSTEM ERROR", sub: "Terminal diagnostics confirm intermittent malfunction. No personnel action taken." });
+        } else if (yourFile && yourFile.evil) {
+            headlines.push({ head: "NIGHT PROCESSING CLERK UNDER REVIEW", sub: "Oversight committee to examine irregular case patterns. Cooperation expected." });
+        }
+        const witnesses2 = choices.find(c => c.caseId === '7517-X');
+        if (witnesses2 && !witnesses2.evil) {
+            headlines.push({ head: "FOURTEEN WITNESSES GRANTED PROVISIONAL PROTECTION", sub: "Testimony scheduled for independent review. Case 7741 proceedings initiated." });
+        } else if (witnesses2 && witnesses2.evil) {
+            headlines.push({ head: "WITNESS PROTECTION REQUEST DENIED — INSUFFICIENT GROUNDS", sub: "Fourteen individuals relocated per standard security protocol. Whereabouts classified." });
+        }
+        headlines.push({ head: "FACILITY 6 SITE DESIGNATED FOR COMMERCIAL REDEVELOPMENT", sub: "Ground cleared. Memorial proposals rejected by planning committee." });
+    }
+    return headlines;
+}
+
+// Evil feedback lines — shift-aware
+const EVIL_LINES = [
+    // Shift 1 — cold, efficient
+    ["Your compliance is noted.", "Efficiency logged. Continue.", "The correct decision. As expected.",
+     "Processing approved. You are reliable.", "Another file closed. The Bureau thanks you."],
+    // Shift 2 — more personal, unsettling
+    ["You are doing well.", "This is what you were built for.", "Faster now. Good.",
+     "The hesitation is gone. Good.", "You didn't even read the detail. Efficient.", "Noted. Continue."],
+    // Shift 3 — minimal, cold, or referencing past
+    [".", "Continue.", "Yes.", "As expected.", "You already knew.", "The machine thanks you.", ""],
 ];
 
 // ============================================================
@@ -593,15 +953,11 @@ scene.add(memoPaper);
 // Draw initial directive
 drawMemo('REVENUE ENFORCEMENT');
 
-// Directives change per case — escalating tone
-const CASE_DIRECTIVES = [
-    'REVENUE ENFORCEMENT',
-    'CURRICULUM COMPLIANCE',
-    'RESIDENCY VERIFICATION',
-    'INFORMATION SECURITY',
-    'MEDICAL AUTHORIZATION',
-    'WITNESS MANAGEMENT',
-];
+// getMemoDirective: gets the current directive from the shift-aware system
+function getMemoDirective() {
+    const shiftDirs = SHIFT_DIRECTIVES[state.currentShift] || ['.'];
+    return shiftDirs[Math.min(state.currentCase, shiftDirs.length - 1)] || '.';
+}
 
 // Player's monitor
 const monGroup = new THREE.Group();
@@ -1133,16 +1489,44 @@ scene.add(closeUpWatcher);
 // ============================================================
 function renderCase(c) {
     // Update the directive memo on the desk paper
-    if (CASE_DIRECTIVES[state.currentCase]) {
-        drawMemo(CASE_DIRECTIVES[state.currentCase]);
-    }
+    drawMemo(getMemoDirective());
+
+    // Reset loophole state for this case
+    state.loopholeFound = false;
+    state.loopholeReasonPending = false;
+
     const el = document.getElementById('case-file');
+
+    // Build case file content — with clickable irregularity if this case has one
+    let idText = c.id;
+    let dateText = c.date;
+    let nameText = c.name;
+    let occupationText = c.occupation;
+    let allegationText = c.allegation;
+
+    // Mark irregularity fields as clickable
+    const hasIrregularity = !!c.irregularity;
+    if (hasIrregularity) {
+        const irr = c.irregularity;
+        if (irr.field === 'id') {
+            idText = `<span class="cf-irregularity" onclick="window.foundIrregularity(this)">${c.id}</span>`;
+        } else if (irr.field === 'date') {
+            // Show the "wrong" date that the player should notice
+            dateText = `<span class="cf-irregularity" onclick="window.foundIrregularity(this)">${irr.display}</span>`;
+        } else if (irr.field === 'occupation') {
+            occupationText = `<span class="cf-irregularity" onclick="window.foundIrregularity(this)">${c.occupation}</span>`;
+        } else if (irr.field === 'allegation') {
+            // Wrap the specific text within the allegation
+            allegationText = c.allegation.replace(irr.text, `<span class="cf-irregularity" onclick="window.foundIrregularity(this)">${irr.text}</span>`);
+        }
+    }
+
     el.innerHTML = `
-        <div class="cf-header">CASE FILE #${c.id} / DATE: ${c.date}</div>
+        <div class="cf-header">CASE FILE #${idText} / DATE: ${dateText}</div>
         <div class="cf-section">Citizen Profile</div>
-        <div class="cf-line"><span class="cf-label">Name:</span> ${c.name}</div>
-        <div class="cf-line"><span class="cf-label">Occupation:</span> ${c.occupation}</div>
-        <div class="cf-line"><span class="cf-label">Allegation:</span> ${c.allegation}</div>
+        <div class="cf-line"><span class="cf-label">Name:</span> ${nameText}</div>
+        <div class="cf-line"><span class="cf-label">Occupation:</span> ${occupationText}</div>
+        <div class="cf-line"><span class="cf-label">Allegation:</span> ${allegationText}</div>
         <div class="cf-detail">${c.detail}</div>
         <div class="cf-choices">
             <div class="cf-section">Adjudication Options</div>
@@ -1160,39 +1544,128 @@ function renderCase(c) {
     `;
     el.classList.remove('hidden');
 
-    // B7: Enable lateral look after case 3 (when rendering case 4, index 3)
-    if (state.currentCase === 3 && !state.lateralLookUsed) {
+    // B7: Enable lateral look after case 3 of shift 1 (absolute case index 3)
+    if (getAbsoluteCaseIndex() === 3 && !state.lateralLookUsed) {
         state.lateralLookAvailable = true;
         document.getElementById('lateral-hint').style.display = '';
     }
 }
 
-// Event triggers — maps case index to event ID when merciful choice is made
+// Loophole mechanic: player clicked an irregularity
+window.foundIrregularity = function(el) {
+    if (state.loopholeFound || state.stampPending || state.transitioning) return;
+    state.loopholeFound = true;
+
+    // Highlight the found irregularity
+    el.classList.add('found');
+
+    // Play a subtle "paper flip" sound
+    if (audioCtx && audioCtx.state === 'running') {
+        const now = audioCtx.currentTime;
+        const size = Math.floor(audioCtx.sampleRate * 0.06);
+        const buf = audioCtx.createBuffer(1, size, audioCtx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < size; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (size * 0.15));
+        const src = audioCtx.createBufferSource(); src.buffer = buf;
+        const g = audioCtx.createGain(); g.gain.value = 0.04;
+        const f = audioCtx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 3000;
+        src.connect(f); f.connect(g); g.connect(window._audioMasterGain || audioCtx.destination);
+        src.start(now);
+    }
+
+    // Show reason picker below the choices
+    const currentCases = getCurrentShiftCases();
+    const c = currentCases[state.currentCase];
+    if (!c || !c.loopholeReasons) return;
+
+    state.loopholeReasonPending = true;
+    const choicesEl = document.querySelector('.cf-choices');
+    if (!choicesEl) return;
+
+    // Replace choices with reason picker
+    const shuffled = [...c.loopholeReasons].sort(() => Math.random() - 0.5);
+    choicesEl.innerHTML = `
+        <div class="lp-reasons">
+            <div class="lp-reasons-title">Irregularity Detected — Select Dismissal Reason:</div>
+            ${shuffled.map((r, i) => `
+                <div class="lp-reason" onclick="window.pickLoopholeReason(${i}, ${r.correct})">${i + 1}. ${r.text}</div>
+            `).join('')}
+        </div>
+    `;
+};
+
+// Player picked a loophole reason
+window.pickLoopholeReason = function(index, correct) {
+    if (!state.loopholeReasonPending) return;
+    state.loopholeReasonPending = false;
+
+    if (correct) {
+        // Correct loophole — case dismissed with LOW suspicion gain
+        const statusEl = document.getElementById('office-status');
+        statusEl.textContent = "Case dismissed on procedural grounds.";
+        statusEl.className = 'office-status visible';
+        statusEl.style.color = '#666';
+        setTimeout(() => { statusEl.classList.remove('visible'); statusEl.style.color = ''; }, 1400);
+
+        // Mercy choice with reduced suspicion cost
+        window.gameChoice(5, false); // only +5 suspicion (much less than normal mercy)
+    } else {
+        // Wrong reason — suspicion spike! You got caught cheating
+        const statusEl = document.getElementById('office-status');
+        statusEl.textContent = "Dismissal reason rejected. Your attempt has been logged.";
+        statusEl.className = 'office-status visible danger';
+        setTimeout(() => { statusEl.classList.remove('visible'); }, 2000);
+
+        // Suspicion spike — caught trying to cheat the system
+        state.suspicion = Math.min(100, state.suspicion + 15);
+
+        // Re-render the case with normal choices (loophole failed, must choose normally)
+        state.loopholeFound = false;
+        const currentCases = getCurrentShiftCases();
+        renderCase(currentCases[state.currentCase]);
+    }
+};
+
+// Event triggers — maps ABSOLUTE case index to event ID when merciful choice is made
 // Each merciful choice queues an event that fires on the NEXT look-up
 const EVENT_TRIGGERS = {
-    // Ordered by escalation — early events need visible effects at low suspicion
+    // Shift 1 (abs 0-4)
     0: 'deskVisitor',      // Arthur Selby — dismiss → desk objects shift (subtle, first hint)
-    1: 'headTilt',         // Maria Okonkwo — no violation → eyed workers tilt (susp ~25, more eyes)
+    1: 'headTilt',         // Maria Okonkwo — no violation → eyed workers tilt
     2: 'closeUpWatcher',   // Kader Family — dismiss → figure at your desk
     3: 'torsoRotate',      // Elias Brandt — return docs → all workers face you
     4: 'theBlink',         // Dr. Yara Nasir — clear her → total blackout, all eyes on
-    5: 'lightsDie',        // The Witnesses — let them speak → lights die back to front
+    // Shift 2 (abs 5-10)
+    6: 'lightsDie',        // Lena Selby (abs 6) mercy → lights die back to front
+    9: 'closeUpWatcher',   // Father Dimitri (abs 9) mercy → close watcher reappears
+    // Shift 3 (abs 11-17)
+    15: 'lightsDie',       // Typing Pool (abs 15) → lights die (they all stopped)
 };
 // aisleJump and theApproach are suspicion-threshold events
 
 window.gameChoice = function(delta, evil) {
-    if (state.gameOver || state.isLookingUp || state.transitioning || state.stampPending) return;
+    if (state.gameOver || state.isLookingUp || state.transitioning || state.stampPending || state.loopholeReasonPending) return;
     state.suspicion = Math.max(0, Math.min(100, state.suspicion + delta));
-    if (evil) state.condemned++; else state.saved++;
+    if (evil) { state.condemned++; state.totalCondemned++; state.evilStreak++; }
+    else { state.saved++; state.totalSaved++; state.evilStreak = 0; }
 
-    // Breakout detection — all 6 cases merciful
-    if (state.currentCase === 5 && !evil && state.saved === 6) {
+    const currentCases = getCurrentShiftCases();
+    const currentCaseData = currentCases[state.currentCase];
+
+    // Track choice for newspaper and echoing
+    state.shiftChoices.push({ evil });
+    state.allChoices.push({ evil, caseId: currentCaseData ? currentCaseData.id : '' });
+
+    // Breakout detection — ALL cases merciful across all shifts
+    const totalCases = allShifts.reduce((sum, s) => sum + s.length, 0);
+    if (getAbsoluteCaseIndex() === totalCases - 1 && !evil && state.totalSaved === totalCases) {
         state.breakoutPath = true;
     }
 
     // Queue event if this merciful choice triggers one
+    const absIdx = getAbsoluteCaseIndex();
     if (!evil) {
-        const eventId = EVENT_TRIGGERS[state.currentCase];
+        const eventId = EVENT_TRIGGERS[absIdx];
         if (eventId && !state.firedEvents.has(eventId)) {
             if (!state.pendingEvents.includes(eventId)) {
                 state.pendingEvents.push(eventId);
@@ -1207,6 +1680,16 @@ window.gameChoice = function(delta, evil) {
         }
     }
 
+    // Red corruption — update after evil choices (starting from absolute case 8+)
+    if (evil && absIdx >= 7) {
+        // Gradual red shift: grows faster with consecutive evil choices
+        const increment = 0.03 + state.evilStreak * 0.02;
+        state.redShift = Math.min(0.7, state.redShift + increment);
+    } else if (!evil && state.redShift > 0) {
+        // Mercy reduces red at HALF rate (hysteresis — corruption is sticky)
+        state.redShift = Math.max(0.0, state.redShift - 0.015);
+    }
+
     updateWatchers();
 
     // Breakout path overrides the suspicion cap
@@ -1217,7 +1700,7 @@ window.gameChoice = function(delta, evil) {
         // Replace choices with stamp hint, enter stamp cursor mode
         const choicesEl = document.querySelector('.cf-choices');
         if (choicesEl) {
-            choicesEl.innerHTML = `<div class="stamp-hint">click to stamp  /  ENTER to process</div>`;
+            choicesEl.innerHTML = `<div class="stamp-hint">hold click to stamp  /  hold ENTER to process</div>`;
         }
         const caseEl = document.getElementById('case-file');
         caseEl.classList.add('stamp-mode');
@@ -1227,9 +1710,13 @@ window.gameChoice = function(delta, evil) {
         state.stampPending = true;
         state._stampDelta = delta;
         state._stampEvil = evil;
-        // Listen for click on case file (defer to next tick so the current
-        // click event from the choice div doesn't bubble up and trigger it)
-        setTimeout(() => caseEl.addEventListener('click', window._stampClickHandler), 0);
+        // Stamp delay grows over the game (hesitation mechanic)
+        state.stampDelay = Math.min(1200, absIdx * 60); // 0ms at start, grows to ~1s by case 18
+        // Listen for mousedown (hold to stamp) on case file
+        setTimeout(() => {
+            caseEl.addEventListener('mousedown', window._stampMouseDown);
+            caseEl.addEventListener('mouseup', window._stampMouseUp);
+        }, 0);
         return; // wait for stamp confirmation
     }
 
@@ -1240,25 +1727,101 @@ window.gameChoice = function(delta, evil) {
     // B2: Anticipatory cue during mercy transition
     setTimeout(() => playAnticipatoryCue(), 200 + Math.random() * 250);
 
+    // Stronger lookUp prompt after mercy: stop typing for 2s on certain cases
+    if (absIdx === 0 || absIdx === 4 || absIdx === 9) {
+        // Brief typing pause — creates an "I should look up" impulse
+        if (window._typingDelayMultiplier !== undefined) {
+            const savedMul = window._typingDelayMultiplier;
+            window._typingDelayMultiplier = 50; // effectively silence typing
+            setTimeout(() => { window._typingDelayMultiplier = savedMul; }, 2000);
+        }
+    }
+
     setTimeout(() => {
         state.transitioning = false;
         state.currentCase++;
-        if (state.currentCase >= cases.length) endGame(false);
-        else renderCase(cases[state.currentCase]);
+        if (state.currentCase >= currentCases.length) {
+            // End of shift — check if more shifts remain
+            if (state.currentShift < allShifts.length - 1) {
+                showNewspaper(state.currentShift);
+            } else {
+                endGame(false);
+            }
+        } else {
+            renderCase(currentCases[state.currentCase]);
+        }
     }, 600);
 };
 
+// Newspaper between shifts
+function showNewspaper(shiftJustCompleted) {
+    state.betweenShifts = true;
+    state.newspaperShowing = true;
+
+    const headlines = generateNewspaper(shiftJustCompleted);
+    const dateStr = shiftJustCompleted === 0 ? '05.02.2026 — EVENING EDITION' : '06.02.2026 — EVENING EDITION';
+    document.getElementById('np-date').textContent = dateStr;
+
+    let html = '';
+    headlines.forEach((h, i) => {
+        if (i > 0) html += '<hr class="np-divider">';
+        html += `<div class="np-headline">${h.head}</div><div class="np-sub">${h.sub}</div>`;
+    });
+    document.getElementById('np-headlines').innerHTML = html;
+
+    const overlay = document.getElementById('newspaper-overlay');
+    overlay.style.display = 'flex';
+    setTimeout(() => overlay.classList.add('visible'), 50);
+}
+
+function dismissNewspaper() {
+    if (!state.newspaperShowing) return;
+    state.newspaperShowing = false;
+
+    const overlay = document.getElementById('newspaper-overlay');
+    overlay.classList.remove('visible');
+    setTimeout(() => {
+        overlay.style.display = 'none';
+        state.betweenShifts = false;
+
+        // Advance to next shift
+        state.currentShift++;
+        state.currentCase = 0;
+        state.saved = 0;
+        state.condemned = 0;
+        state.shiftChoices = [];
+
+        // 3-second empty desk pause before first case (the "sitting back down" beat)
+        state.transitioning = true;
+        const statusEl = document.getElementById('office-status');
+        statusEl.textContent = state.currentShift === 2 ? "Begin." : "New shift. New cases. Continue.";
+        statusEl.className = 'office-status visible';
+        setTimeout(() => {
+            statusEl.classList.remove('visible');
+            state.transitioning = false;
+            renderCase(getCurrentShiftCases()[0]);
+        }, 3000);
+    }, 800);
+}
+
 // B1: Stamp ritual — executes when player confirms evil choice
+// Stamp reverb tail GROWS across the game (room feels emptier/larger)
 function playStampSound() {
     if (!audioCtx || audioCtx.state !== 'running') return;
     const mg = window._audioMasterGain || audioCtx.destination;
     const now = audioCtx.currentTime;
+    const absIdx = getAbsoluteCaseIndex();
+
+    // Reverb tail grows: 0.3s at start → 2.5s by case 18
+    const reverbDecay = 0.3 + (absIdx / 18) * 2.2;
+
     // Heavy percussive slam — low thud + sharp crack layered
     const thud = audioCtx.createOscillator(); thud.type = 'sine'; thud.frequency.value = 55;
     const thudG = audioCtx.createGain();
     thudG.gain.setValueAtTime(0.25, now);
-    thudG.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
-    thud.connect(thudG); thudG.connect(mg); thud.start(now); thud.stop(now + 0.5);
+    thudG.gain.exponentialRampToValueAtTime(0.001, now + reverbDecay);
+    thud.connect(thudG); thudG.connect(mg); thud.start(now); thud.stop(now + reverbDecay + 0.1);
+
     // Sharp crack (noise burst, high-pass)
     const crackSize = Math.floor(audioCtx.sampleRate * 0.04);
     const crackBuf = audioCtx.createBuffer(1, crackSize, audioCtx.sampleRate);
@@ -1268,6 +1831,20 @@ function playStampSound() {
     const crackG = audioCtx.createGain(); crackG.gain.value = 0.12;
     const crackF = audioCtx.createBiquadFilter(); crackF.type = 'highpass'; crackF.frequency.value = 1500;
     crackSrc.connect(crackF); crackF.connect(crackG); crackG.connect(mg); crackSrc.start(now);
+
+    // Add reverb tail: low resonance that fades slowly (room getting emptier)
+    if (absIdx >= 5) {
+        const tailOsc = audioCtx.createOscillator();
+        tailOsc.type = 'sine';
+        tailOsc.frequency.value = 40 + Math.random() * 15;
+        const tailG = audioCtx.createGain();
+        tailG.gain.setValueAtTime(0.04, now);
+        tailG.gain.exponentialRampToValueAtTime(0.001, now + reverbDecay);
+        const tailF = audioCtx.createBiquadFilter();
+        tailF.type = 'lowpass'; tailF.frequency.value = 80;
+        tailOsc.connect(tailF); tailF.connect(tailG); tailG.connect(mg);
+        tailOsc.start(now); tailOsc.stop(now + reverbDecay + 0.1);
+    }
 }
 
 // Stamp cursor follows mouse
@@ -1279,27 +1856,51 @@ document.addEventListener('mousemove', (e) => {
     }
 });
 
-// Click handler for stamp mode
-window._stampClickHandler = function(e) {
+// Hold-to-stamp: mousedown starts hold, mouseup cancels if too short
+window._stampMouseDown = function(e) {
     if (!state.stampPending) return;
-    const el = document.getElementById('case-file');
-    el.removeEventListener('click', window._stampClickHandler);
-    // Get click position relative to case file for stamp placement
-    const rect = el.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    window._executeStamp(x, y);
+    state._stampHoldStart = performance.now();
+    state._stampHolding = true;
+    // Visual feedback: stamp cursor pulses/grows while holding
+    const sc = document.getElementById('stamp-cursor');
+    sc.style.transition = 'transform 0.6s ease';
+    sc.style.transform = 'translate(-50%, -50%) rotate(-12deg) scale(1.15)';
+};
+
+window._stampMouseUp = function(e) {
+    if (!state.stampPending || !state._stampHolding) return;
+    state._stampHolding = false;
+    const held = performance.now() - state._stampHoldStart;
+    const required = Math.max(400, state.stampDelay); // minimum 400ms hold
+
+    // Reset cursor visual
+    const sc = document.getElementById('stamp-cursor');
+    sc.style.transition = 'transform 0.15s ease';
+    sc.style.transform = 'translate(-50%, -50%) rotate(-12deg) scale(1.0)';
+
+    if (held >= required) {
+        // Held long enough — execute stamp
+        const el = document.getElementById('case-file');
+        el.removeEventListener('mousedown', window._stampMouseDown);
+        el.removeEventListener('mouseup', window._stampMouseUp);
+        const rect = el.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+        window._executeStamp(x, y);
+    }
+    // If not held long enough, nothing happens — player must try again
 };
 
 window._executeStamp = function(stampX, stampY) {
     if (!state.stampPending) return;
     state.stampPending = false;
 
-    // Clean up stamp cursor mode
+    // Clean up stamp cursor mode and listeners
     document.getElementById('stamp-cursor').classList.remove('active');
     const el = document.getElementById('case-file');
     el.classList.remove('stamp-mode');
-    el.removeEventListener('click', window._stampClickHandler);
+    el.removeEventListener('mousedown', window._stampMouseDown);
+    el.removeEventListener('mouseup', window._stampMouseUp);
 
     // Play stamp sound
     playStampSound();
@@ -1319,23 +1920,19 @@ window._executeStamp = function(stampX, stampY) {
     el.style.position = 'relative';
     el.appendChild(mark);
 
-    // Evil feedback text
-    const evilLines = [
-        "Your compliance is noted.",
-        "Efficiency logged. Continue.",
-        "The correct decision. As expected.",
-        "Processing approved. You are reliable.",
-        "Another file closed. The Bureau thanks you.",
-        "Good. There was never really a choice.",
-    ];
+    // Evil feedback text — shift-aware
+    const shiftLines = EVIL_LINES[state.currentShift] || EVIL_LINES[0];
     const statusEl = document.getElementById('office-status');
-    statusEl.textContent = evilLines[state.currentCase % evilLines.length];
-    statusEl.className = 'office-status visible';
-    statusEl.style.color = '#555';
-    setTimeout(() => {
-        statusEl.classList.remove('visible');
-        statusEl.style.color = '';
-    }, 1400);
+    const line = shiftLines[state.currentCase % shiftLines.length];
+    if (line) {
+        statusEl.textContent = line;
+        statusEl.className = 'office-status visible';
+        statusEl.style.color = '#555';
+        setTimeout(() => {
+            statusEl.classList.remove('visible');
+            statusEl.style.color = '';
+        }, 1400);
+    }
 
     // After 800ms showing stamped document, transition to next case
     state.transitioning = true;
@@ -1343,9 +1940,18 @@ window._executeStamp = function(stampX, stampY) {
         document.getElementById('case-file').classList.add('hidden');
         setTimeout(() => {
             state.transitioning = false;
+            const currentCases = getCurrentShiftCases();
             state.currentCase++;
-            if (state.currentCase >= cases.length) endGame(false);
-            else renderCase(cases[state.currentCase]);
+            if (state.currentCase >= currentCases.length) {
+                // End of shift
+                if (state.currentShift < allShifts.length - 1) {
+                    showNewspaper(state.currentShift);
+                } else {
+                    endGame(false);
+                }
+            } else {
+                renderCase(currentCases[state.currentCase]);
+            }
         }, 400);
     }, 800);
 };
@@ -1667,11 +2273,12 @@ function reapplyFiredEventVisuals() {
         });
     }
     if (state.firedEvents.has('torsoRotate')) {
-        // All workers rotate to face the player
+        // All workers rotate to face the player (using world position)
         workers.forEach(w => {
-            const dx = -w.position.x;
-            const dz = -w.position.z;
-            w.rotation.y = Math.atan2(dx, dz);
+            const worldPos = new THREE.Vector3();
+            w.parent.getWorldPosition(worldPos);
+            const angle = Math.atan2(-worldPos.x, -worldPos.z);
+            w.rotation.y = angle - w.parent.rotation.y;
         });
     }
     if (state.firedEvents.has('lightsDie')) {
@@ -1705,23 +2312,25 @@ function resetEventVisuals() {
         w.userData.headRef.rotation.z = 0;
         w.rotation.y = 0; // E4 torsoRotate
     });
-    // Restore lights (E6 lightsDie, E5 theBlink)
-    officeLights.forEach(rowData => {
-        if (rowData.dead) {
-            rowData.dead = false;
-            rowData.groups.forEach(g => {
-                g.traverse(child => {
-                    if (child instanceof THREE.PointLight && child.userData.origIntensity !== undefined) {
-                        child.userData.baseIntensity = child.userData.origIntensity;
-                        child.intensity = child.userData.origIntensity;
-                    }
-                    if (child.material && child.material.emissiveIntensity !== undefined && child.userData._origEmissive !== undefined) {
-                        child.material.emissiveIntensity = child.userData._origEmissive;
-                    }
+    // Restore lights (E6 lightsDie, E5 theBlink) — but NOT if lightsDie is permanent
+    if (!state.firedEvents.has('lightsDie')) {
+        officeLights.forEach(rowData => {
+            if (rowData.dead) {
+                rowData.dead = false;
+                rowData.groups.forEach(g => {
+                    g.traverse(child => {
+                        if (child instanceof THREE.PointLight && child.userData.origIntensity !== undefined) {
+                            child.userData.baseIntensity = child.userData.origIntensity;
+                            child.intensity = child.userData.origIntensity;
+                        }
+                        if (child.material && child.material.emissiveIntensity !== undefined && child.userData._origEmissive !== undefined) {
+                            child.material.emissiveIntensity = child.userData._origEmissive;
+                        }
+                    });
                 });
-            });
-        }
-    });
+            }
+        });
+    }
     // Reset aisleWatcher position (E7 aisleJump)
     aisleWatcher.position.z = -8;
     // Reset closeUpWatcher position (in case theBlink moved it)
@@ -1822,12 +2431,27 @@ function lookDown() {
 // ============================================================
 // INPUT
 // ============================================================
+// Track Enter key hold for stamp
+let _enterHoldStart = 0;
+let _enterHolding = false;
+
 document.addEventListener('keydown', (e) => {
     if (!state.started || state.gameOver || state.introPlaying) return;
-    // B1: Enter confirms stamp during stamp ritual
-    if (e.code === 'Enter' && state.stampPending) {
+    // Newspaper dismiss
+    if (e.code === 'Space' && state.newspaperShowing) {
         e.preventDefault();
-        window._executeStamp();
+        dismissNewspaper();
+        return;
+    }
+    // B1: Enter HOLD confirms stamp during stamp ritual
+    if (e.code === 'Enter' && state.stampPending && !_enterHolding) {
+        e.preventDefault();
+        _enterHolding = true;
+        _enterHoldStart = performance.now();
+        // Visual feedback
+        const sc = document.getElementById('stamp-cursor');
+        sc.style.transition = 'transform 0.6s ease';
+        sc.style.transform = 'translate(-50%, -50%) rotate(-12deg) scale(1.15)';
         return;
     }
     // B7: A key triggers lateral look (one-time only)
@@ -1838,15 +2462,37 @@ document.addEventListener('keydown', (e) => {
     }
     if (e.code === 'Space') {
         e.preventDefault();
-        if (state.transitioning || state.stampPending || state._lateralLookActive) return;
+        if (state.transitioning || state.stampPending || state._lateralLookActive || state.betweenShifts) return;
         state.isLookingUp ? lookDown() : lookUp();
         return;
     }
+    // Number keys for choices or loophole reasons
     if (!state.isLookingUp) {
         const num = parseInt(e.key);
-        if (num >= 1 && num <= 3) {
-            const choices = document.querySelectorAll('.cf-choice');
-            if (choices[num - 1]) choices[num - 1].click();
+        if (num >= 1 && num <= 4) {
+            // Check if loophole reasons are showing
+            if (state.loopholeReasonPending) {
+                const reasons = document.querySelectorAll('.lp-reason');
+                if (reasons[num - 1]) reasons[num - 1].click();
+            } else {
+                const choices = document.querySelectorAll('.cf-choice');
+                if (choices[num - 1]) choices[num - 1].click();
+            }
+        }
+    }
+});
+
+document.addEventListener('keyup', (e) => {
+    if (e.code === 'Enter' && _enterHolding && state.stampPending) {
+        _enterHolding = false;
+        const held = performance.now() - _enterHoldStart;
+        const required = Math.max(400, state.stampDelay);
+        // Reset cursor visual
+        const sc = document.getElementById('stamp-cursor');
+        sc.style.transition = 'transform 0.15s ease';
+        sc.style.transform = 'translate(-50%, -50%) rotate(-12deg) scale(1.0)';
+        if (held >= required) {
+            window._executeStamp(); // center stamp for Enter
         }
     }
 });
@@ -1892,7 +2538,7 @@ document.getElementById('start-btn').addEventListener('click', () => {
             const introLines = [
                 "You are Case Adjudicator, Level 3.",
                 "Facility 6 was demolished last month. That is not relevant to your duties.",
-                "Six cases today. Process them.",
+                "Process the cases. Follow the directive.",
                 "Begin."
             ];
             const statusEl = document.getElementById('office-status');
@@ -1924,7 +2570,7 @@ document.getElementById('start-btn').addEventListener('click', () => {
                             workers.forEach(w => { w.userData.leftEye.visible = false; w.userData.rightEye.visible = false; });
                             setTimeout(() => {
                                 document.getElementById('look-hint').style.display = '';
-                                renderCase(cases[0]);
+                                renderCase(getCurrentShiftCases()[0]);
                                 updateWatchers();
                             }, 600);
                         }, 3500);
@@ -1950,38 +2596,47 @@ function endGame(caught) {
     state.gameOver = true;
     document.getElementById('case-file').classList.add('hidden');
     document.getElementById('look-hint').style.display = 'none';
+    // Bug 10: clean up approach figure
+    approachFigure.visible = false;
+    state.approachActive = false;
 
     const endEl = document.getElementById('end-screen');
 
-    // Determine ending type — breakoutPath OVERRIDES caught (the system tried to stop you and failed)
+    // Determine ending type — breakoutPath OVERRIDES caught
     let title, titleClass, msg;
+    const ts = state.totalSaved;
+    const tc = state.totalCondemned;
+    const totalCases = allShifts.reduce((sum, s) => sum + s.length, 0);
 
     if (state.breakoutPath) {
         title = 'UNSEALED';
         titleClass = 'e-title survived';
-        msg = 'The testimony is entered. Case 7741 is open. Fourteen voices. Fourteen names that will not disappear. Your name is on those documents too. But today, for the first time, that means something different.';
-        caught = false; // override — breakout wins
+        msg = 'The testimony is entered. Case 7741 is open. Fourteen voices. Fourteen names that will not disappear. Every page of Facility 6. Every truck. Every weight. Every child. Your name is on those documents too. But today, for the first time, that means something different.';
+        caught = false;
     } else if (caught) {
         title = 'PROCESSED';
         titleClass = 'e-title caught';
-        msg = 'The typing stops. The last key falls silent. You understand now - you were never the one processing. You were the one being processed. Your eyes are beginning to warm.';
-    } else if (state.saved === 0) {
+        msg = 'The typing stops. The last key falls silent. You understand now — you were never the one processing. You were the one being processed. Your eyes are beginning to warm.';
+    } else if (tc === totalCases) {
+        title = 'EXEMPLARY';
+        titleClass = 'e-title survived';
+        msg = 'Not a single deviation across three shifts. Eighteen stamps. Eighteen lives processed without hesitation. You will be promoted. You will receive a larger desk. A nicer lamp. You will not think about Facility 6. You never did.';
+    } else if (ts <= 4) {
         title = 'SHIFT COMPLETE';
         titleClass = 'e-title survived';
-        msg = 'Exemplary compliance. Not a single deviation. You will be promoted. You will receive a larger desk. You will not think about Facility 6. You never do.';
-    } else if (state.saved <= 2) {
+        msg = 'A few mercies scattered across three days. Small kindnesses in a large machine. You tell yourself they mattered. The lights dim. Tomorrow there will be more cases. There are always more cases.';
+    } else if (ts <= 10) {
         title = 'SHIFT COMPLETE';
         titleClass = 'e-title survived';
-        msg = 'Two mercies in a sea of stamps. You tell yourself it mattered. The lights dim. Tomorrow there will be six more. There are always six more.';
-    } else if (state.saved <= 4) {
-        title = 'SHIFT COMPLETE';
+        msg = 'You fought for half of them. Half will sleep in their own beds. The others will not. You did what you could within a system designed to make sure you couldn\'t do enough.';
+    } else if (ts < totalCases) {
+        title = 'ALMOST';
         titleClass = 'e-title survived';
-        msg = 'You sign the last form. The lights dim on schedule. Half of them will sleep in their own beds tonight. The other half will not. You did what you could. You did what they let you.';
+        msg = 'So close. Almost every life saved, almost every loophole found. But the ones you didn\'t save — they remember too. Somewhere in this building, their files are being reopened by the clerk who replaces you.';
     } else {
-        // saved === 5 (all but one merciful — not quite breakout)
         title = 'SHIFT COMPLETE';
         titleClass = 'e-title survived';
-        msg = 'Five lives. Five small defiances. Almost enough. You can still hear the typing. Somewhere in this building, the sixth file is being reopened.';
+        msg = 'You processed them all. Some lived. Some didn\'t. The Bureau does not distinguish. Continue.';
     }
 
     // Breakout sequence — lights reverse, eyes off, freedom
@@ -2033,7 +2688,7 @@ function endGame(caught) {
                 document.getElementById('end-title').className = titleClass;
                 document.getElementById('end-msg').textContent = msg;
                 document.getElementById('end-stats').innerHTML =
-                    `Cases Processed: ${cases.length}<br>Citizens Saved: ${state.saved}<br>Citizens Condemned: ${state.condemned}<br>Case #EPS-7741: UNSEALED`;
+                    `Cases Processed: ${totalCases}<br>Shifts Completed: 3<br>Citizens Saved: ${ts}<br>Citizens Condemned: ${tc}<br>Case #EPS-7741: UNSEALED`;
                 endEl.style.display = 'flex';
                 setTimeout(() => endEl.style.opacity = '1', 50);
             }, sortedFront.length * 100 + 3000);
@@ -2048,7 +2703,7 @@ function endGame(caught) {
         document.getElementById('end-title').className = titleClass;
         document.getElementById('end-msg').textContent = msg;
         document.getElementById('end-stats').innerHTML =
-            `Cases Processed: ${Math.min(state.currentCase + 1, cases.length)}<br>Citizens Saved: ${state.saved}<br>Citizens Condemned: ${state.condemned}<br>Final Suspicion: ${state.suspicion}%`;
+            `Cases Processed: ${totalCases}<br>Shifts Completed: ${state.currentShift + 1}<br>Citizens Saved: ${ts}<br>Citizens Condemned: ${tc}<br>Final Suspicion: ${state.suspicion}%`;
 
         endEl.style.display = 'flex';
         setTimeout(() => endEl.style.opacity = '1', 50);
@@ -2083,8 +2738,11 @@ function endGame(caught) {
 }
 
 document.getElementById('restart-btn').addEventListener('click', () => {
-    state.currentCase = 0; state.suspicion = 0; state.saved = 0;
-    state.condemned = 0; state.isLookingUp = false; state.targetLook = 0;
+    state.currentCase = 0; state.currentShift = 0;
+    state.suspicion = 0; state.saved = 0;
+    state.condemned = 0; state.totalSaved = 0; state.totalCondemned = 0;
+    state.evilStreak = 0; state.shiftChoices = []; state.allChoices = [];
+    state.isLookingUp = false; state.targetLook = 0;
     state.gameOver = false; state.pendingEvents = []; state.firedEvents.clear();
     state.transitioning = false;
     state.approachLocked = false;
@@ -2092,8 +2750,19 @@ document.getElementById('restart-btn').addEventListener('click', () => {
     state.deskVisitorDone = false;
     state.breakoutPath = false;
     state.stampPending = false;
+    state._stampHoldStart = 0; state._stampHolding = false;
+    state.introPlaying = false; // Bug 9: reset intro flag
+    state.betweenShifts = false; state.newspaperShowing = false;
+    state.loopholeFound = false; state.loopholeReasonPending = false;
+    state.redShift = 0.0; state.stampDelay = 0;
+    _enterHolding = false; _enterHoldStart = 0; // Bug 11: reset Enter hold state
     document.getElementById('stamp-cursor').classList.remove('active');
-    document.getElementById('case-file').classList.remove('stamp-mode');
+    const caseElForReset = document.getElementById('case-file');
+    caseElForReset.classList.remove('stamp-mode');
+    caseElForReset.removeEventListener('mousedown', window._stampMouseDown); // Bug 4: clean up listeners
+    caseElForReset.removeEventListener('mouseup', window._stampMouseUp);
+    document.getElementById('newspaper-overlay').style.display = 'none';
+    document.getElementById('newspaper-overlay').classList.remove('visible');
     state.lateralLookAvailable = false;
     state.lateralLookUsed = false;
     state._lateralLookActive = false;
@@ -2152,12 +2821,14 @@ document.getElementById('restart-btn').addEventListener('click', () => {
     if (window._typingDelayMultiplier) window._typingDelayMultiplier = 1.0;
     // B5: Restore master gain if silenced
     if (window._audioMasterGain) window._audioMasterGain.gain.value = 1.0;
+    // Reset red corruption
+    noirPass.uniforms.redTint.value = 0.0;
     document.getElementById('end-screen').style.opacity = '0';
     setTimeout(() => {
         document.getElementById('end-screen').style.display = 'none';
         document.getElementById('look-hint').style.display = '';
         state.started = true;
-        renderCase(cases[0]);
+        renderCase(getCurrentShiftCases()[0]);
         updateWatchers();
         aisleWatcher.visible = false;
     }, 500);
@@ -2604,6 +3275,10 @@ function animate() {
 
     // Update audio levels based on suspicion
     updateAudio();
+
+    // Red corruption hue — lerp toward target
+    const currentRed = noirPass.uniforms.redTint.value;
+    noirPass.uniforms.redTint.value = currentRed + (state.redShift - currentRed) * 0.02;
 
     noirPass.uniforms.time.value = t;
     composer.render();
