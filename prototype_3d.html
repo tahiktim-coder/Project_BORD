@@ -233,6 +233,190 @@
             color: #8b0000; border-bottom: 1px solid #8b0000;
         }
 
+        /* Case file entrance animation */
+        @keyframes caseArrive {
+            0% { opacity: 0; transform: translate(-50%, -35%) scale(0.97); }
+            40% { opacity: 0.7; }
+            70% { transform: translate(-50%, -45.5%); }
+            100% { opacity: 1; transform: translate(-50%, -45%); }
+        }
+        @keyframes caseArriveFast {
+            0% { opacity: 0; transform: translate(-50%, -36%) scale(0.98) rotate(0.5deg); }
+            50% { opacity: 0.8; }
+            100% { opacity: 1; transform: translate(-50%, -45%); }
+        }
+        @keyframes caseArriveUrgent {
+            0% { opacity: 0; transform: translate(-65%, -45%) rotate(-1deg); }
+            60% { opacity: 0.9; }
+            100% { opacity: 1; transform: translate(-50%, -45%); }
+        }
+        #case-file.case-enter {
+            animation: caseArrive 450ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        #case-file.case-enter-fast {
+            animation: caseArriveFast 300ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        #case-file.case-enter-urgent {
+            animation: caseArriveUrgent 200ms linear forwards;
+        }
+
+        /* Mercy dismiss — paper slides off to the right */
+        #case-file.mercy-dismiss {
+            opacity: 0;
+            transform: translate(40%, -45%) rotate(3deg);
+            transition: opacity 0.5s cubic-bezier(0.55, 0.06, 0.68, 0.19),
+                        transform 0.5s cubic-bezier(0.55, 0.06, 0.68, 0.19);
+            pointer-events: none;
+        }
+
+        /* Stamp recoil animation */
+        @keyframes stampRecoil {
+            0% { transform: translate(-50%, -45%); }
+            15% { transform: translate(-50%, -44.5%) scaleY(0.995); }
+            35% { transform: translate(-50%, -45.3%) scaleY(1.003); }
+            100% { transform: translate(-50%, -45%); }
+        }
+        #case-file.stamp-impact {
+            animation: stampRecoil 300ms cubic-bezier(0.36, 0, 0.66, -0.56) forwards;
+        }
+
+        /* Stamp mark slam animation */
+        @keyframes stampSlam {
+            0% { transform: translate(-50%, -50%) rotate(-12deg) scale(1.6); opacity: 0; }
+            60% { transform: translate(-50%, -50%) rotate(-12deg) scale(0.92); opacity: 1; }
+            100% { transform: translate(-50%, -50%) rotate(-12deg) scale(1.0); opacity: 1; }
+        }
+        #stamp-mark.visible {
+            display: block;
+            animation: stampSlam 180ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        /* Newspaper slam animation */
+        @keyframes newspaperDrop {
+            0% { transform: translateY(-60px) scale(0.95); opacity: 0; }
+            75% { transform: translateY(5px) scale(1.005); opacity: 1; }
+            100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        .np-paper.np-slam {
+            animation: newspaperDrop 500ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        /* Headline stagger */
+        @keyframes headlineReveal {
+            0% { opacity: 0; transform: translateY(5px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        .np-headline, .np-sub, .np-divider {
+            opacity: 0;
+        }
+        #newspaper-overlay.visible .np-headline,
+        #newspaper-overlay.visible .np-sub,
+        #newspaper-overlay.visible .np-divider {
+            animation: headlineReveal 400ms ease forwards;
+        }
+
+        /* Irregularity glow pulse */
+        @keyframes irregularityPulse {
+            0% { background: rgba(139,0,0,0.3); text-shadow: 0 0 8px rgba(139,0,0,0.5); }
+            100% { background: transparent; text-shadow: none; }
+        }
+        .cf-irregularity.found {
+            color: #8b0000; border-bottom: 1px solid #8b0000;
+            animation: irregularityPulse 600ms ease forwards;
+        }
+
+        /* Irregularity hint pulse (after 4s on loophole cases) */
+        @keyframes irregularityHintPulse {
+            0%, 100% { border-bottom-color: transparent; }
+            50% { border-bottom-color: rgba(139,0,0,0.2); }
+        }
+        .cf-irregularity.hinting {
+            animation: irregularityHintPulse 2s ease infinite;
+        }
+
+        /* Differentiated choice hover */
+        .cf-choice[data-evil="true"]:hover {
+            background: rgba(80,0,0,0.18); border-color: rgba(139,0,0,0.35);
+            box-shadow: inset 0 0 8px rgba(80,0,0,0.08);
+            transition: all 0.2s ease;
+        }
+        .cf-choice[data-evil="false"]:hover {
+            background: rgba(200,200,180,0.15); border-color: rgba(100,100,80,0.2);
+            transition: all 0.12s ease;
+        }
+
+        /* Loophole reason stagger */
+        @keyframes reasonAppear {
+            0% { opacity: 0; transform: translateX(-8px); }
+            100% { opacity: 1; transform: translateX(0); }
+        }
+        .lp-reason {
+            opacity: 0;
+            animation: reasonAppear 200ms ease forwards;
+        }
+        .lp-reason:nth-child(2) { animation-delay: 80ms; }
+        .lp-reason:nth-child(3) { animation-delay: 160ms; }
+        .lp-reason:nth-child(4) { animation-delay: 240ms; }
+        .lp-reason:nth-child(5) { animation-delay: 320ms; }
+
+        /* Stamp cursor shake (shift 2+) */
+        @keyframes stampShake {
+            0%, 100% { transform: translate(-50%, -50%) rotate(-12deg) scale(1.15); }
+            25% { transform: translate(-49%, -51%) rotate(-13deg) scale(1.15); }
+            75% { transform: translate(-51%, -49%) rotate(-11deg) scale(1.15); }
+        }
+        #stamp-cursor.shaking {
+            animation: stampShake 200ms ease infinite;
+        }
+
+        /* Typewriter cursor blink for detail text */
+        @keyframes cursorBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        .tw-cursor {
+            display: inline-block;
+            width: 6px; height: 11px;
+            background: #555;
+            animation: cursorBlink 530ms step-end infinite;
+            vertical-align: baseline;
+            margin-left: 1px;
+        }
+
+        /* Choices initially hidden, fade in after detail reveal */
+        .cf-choices.choices-hidden {
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .cf-choices.choices-visible {
+            opacity: 1; pointer-events: auto;
+        }
+
+        /* End title slam animation */
+        @keyframes titleSlam {
+            0% { transform: scale(2.5); opacity: 0; }
+            100% { transform: scale(1.0); opacity: 1; }
+        }
+        .e-title.caught {
+            color:#8b0000; text-shadow:0 0 40px rgba(139,0,0,0.5);
+            animation: titleSlam 250ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        /* Shift 3 paper degradation */
+        #case-file.shift3-degraded {
+            background: rgba(215, 212, 205, 0.88);
+        }
+        #case-file.shift3-late {
+            background: rgba(225, 222, 218, 0.85);
+        }
+        #case-file.shift3-blank {
+            background: rgba(235, 233, 230, 0.5);
+        }
+        #case-file.shift3-final {
+            background: rgba(245, 245, 245, 0.9);
+            color: #555;
+        }
+
         /* Vignette */
         #vignette {
             position:fixed; top:0; left:0; width:100%; height:100%;
@@ -417,6 +601,7 @@ const state = {
     redShift: 0.0,             // current red tint (0.0 to 0.7 max)
     // Stamp delay (grows over game)
     stampDelay: 0,             // ms delay before stamp activates (grows per case)
+    _gameEpoch: 0,            // incremented on restart, guards stale endGame timeouts
 };
 
 // ============================================================
@@ -959,6 +1144,205 @@ function getMemoDirective() {
     return shiftDirs[Math.min(state.currentCase, shiftDirs.length - 1)] || '.';
 }
 
+// ============================================================
+// JUICE: Sound helpers + typewriter system
+// ============================================================
+
+// Paper placement sound — sine thud at 80Hz + high-pass noise burst
+function playPaperPlace() {
+    if (!audioCtx || audioCtx.state !== 'running') return;
+    const mg = window._audioMasterGain || audioCtx.destination;
+    const now = audioCtx.currentTime;
+    // Low thud (paper hitting desk)
+    const osc = audioCtx.createOscillator(); osc.type = 'sine'; osc.frequency.value = 80;
+    const g = audioCtx.createGain();
+    g.gain.setValueAtTime(0.06, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+    osc.connect(g); g.connect(mg); osc.start(now); osc.stop(now + 0.2);
+    // High noise (paper friction)
+    setTimeout(() => {
+        const size = Math.floor(audioCtx.sampleRate * 0.06);
+        const buf = audioCtx.createBuffer(1, size, audioCtx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < size; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (size * 0.15));
+        const src = audioCtx.createBufferSource(); src.buffer = buf;
+        const f = audioCtx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 2500;
+        const ng = audioCtx.createGain(); ng.gain.value = 0.03;
+        src.connect(f); f.connect(ng); ng.connect(mg); src.start(audioCtx.currentTime);
+    }, 20);
+}
+
+// Mercy dismiss sound — two staggered paper rustle bursts
+function playMercySound() {
+    if (!audioCtx || audioCtx.state !== 'running') return;
+    const mg = window._audioMasterGain || audioCtx.destination;
+    for (let burst = 0; burst < 2; burst++) {
+        setTimeout(() => {
+            const now = audioCtx.currentTime;
+            const dur = 0.15 + Math.random() * 0.1;
+            const size = Math.floor(audioCtx.sampleRate * dur);
+            const buf = audioCtx.createBuffer(1, size, audioCtx.sampleRate);
+            const d = buf.getChannelData(0);
+            for (let i = 0; i < size; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (size * 0.3));
+            const src = audioCtx.createBufferSource(); src.buffer = buf;
+            const f = audioCtx.createBiquadFilter(); f.type = 'highpass';
+            f.frequency.value = 1800 + Math.random() * 2000;
+            const g = audioCtx.createGain(); g.gain.value = 0.05 + Math.random() * 0.03;
+            src.connect(f); f.connect(g); g.connect(mg); src.start(now);
+        }, burst * 80);
+    }
+}
+
+// Chair creak sound — for look up/down transitions
+function playChairCreak() {
+    if (!audioCtx || audioCtx.state !== 'running') return;
+    const mg = window._audioMasterGain || audioCtx.destination;
+    const now = audioCtx.currentTime;
+    const dur = 0.25 + Math.random() * 0.15;
+    const size = Math.floor(audioCtx.sampleRate * dur);
+    const buf = audioCtx.createBuffer(1, size, audioCtx.sampleRate);
+    const d = buf.getChannelData(0);
+    const freq = 200 + Math.random() * 150;
+    for (let i = 0; i < size; i++) {
+        const t = i / audioCtx.sampleRate;
+        d[i] = Math.sin(t * freq * 6.28) * (Math.random() * 0.3 + 0.7) * Math.exp(-t * 6) * 0.5;
+    }
+    const src = audioCtx.createBufferSource(); src.buffer = buf;
+    const f = audioCtx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 250; f.Q.value = 4;
+    const g = audioCtx.createGain(); g.gain.value = 0.07;
+    src.connect(f); f.connect(g); g.connect(mg); src.start(now);
+}
+
+// Loophole discovery sound — lock tumbler click + warm resonance
+function playLoopholeDiscovery() {
+    if (!audioCtx || audioCtx.state !== 'running') return;
+    const mg = window._audioMasterGain || audioCtx.destination;
+    const now = audioCtx.currentTime;
+    // Click (lock tumbler)
+    const clickOsc = audioCtx.createOscillator(); clickOsc.type = 'sine'; clickOsc.frequency.value = 1200;
+    const clickG = audioCtx.createGain();
+    clickG.gain.setValueAtTime(0.1, now);
+    clickG.gain.exponentialRampToValueAtTime(0.001, now + 0.015);
+    clickOsc.connect(clickG); clickG.connect(mg); clickOsc.start(now); clickOsc.stop(now + 0.02);
+    // Warm resonance (major third)
+    const o1 = audioCtx.createOscillator(); o1.type = 'sine'; o1.frequency.value = 440;
+    const o2 = audioCtx.createOscillator(); o2.type = 'sine'; o2.frequency.value = 554;
+    const rg = audioCtx.createGain();
+    rg.gain.setValueAtTime(0.0, now + 0.015);
+    rg.gain.linearRampToValueAtTime(0.06, now + 0.075);
+    rg.gain.exponentialRampToValueAtTime(0.001, now + 0.575);
+    o1.connect(rg); o2.connect(rg); rg.connect(mg);
+    o1.start(now + 0.015); o2.start(now + 0.015);
+    o1.stop(now + 0.6); o2.stop(now + 0.6);
+}
+
+// Wrong loophole sound — dissonant buzz
+function playLoopholeWrong() {
+    if (!audioCtx || audioCtx.state !== 'running') return;
+    const mg = window._audioMasterGain || audioCtx.destination;
+    const now = audioCtx.currentTime;
+    const o1 = audioCtx.createOscillator(); o1.type = 'square'; o1.frequency.value = 110;
+    const o2 = audioCtx.createOscillator(); o2.type = 'square'; o2.frequency.value = 117;
+    const g = audioCtx.createGain();
+    g.gain.setValueAtTime(0.08, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+    o1.connect(g); o2.connect(g); g.connect(mg);
+    o1.start(now); o2.start(now); o1.stop(now + 0.4); o2.stop(now + 0.4);
+}
+
+// Newspaper landing sound — slap + crinkle
+function playNewspaperLand() {
+    if (!audioCtx || audioCtx.state !== 'running') return;
+    const mg = window._audioMasterGain || audioCtx.destination;
+    const now = audioCtx.currentTime;
+    // Slap
+    const osc = audioCtx.createOscillator(); osc.type = 'sine'; osc.frequency.value = 65;
+    const g = audioCtx.createGain();
+    g.gain.setValueAtTime(0.12, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+    osc.connect(g); g.connect(mg); osc.start(now); osc.stop(now + 0.25);
+    // Crinkle
+    const size = Math.floor(audioCtx.sampleRate * 0.1);
+    const buf = audioCtx.createBuffer(1, size, audioCtx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < size; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (size * 0.2));
+    const src = audioCtx.createBufferSource(); src.buffer = buf;
+    const f = audioCtx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 1500;
+    const ng = audioCtx.createGain(); ng.gain.value = 0.06;
+    src.connect(f); f.connect(ng); ng.connect(mg); src.start(now);
+}
+
+// Typewriter text reveal — types the detail field character by character
+let _typewriterTimer = null;
+function typewriterReveal(element, text, onComplete) {
+    if (_typewriterTimer) clearTimeout(_typewriterTimer);
+    element.textContent = '';
+    const cursor = document.createElement('span');
+    cursor.className = 'tw-cursor';
+    element.appendChild(cursor);
+
+    // Shift 3 corruption: replace ~5% of characters
+    let displayText = text;
+    if (state.currentShift === 2) {
+        const corruption = state.currentCase / 7;
+        displayText = text.split('').map(ch => {
+            if (ch === ' ' || ch === '.') return ch;
+            if (Math.random() < 0.03 * (1 + corruption)) {
+                const glitchChars = ['_', '.', ' ', '\u2588', '-'];
+                return glitchChars[Math.floor(Math.random() * glitchChars.length)];
+            }
+            return ch;
+        }).join('');
+    }
+
+    let i = 0;
+    function typeNext() {
+        if (i >= displayText.length) {
+            cursor.remove();
+            if (onComplete) onComplete();
+            return;
+        }
+        const ch = displayText[i];
+        element.insertBefore(document.createTextNode(ch), cursor);
+        i++;
+
+        // Variable timing
+        let delay;
+        if (ch === '.') delay = 180 + Math.random() * 60;
+        else if (ch === ',') delay = 100 + Math.random() * 40;
+        else if (ch === '—' || ch === '-') delay = 120;
+        else delay = 28 + Math.random() * 17;
+
+        // Occasional typing sound (40% chance)
+        if (Math.random() < 0.4 && audioCtx && audioCtx.state === 'running') {
+            const mg = window._audioMasterGain || audioCtx.destination;
+            const now = audioCtx.currentTime;
+            const s = Math.floor(audioCtx.sampleRate * 0.008);
+            const b = audioCtx.createBuffer(1, s, audioCtx.sampleRate);
+            const d = b.getChannelData(0);
+            for (let j = 0; j < s; j++) d[j] = (Math.random() * 2 - 1) * Math.exp(-j / (s * 0.15));
+            const src = audioCtx.createBufferSource(); src.buffer = b;
+            const bf = audioCtx.createBiquadFilter(); bf.type = 'bandpass';
+            bf.frequency.value = 1200 + Math.random() * 800; bf.Q.value = 2;
+            const g = audioCtx.createGain(); g.gain.value = 0.015;
+            src.connect(bf); bf.connect(g); g.connect(mg); src.start(now);
+        }
+
+        _typewriterTimer = setTimeout(typeNext, delay);
+    }
+    typeNext();
+}
+
+// Mercy echo text — shown after mercy choices (parallel to EVIL_LINES)
+const MERCY_ECHOES = [
+    // Shift 1
+    ["Noted.", "The file is gone.", "Noted.", "Noted.", "Noted."],
+    // Shift 2
+    ["They noticed.", "They noticed.", "They noticed.", "They noticed.", "They noticed.", "They noticed."],
+    // Shift 3
+    ["", "", "", "", "", "", ""],
+];
+
 // Player's monitor
 const monGroup = new THREE.Group();
 const monBody = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.4, 0.35), monitorMat);
@@ -1497,6 +1881,20 @@ function renderCase(c) {
 
     const el = document.getElementById('case-file');
 
+    // Clear previous animation classes and shift styles
+    el.classList.remove('hidden', 'mercy-dismiss', 'case-enter', 'case-enter-fast', 'case-enter-urgent',
+        'stamp-impact', 'shift3-degraded', 'shift3-late', 'shift3-blank', 'shift3-final');
+    el.style.background = '';
+    el.style.color = '';
+
+    // Shift 3 visual degradation
+    if (state.currentShift === 2) {
+        if (state.currentCase >= 5) el.classList.add('shift3-final');
+        else if (state.currentCase === 4) el.classList.add('shift3-blank');
+        else if (state.currentCase >= 2) el.classList.add('shift3-late');
+        else el.classList.add('shift3-degraded');
+    }
+
     // Build case file content — with clickable irregularity if this case has one
     let idText = c.id;
     let dateText = c.date;
@@ -1511,12 +1909,10 @@ function renderCase(c) {
         if (irr.field === 'id') {
             idText = `<span class="cf-irregularity" onclick="window.foundIrregularity(this)">${c.id}</span>`;
         } else if (irr.field === 'date') {
-            // Show the "wrong" date that the player should notice
             dateText = `<span class="cf-irregularity" onclick="window.foundIrregularity(this)">${irr.display}</span>`;
         } else if (irr.field === 'occupation') {
             occupationText = `<span class="cf-irregularity" onclick="window.foundIrregularity(this)">${c.occupation}</span>`;
         } else if (irr.field === 'allegation') {
-            // Wrap the specific text within the allegation
             allegationText = c.allegation.replace(irr.text, `<span class="cf-irregularity" onclick="window.foundIrregularity(this)">${irr.text}</span>`);
         }
     }
@@ -1527,11 +1923,11 @@ function renderCase(c) {
         <div class="cf-line"><span class="cf-label">Name:</span> ${nameText}</div>
         <div class="cf-line"><span class="cf-label">Occupation:</span> ${occupationText}</div>
         <div class="cf-line"><span class="cf-label">Allegation:</span> ${allegationText}</div>
-        <div class="cf-detail">${c.detail}</div>
-        <div class="cf-choices">
+        <div class="cf-detail" id="cf-detail-text"></div>
+        <div class="cf-choices choices-hidden">
             <div class="cf-section">Adjudication Options</div>
             ${c.choices.map(ch => `
-                <div class="cf-choice" onclick="window.gameChoice(${ch.delta}, ${ch.evil})">
+                <div class="cf-choice" data-evil="${ch.evil}" onclick="window.gameChoice(${ch.delta}, ${ch.evil})">
                     <span class="cf-choice-num">${ch.num}.</span>
                     <div>
                         <div class="cf-choice-main">${ch.main}</div>
@@ -1542,7 +1938,42 @@ function renderCase(c) {
         </div>
         <div class="cf-process">FILE ${c.id} - CLASSIFICATION: RESTRICTED</div>
     `;
-    el.classList.remove('hidden');
+
+    // Entrance animation — shift-aware
+    void el.offsetWidth; // force reflow
+    if (state.currentShift === 2) el.classList.add('case-enter-urgent');
+    else if (state.currentShift === 1) el.classList.add('case-enter-fast');
+    else el.classList.add('case-enter');
+
+    // Silence before the final case of each shift (dramatic weight)
+    const shiftCases = getCurrentShiftCases();
+    const absIdx = getAbsoluteCaseIndex();
+    if (state.currentCase === shiftCases.length - 1 && absIdx > 0) {
+        audioSilence(absIdx === 17 ? 3000 : 1500); // longest silence before THE final case
+    }
+
+    // Paper placement sound
+    playPaperPlace();
+
+    // Typewriter reveal for the detail text, then show choices
+    const detailEl = document.getElementById('cf-detail-text');
+    const choicesEl = document.querySelector('.cf-choices');
+
+    typewriterReveal(detailEl, c.detail, () => {
+        // Choices fade in after detail is fully typed
+        choicesEl.classList.remove('choices-hidden');
+        choicesEl.classList.add('choices-visible');
+    });
+
+    // Irregularity hint: after 4s, subtly pulse the clickable text
+    if (hasIrregularity && getAbsoluteCaseIndex() > 1) {
+        setTimeout(() => {
+            const irrEl = el.querySelector('.cf-irregularity');
+            if (irrEl && !irrEl.classList.contains('found')) {
+                irrEl.classList.add('hinting');
+            }
+        }, 4000);
+    }
 
     // B7: Enable lateral look after case 3 of shift 1 (absolute case index 3)
     if (getAbsoluteCaseIndex() === 3 && !state.lateralLookUsed) {
@@ -1556,21 +1987,18 @@ window.foundIrregularity = function(el) {
     if (state.loopholeFound || state.stampPending || state.transitioning) return;
     state.loopholeFound = true;
 
-    // Highlight the found irregularity
+    // Highlight the found irregularity (CSS animation handles glow pulse)
+    el.classList.remove('hinting');
     el.classList.add('found');
 
-    // Play a subtle "paper flip" sound
-    if (audioCtx && audioCtx.state === 'running') {
-        const now = audioCtx.currentTime;
-        const size = Math.floor(audioCtx.sampleRate * 0.06);
-        const buf = audioCtx.createBuffer(1, size, audioCtx.sampleRate);
-        const d = buf.getChannelData(0);
-        for (let i = 0; i < size; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (size * 0.15));
-        const src = audioCtx.createBufferSource(); src.buffer = buf;
-        const g = audioCtx.createGain(); g.gain.value = 0.04;
-        const f = audioCtx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 3000;
-        src.connect(f); f.connect(g); g.connect(window._audioMasterGain || audioCtx.destination);
-        src.start(now);
+    // Play discovery sound — lock tumbler click + warm resonance
+    playLoopholeDiscovery();
+
+    // Brief lamp brightening
+    if (typeof lampLight !== 'undefined') {
+        const origIntensity = lampLight.intensity;
+        lampLight.intensity = origIntensity * 1.5;
+        setTimeout(() => { lampLight.intensity = origIntensity; }, 400);
     }
 
     // Show reason picker below the choices
@@ -1611,10 +2039,16 @@ window.pickLoopholeReason = function(index, correct) {
         window.gameChoice(5, false); // only +5 suspicion (much less than normal mercy)
     } else {
         // Wrong reason — suspicion spike! You got caught cheating
+        playLoopholeWrong();
         const statusEl = document.getElementById('office-status');
         statusEl.textContent = "Dismissal reason rejected. Your attempt has been logged.";
         statusEl.className = 'office-status visible danger';
         setTimeout(() => { statusEl.classList.remove('visible'); }, 2000);
+
+        // Flash case file border red
+        const caseEl = document.getElementById('case-file');
+        caseEl.style.borderColor = 'rgba(139,0,0,0.6)';
+        setTimeout(() => { caseEl.style.borderColor = ''; }, 600);
 
         // Suspicion spike — caught trying to cheat the system
         state.suspicion = Math.min(100, state.suspicion + 15);
@@ -1710,8 +2144,13 @@ window.gameChoice = function(delta, evil) {
         state.stampPending = true;
         state._stampDelta = delta;
         state._stampEvil = evil;
-        // Stamp delay grows over the game (hesitation mechanic)
-        state.stampDelay = Math.min(1200, absIdx * 60); // 0ms at start, grows to ~1s by case 18
+        // Stamp delay grows over the game (hesitation mechanic) — exponential curve
+        // Shift 3 override: much heavier stamps
+        if (state.currentShift === 2) {
+            state.stampDelay = 800 + state.currentCase * 200; // 800ms to 2000ms in shift 3
+        } else {
+            state.stampDelay = Math.min(1200, 200 + Math.pow(absIdx, 1.6) * 25);
+        }
         // Listen for mousedown (hold to stamp) on case file
         setTimeout(() => {
             caseEl.addEventListener('mousedown', window._stampMouseDown);
@@ -1720,22 +2159,105 @@ window.gameChoice = function(delta, evil) {
         return; // wait for stamp confirmation
     }
 
-    // Mercy path — quiet fade, anticipatory sound
-    document.getElementById('case-file').classList.add('hidden');
+    // Mercy path — paper slides off, anticipatory sound, possible forced lookUp
+    const caseFileEl = document.getElementById('case-file');
+    caseFileEl.classList.remove('case-enter', 'case-enter-fast', 'case-enter-urgent');
+    caseFileEl.classList.add('mercy-dismiss');
+    playMercySound();
     state.transitioning = true;
 
-    // B2: Anticipatory cue during mercy transition
-    setTimeout(() => playAnticipatoryCue(), 200 + Math.random() * 250);
-
-    // Stronger lookUp prompt after mercy: stop typing for 2s on certain cases
-    if (absIdx === 0 || absIdx === 4 || absIdx === 9) {
-        // Brief typing pause — creates an "I should look up" impulse
-        if (window._typingDelayMultiplier !== undefined) {
-            const savedMul = window._typingDelayMultiplier;
-            window._typingDelayMultiplier = 50; // effectively silence typing
-            setTimeout(() => { window._typingDelayMultiplier = savedMul; }, 2000);
-        }
+    // Mercy echo text (parallel to evil feedback)
+    const mercyEchoes = MERCY_ECHOES[state.currentShift] || MERCY_ECHOES[0];
+    const mercyLine = mercyEchoes[state.currentCase % mercyEchoes.length];
+    if (mercyLine) {
+        const statusEl = document.getElementById('office-status');
+        statusEl.textContent = mercyLine;
+        statusEl.className = 'office-status visible';
+        statusEl.style.color = '#777';
+        setTimeout(() => { statusEl.classList.remove('visible'); statusEl.style.color = ''; }, 1400);
     }
+
+    // Hard typing stop on EVERY mercy choice — the room heard you
+    if (window._typingDelayMultiplier !== undefined) {
+        const savedMul = window._typingDelayMultiplier;
+        window._typingDelayMultiplier = 999;
+        setTimeout(() => { window._typingDelayMultiplier = savedMul; }, 800);
+    }
+
+    // Lamp flicker on mercy — dims briefly (something noticed)
+    if (typeof lampLight !== 'undefined') {
+        const origLamp = lampLight.intensity;
+        lampLight.intensity = origLamp * 0.4;
+        setTimeout(() => { lampLight.intensity = origLamp * 1.2; }, 200);
+        setTimeout(() => { lampLight.intensity = origLamp; }, 500);
+    }
+
+    // B2: Anticipatory cue during mercy transition
+    setTimeout(() => playAnticipatoryCue(), 300 + Math.random() * 200);
+
+    // Forced look-up on FIRST mercy (case 0): teach the mechanic
+    if (absIdx === 0 && !state.firedEvents.has('_forcedFirstLookUp')) {
+        state.firedEvents.add('_forcedFirstLookUp');
+        // After the paper slides off, force camera up
+        setTimeout(() => {
+            if (state.gameOver) return;
+            // Auto lookUp
+            state.isLookingUp = true;
+            state.targetLook = 1;
+            caseFileEl.style.display = 'none'; // fully hide during forced look
+            workers.forEach(w => { w.userData.leftEye.visible = true; w.userData.rightEye.visible = true; });
+            updateWatchers(true);
+            playChairCreak();
+
+            // Fire pending event if any
+            if (state.pendingEvents.length > 0) {
+                const eventId = state.pendingEvents.shift();
+                if (!state.firedEvents.has(eventId)) {
+                    state.firedEvents.add(eventId);
+                    fireEvent(eventId);
+                }
+            }
+
+            const statusEl = document.getElementById('office-status');
+            statusEl.textContent = "Someone has stopped typing.";
+            statusEl.className = 'office-status visible';
+
+            // Auto return after 2.5 seconds
+            setTimeout(() => {
+                if (state.gameOver) return;
+                statusEl.classList.remove('visible');
+                state.isLookingUp = false;
+                state.targetLook = 0;
+                workers.forEach(w => { w.userData.leftEye.visible = false; w.userData.rightEye.visible = false; });
+                aisleWatcher.visible = false;
+                closeUpWatcher.visible = false;
+                approachFigure.visible = false;
+                resetEventVisuals();
+                caseFileEl.style.display = '';
+
+                // Now advance to next case
+                state.transitioning = false;
+                state.currentCase++;
+                if (state.currentCase >= currentCases.length) {
+                    if (state.currentShift < allShifts.length - 1) showNewspaper(state.currentShift);
+                    else endGame(false);
+                } else {
+                    renderCase(currentCases[state.currentCase]);
+                }
+            }, 2500);
+        }, 600);
+        return; // handled by forced lookUp path
+    }
+
+    // Silence at key emotional moments
+    if (absIdx === 2 || absIdx === 13) {
+        // Kader Family (abs 2) or Your Own File (abs 13) — hold silence
+        audioSilence(absIdx === 13 ? 2000 : 800);
+    }
+
+    // Variable transition timing — heavier cases get more empty-desk time
+    const baseDelay = 600 + Math.min(800, absIdx * 50); // 600ms early → 1500ms late
+    const weightBonus = (absIdx === 2 || absIdx === 5 || absIdx === 10 || absIdx === 13) ? 600 : 0;
 
     setTimeout(() => {
         state.transitioning = false;
@@ -1750,7 +2272,7 @@ window.gameChoice = function(delta, evil) {
         } else {
             renderCase(currentCases[state.currentCase]);
         }
-    }, 600);
+    }, baseDelay + weightBonus);
 };
 
 // Newspaper between shifts
@@ -1763,15 +2285,32 @@ function showNewspaper(shiftJustCompleted) {
     document.getElementById('np-date').textContent = dateStr;
 
     let html = '';
+    let elemCount = 0;
     headlines.forEach((h, i) => {
-        if (i > 0) html += '<hr class="np-divider">';
-        html += `<div class="np-headline">${h.head}</div><div class="np-sub">${h.sub}</div>`;
+        if (i > 0) {
+            html += `<hr class="np-divider" style="animation-delay: ${400 + elemCount * 300}ms">`;
+            elemCount++;
+        }
+        html += `<div class="np-headline" style="animation-delay: ${400 + elemCount * 300}ms">${h.head}</div>`;
+        elemCount++;
+        html += `<div class="np-sub" style="animation-delay: ${400 + elemCount * 300}ms">${h.sub}</div>`;
+        elemCount++;
     });
     document.getElementById('np-headlines').innerHTML = html;
 
+    // Add slam animation to paper
+    const paper = document.querySelector('.np-paper');
+    paper.classList.remove('np-slam');
+    void paper.offsetWidth;
+    paper.classList.add('np-slam');
+
     const overlay = document.getElementById('newspaper-overlay');
     overlay.style.display = 'flex';
-    setTimeout(() => overlay.classList.add('visible'), 50);
+    setTimeout(() => {
+        overlay.classList.add('visible');
+        // Newspaper landing sound
+        setTimeout(() => playNewspaperLand(), 200);
+    }, 50);
 }
 
 function dismissNewspaper() {
@@ -1791,17 +2330,91 @@ function dismissNewspaper() {
         state.condemned = 0;
         state.shiftChoices = [];
 
+        // Reset shift atmosphere — false calm
+        resetShiftAtmosphere();
+
         // 3-second empty desk pause before first case (the "sitting back down" beat)
         state.transitioning = true;
+
+        // Door slam sound at start of new shift
+        if (audioCtx && audioCtx.state === 'running') {
+            const mg = window._audioMasterGain || audioCtx.destination;
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator(); osc.type = 'sine'; osc.frequency.value = 45;
+            const g = audioCtx.createGain();
+            g.gain.setValueAtTime(0.1, now);
+            g.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+            osc.connect(g); g.connect(mg); osc.start(now); osc.stop(now + 0.6);
+        }
+
         const statusEl = document.getElementById('office-status');
         statusEl.textContent = state.currentShift === 2 ? "Begin." : "New shift. New cases. Continue.";
         statusEl.className = 'office-status visible';
+
+        // Lamp flicker at start of new shift
+        if (typeof lampLight !== 'undefined') {
+            const orig = lampLight.intensity;
+            lampLight.intensity = orig * 0.3;
+            setTimeout(() => { lampLight.intensity = orig * 1.2; }, 150);
+            setTimeout(() => { lampLight.intensity = orig * 0.6; }, 350);
+            setTimeout(() => { lampLight.intensity = orig; }, 600);
+        }
+
         setTimeout(() => {
             statusEl.classList.remove('visible');
             state.transitioning = false;
             renderCase(getCurrentShiftCases()[0]);
         }, 3000);
     }, 800);
+}
+
+// Reset atmosphere between shifts — false calm
+function resetShiftAtmosphere() {
+    // Reset typing to normal cadence
+    if (window._typingDelayMultiplier) window._typingDelayMultiplier = 1.0;
+    // Reset drone to near-silent
+    if (window._audioDroneGain && audioCtx) {
+        const now = audioCtx.currentTime;
+        window._audioDroneGain.gain.cancelScheduledValues(now);
+        window._audioDroneGain.gain.setValueAtTime(window._audioDroneGain.gain.value, now);
+        window._audioDroneGain.gain.linearRampToValueAtTime(0.01, now + 1.0);
+    }
+    // Restore all lights
+    officeLights.forEach(rowData => {
+        rowData.dead = false;
+        rowData.groups.forEach(g => {
+            g.traverse(child => {
+                if (child instanceof THREE.PointLight && child.userData.origIntensity !== undefined) {
+                    child.userData.baseIntensity = child.userData.origIntensity;
+                    child.intensity = child.userData.origIntensity;
+                }
+                if (child.material && child.material.emissiveIntensity !== undefined && child.userData._origEmissive !== undefined) {
+                    child.material.emissiveIntensity = child.userData._origEmissive;
+                }
+            });
+        });
+    });
+    // Clear event visuals (but NOT firedEvents set — they stay one-shot)
+    resetEventVisuals();
+    // Reduce red shift by half (corruption is sticky)
+    state.redShift *= 0.5;
+    // Carry over 40% of suspicion
+    state.suspicion = Math.floor(state.suspicion * 0.4);
+    // Shift 3: back 7 rows start dim
+    if (state.currentShift === 2) {
+        officeLights.forEach((rowData, i) => {
+            if (i >= officeLights.length - 7) {
+                rowData.groups.forEach(g => {
+                    g.traverse(child => {
+                        if (child instanceof THREE.PointLight) {
+                            child.userData.baseIntensity = (child.userData.origIntensity || child.intensity) * 0.3;
+                            child.intensity = child.userData.baseIntensity;
+                        }
+                    });
+                });
+            }
+        });
+    }
 }
 
 // B1: Stamp ritual — executes when player confirms evil choice
@@ -1857,6 +2470,10 @@ document.addEventListener('mousemove', (e) => {
 });
 
 // Hold-to-stamp: mousedown starts hold, mouseup cancels if too short
+// Rising tone oscillator during stamp hold
+let _stampHoldOsc = null;
+let _stampHoldGain = null;
+
 window._stampMouseDown = function(e) {
     if (!state.stampPending) return;
     state._stampHoldStart = performance.now();
@@ -1865,6 +2482,22 @@ window._stampMouseDown = function(e) {
     const sc = document.getElementById('stamp-cursor');
     sc.style.transition = 'transform 0.6s ease';
     sc.style.transform = 'translate(-50%, -50%) rotate(-12deg) scale(1.15)';
+    // Add shake in shift 2+
+    if (state.currentShift >= 1) sc.classList.add('shaking');
+    // Rising tone during hold
+    if (audioCtx && audioCtx.state === 'running') {
+        const mg = window._audioMasterGain || audioCtx.destination;
+        _stampHoldOsc = audioCtx.createOscillator();
+        _stampHoldOsc.type = 'sine';
+        _stampHoldOsc.frequency.setValueAtTime(30, audioCtx.currentTime);
+        _stampHoldOsc.frequency.linearRampToValueAtTime(80, audioCtx.currentTime + 3);
+        _stampHoldGain = audioCtx.createGain();
+        const vol = 0.02 + (getAbsoluteCaseIndex() / 18) * 0.06;
+        _stampHoldGain.gain.value = vol;
+        _stampHoldOsc.connect(_stampHoldGain);
+        _stampHoldGain.connect(mg);
+        _stampHoldOsc.start();
+    }
 };
 
 window._stampMouseUp = function(e) {
@@ -1873,10 +2506,17 @@ window._stampMouseUp = function(e) {
     const held = performance.now() - state._stampHoldStart;
     const required = Math.max(400, state.stampDelay); // minimum 400ms hold
 
+    // Stop rising tone
+    if (_stampHoldOsc) {
+        try { _stampHoldOsc.stop(); } catch(e) {}
+        _stampHoldOsc = null; _stampHoldGain = null;
+    }
+
     // Reset cursor visual
     const sc = document.getElementById('stamp-cursor');
     sc.style.transition = 'transform 0.15s ease';
     sc.style.transform = 'translate(-50%, -50%) rotate(-12deg) scale(1.0)';
+    sc.classList.remove('shaking');
 
     if (held >= required) {
         // Held long enough — execute stamp
@@ -1896,7 +2536,8 @@ window._executeStamp = function(stampX, stampY) {
     state.stampPending = false;
 
     // Clean up stamp cursor mode and listeners
-    document.getElementById('stamp-cursor').classList.remove('active');
+    const sc = document.getElementById('stamp-cursor');
+    sc.classList.remove('active', 'shaking');
     const el = document.getElementById('case-file');
     el.classList.remove('stamp-mode');
     el.removeEventListener('mousedown', window._stampMouseDown);
@@ -1905,11 +2546,47 @@ window._executeStamp = function(stampX, stampY) {
     // Play stamp sound
     playStampSound();
 
+    // Paper recoil animation
+    el.classList.add('stamp-impact');
+    setTimeout(() => el.classList.remove('stamp-impact'), 300);
+
+    // Desk lamp flicker on stamp
+    if (typeof lampLight !== 'undefined') {
+        const origLamp = lampLight.intensity;
+        lampLight.intensity = origLamp * 0.05; // near-blackout
+        setTimeout(() => { lampLight.intensity = origLamp * 1.3; }, 60);
+        setTimeout(() => { lampLight.intensity = origLamp * 0.6; }, 120);
+        setTimeout(() => { lampLight.intensity = origLamp; }, 200);
+    }
+
+    // Post-stamp typing silence (the room heard the stamp)
+    if (window._typingDelayMultiplier !== undefined) {
+        const savedMul = window._typingDelayMultiplier;
+        window._typingDelayMultiplier = 100;
+        setTimeout(() => { window._typingDelayMultiplier = savedMul; }, 500);
+    }
+
+    // Shift 3: silence after stamp (reverb cuts dead)
+    const absIdx = getAbsoluteCaseIndex();
+    if (state.currentShift === 2) {
+        audioSilence(800);
+    }
+
     // Show PROCESSED mark where they clicked (or center if Enter was used)
+    const oldMark = el.querySelector('#stamp-mark');
+    if (oldMark) oldMark.remove();
     const mark = document.createElement('div');
     mark.id = 'stamp-mark';
     mark.className = 'visible';
-    mark.textContent = 'PROCESSED';
+    // Stamp text varies in shift 3
+    if (state.currentShift === 2 && state.currentCase >= 5) mark.textContent = '';
+    else if (state.currentShift === 2 && state.currentCase === 4) mark.textContent = '.';
+    else mark.textContent = 'PROCESSED';
+
+    // Random rotation variation in shift 2+
+    const rotDeg = -12 + (state.currentShift >= 1 ? (Math.random() * 10 - 5) : 0);
+    mark.style.transform = `translate(-50%, -50%) rotate(${rotDeg}deg)`;
+
     if (stampX !== undefined && stampY !== undefined) {
         mark.style.left = stampX + '%';
         mark.style.top = stampY + '%';
@@ -1935,9 +2612,13 @@ window._executeStamp = function(stampX, stampY) {
     }
 
     // After 800ms showing stamped document, transition to next case
+    // Variable timing — later cases hold longer on the stamped document
+    const holdTime = 800 + Math.min(400, absIdx * 25);
     state.transitioning = true;
     setTimeout(() => {
         document.getElementById('case-file').classList.add('hidden');
+        // Empty desk beat — hold on empty desk before next case
+        const deskBeat = 400 + Math.min(600, absIdx * 40);
         setTimeout(() => {
             state.transitioning = false;
             const currentCases = getCurrentShiftCases();
@@ -1952,8 +2633,8 @@ window._executeStamp = function(stampX, stampY) {
             } else {
                 renderCase(currentCases[state.currentCase]);
             }
-        }, 400);
-    }, 800);
+        }, deskBeat);
+    }, holdTime);
 };
 
 // ============================================================
@@ -1964,16 +2645,29 @@ function lookUp() {
     state.isLookingUp = true;
     state.targetLook = 1;
     document.getElementById('case-file').classList.add('hidden');
-    // directive memo is now on the 3D paper — no CSS to toggle
     document.getElementById('look-hint').textContent = '[ SPACE ] look back down';
     // B7: Show lateral hint when looking up (if available)
     if (state.lateralLookAvailable && !state.lateralLookUsed) {
         document.getElementById('lateral-hint').style.display = '';
     }
-    // Delay status text to match camera pan
+
+    // Chair creak sound — physical act of leaning back
+    playChairCreak();
+
+    // Drone swell during look-up (dread)
+    if (window._audioDroneGain && audioCtx) {
+        const now = audioCtx.currentTime;
+        const currentVal = window._audioDroneGain.gain.value;
+        window._audioDroneGain.gain.cancelScheduledValues(now);
+        window._audioDroneGain.gain.setValueAtTime(currentVal, now);
+        window._audioDroneGain.gain.linearRampToValueAtTime(currentVal * 1.5 + 0.03, now + 0.5);
+        window._audioDroneGain.gain.linearRampToValueAtTime(currentVal, now + 2.0);
+    }
+
+    // Delay status text to match camera settle (1200ms, not 600ms)
     setTimeout(() => {
         if (state.isLookingUp) document.getElementById('office-status').classList.add('visible');
-    }, 600);
+    }, 1200);
     // Show eye meshes again (hidden during desk view to prevent bleed around case file)
     workers.forEach(w => {
         w.userData.leftEye.visible = true;
@@ -2175,6 +2869,8 @@ function fireEvent(eventId) {
             // Total blackout — ALL lights off for 1 second, then back on with extra eyes
             retryIfAborted('theBlink', 500, () => {
                 state.approachLocked = true; // lock camera during blackout
+                // Total audio silence during blackout — lights AND sound die together
+                audioSilence(1200);
                 // Audio: silence snap — a single low thud as everything dies
                 if (audioCtx && audioCtx.state === 'running') {
                     const now = audioCtx.currentTime;
@@ -2387,7 +3083,9 @@ function lookDown() {
     if (!state.isLookingUp || state.gameOver || state.approachLocked) return;
     state.isLookingUp = false;
     state.targetLook = 0;
-    document.getElementById('case-file').classList.remove('hidden');
+    const cfEl = document.getElementById('case-file');
+    cfEl.classList.remove('hidden', 'mercy-dismiss');
+    cfEl.style.display = ''; // clear any forced display:none from forced lookUp
     document.getElementById('look-hint').textContent = '[ SPACE ] look up from desk';
     document.getElementById('lateral-hint').style.display = 'none'; // B7: hide on lookDown
     document.getElementById('office-status').classList.remove('visible');
@@ -2452,6 +3150,22 @@ document.addEventListener('keydown', (e) => {
         const sc = document.getElementById('stamp-cursor');
         sc.style.transition = 'transform 0.6s ease';
         sc.style.transform = 'translate(-50%, -50%) rotate(-12deg) scale(1.15)';
+        // Add shake in shift 2+ (matching mouse path)
+        if (state.currentShift >= 1) sc.classList.add('shaking');
+        // Rising tone during hold (matching mouse path)
+        if (audioCtx && audioCtx.state === 'running') {
+            const mg = window._audioMasterGain || audioCtx.destination;
+            _stampHoldOsc = audioCtx.createOscillator();
+            _stampHoldOsc.type = 'sine';
+            _stampHoldOsc.frequency.setValueAtTime(30, audioCtx.currentTime);
+            _stampHoldOsc.frequency.linearRampToValueAtTime(80, audioCtx.currentTime + 3);
+            _stampHoldGain = audioCtx.createGain();
+            const vol = 0.02 + (getAbsoluteCaseIndex() / 18) * 0.06;
+            _stampHoldGain.gain.value = vol;
+            _stampHoldOsc.connect(_stampHoldGain);
+            _stampHoldGain.connect(mg);
+            _stampHoldOsc.start();
+        }
         return;
     }
     // B7: A key triggers lateral look (one-time only)
@@ -2487,10 +3201,16 @@ document.addEventListener('keyup', (e) => {
         _enterHolding = false;
         const held = performance.now() - _enterHoldStart;
         const required = Math.max(400, state.stampDelay);
+        // Stop rising tone
+        if (_stampHoldOsc) {
+            try { _stampHoldOsc.stop(); } catch(ex) {}
+            _stampHoldOsc = null; _stampHoldGain = null;
+        }
         // Reset cursor visual
         const sc = document.getElementById('stamp-cursor');
         sc.style.transition = 'transform 0.15s ease';
         sc.style.transform = 'translate(-50%, -50%) rotate(-12deg) scale(1.0)';
+        sc.classList.remove('shaking');
         if (held >= required) {
             window._executeStamp(); // center stamp for Enter
         }
@@ -2697,17 +3417,135 @@ function endGame(caught) {
         return; // skip normal end flow
     }
 
-    // Normal ending flow
-    setTimeout(() => {
-        document.getElementById('end-title').textContent = title;
-        document.getElementById('end-title').className = titleClass;
-        document.getElementById('end-msg').textContent = msg;
-        document.getElementById('end-stats').innerHTML =
-            `Cases Processed: ${totalCases}<br>Shifts Completed: ${state.currentShift + 1}<br>Citizens Saved: ${ts}<br>Citizens Condemned: ${tc}<br>Final Suspicion: ${state.suspicion}%`;
+    // ---- STAGED ENDING SEQUENCE ----
+    const endEpoch = state._gameEpoch; // capture epoch to guard stale timeouts
+    const epochGuard = () => state._gameEpoch === endEpoch && state.gameOver;
+    // Stop typing immediately
+    if (window._typingDelayMultiplier) window._typingDelayMultiplier = 999;
 
-        endEl.style.display = 'flex';
-        setTimeout(() => endEl.style.opacity = '1', 50);
-    }, caught ? 2000 : 1000);
+    if (caught) {
+        // Caught ending — use audio silence for dread
+        audioSilence(2000, () => {
+            // After silence, single low tone rises
+            if (audioCtx && audioCtx.state === 'running') {
+                const mg = window._audioMasterGain || audioCtx.destination;
+                const now = audioCtx.currentTime;
+                const deathTone = audioCtx.createOscillator();
+                deathTone.type = 'sine'; deathTone.frequency.value = 35;
+                const dg = audioCtx.createGain();
+                dg.gain.setValueAtTime(0.15, now);
+                dg.gain.exponentialRampToValueAtTime(0.001, now + 4);
+                deathTone.connect(dg); dg.connect(mg);
+                deathTone.start(now); deathTone.stop(now + 4.5);
+            }
+        });
+
+        // Show end screen after 3 seconds (during silence)
+        setTimeout(() => {
+            if (!epochGuard()) return;
+            document.getElementById('end-title').textContent = title;
+            document.getElementById('end-title').className = titleClass;
+            document.getElementById('end-msg').textContent = msg;
+
+            // Staggered stat reveal
+            const statsEl = document.getElementById('end-stats');
+            const statLines = [
+                `Cases Processed: ${totalCases}`,
+                `Shifts Completed: ${state.currentShift + 1}`,
+                `Citizens Saved: ${ts}`,
+                `Citizens Condemned: ${tc}`,
+                `Final Suspicion: ${state.suspicion}%`
+            ];
+            statsEl.innerHTML = statLines.map((l, i) =>
+                `<div style="opacity:0; transition: opacity 0.3s ease; transition-delay: ${0.8 + i * 0.5}s">${l}</div>`
+            ).join('');
+            endEl.style.display = 'flex';
+            setTimeout(() => {
+                endEl.style.opacity = '1';
+                // Trigger stat reveals
+                statsEl.querySelectorAll('div').forEach(d => d.style.opacity = '1');
+            }, 50);
+        }, 3000);
+    } else if (tc === totalCases) {
+        // EXEMPLARY ending — no drama, instant. The machine does not celebrate you.
+        setTimeout(() => {
+            document.getElementById('end-title').textContent = title;
+            document.getElementById('end-title').className = titleClass;
+            document.getElementById('end-msg').textContent = msg;
+            document.getElementById('end-stats').innerHTML =
+                `Cases Processed: ${totalCases}<br>Shifts Completed: 3<br>Citizens Saved: ${ts}<br>Citizens Condemned: ${tc}`;
+            endEl.style.display = 'flex';
+            setTimeout(() => endEl.style.opacity = '1', 50);
+        }, 800);
+    } else {
+        // Standard ending — staged build: typing stops, drone swells, lights fail, silence, then end
+        // 0-2s: typing dead, empty desk
+        // 2-4s: drone swell
+        if (window._audioDroneGain && audioCtx) {
+            setTimeout(() => {
+                if (!epochGuard()) return;
+                const now = audioCtx.currentTime;
+                window._audioDroneGain.gain.cancelScheduledValues(now);
+                window._audioDroneGain.gain.setValueAtTime(window._audioDroneGain.gain.value, now);
+                window._audioDroneGain.gain.linearRampToValueAtTime(0.2, now + 2);
+            }, 2000);
+        }
+        // 4-7s: lights fail slowly (reuse lightsDie but slower)
+        setTimeout(() => {
+            if (!epochGuard()) return;
+            const sortedRows = [...officeLights].filter(r => !r.dead).sort((a, b) => a.z - b.z);
+            sortedRows.forEach((rowData, idx) => {
+                setTimeout(() => {
+                    if (!epochGuard()) return;
+                    rowData.dead = true;
+                    rowData.groups.forEach(g => {
+                        g.traverse(child => {
+                            if (child instanceof THREE.PointLight) {
+                                child.userData.baseIntensity = 0; child.intensity = 0;
+                            }
+                        });
+                    });
+                }, idx * 300);
+            });
+        }, 4000);
+        // 7-9s: total silence
+        setTimeout(() => { if (epochGuard()) audioSilence(3000); }, 7000);
+        // 9-11s: desk lamp flickers and dies
+        setTimeout(() => {
+            if (!epochGuard()) return;
+            if (typeof lampLight !== 'undefined') {
+                const orig = lampLight.intensity;
+                lampLight.intensity = orig * 0.5;
+                setTimeout(() => { lampLight.intensity = orig; }, 200);
+                setTimeout(() => { lampLight.intensity = orig * 0.3; }, 500);
+                setTimeout(() => { lampLight.intensity = 0; lampLight.userData.baseIntensity = 0; }, 800);
+            }
+        }, 9000);
+        // 11s: end screen
+        setTimeout(() => {
+            if (!epochGuard()) return;
+            document.getElementById('end-title').textContent = title;
+            document.getElementById('end-title').className = titleClass;
+            document.getElementById('end-msg').textContent = msg;
+
+            const statsEl = document.getElementById('end-stats');
+            const statLines = [
+                `Cases Processed: ${totalCases}`,
+                `Shifts Completed: ${state.currentShift + 1}`,
+                `Citizens Saved: ${ts}`,
+                `Citizens Condemned: ${tc}`,
+                `Final Suspicion: ${state.suspicion}%`
+            ];
+            statsEl.innerHTML = statLines.map((l, i) =>
+                `<div style="opacity:0; transition: opacity 0.3s ease; transition-delay: ${0.8 + i * 0.5}s">${l}</div>`
+            ).join('');
+            endEl.style.display = 'flex';
+            setTimeout(() => {
+                endEl.style.opacity = '1';
+                statsEl.querySelectorAll('div').forEach(d => d.style.opacity = '1');
+            }, 50);
+        }, 11000);
+    }
 
     if (caught) {
         state.targetLook = 1;
@@ -2738,6 +3576,7 @@ function endGame(caught) {
 }
 
 document.getElementById('restart-btn').addEventListener('click', () => {
+    state._gameEpoch++; // Invalidate all pending endGame timeouts
     state.currentCase = 0; state.currentShift = 0;
     state.suspicion = 0; state.saved = 0;
     state.condemned = 0; state.totalSaved = 0; state.totalCondemned = 0;
@@ -2756,7 +3595,10 @@ document.getElementById('restart-btn').addEventListener('click', () => {
     state.loopholeFound = false; state.loopholeReasonPending = false;
     state.redShift = 0.0; state.stampDelay = 0;
     _enterHolding = false; _enterHoldStart = 0; // Bug 11: reset Enter hold state
-    document.getElementById('stamp-cursor').classList.remove('active');
+    // Stop any lingering stamp hold tone
+    if (_stampHoldOsc) { try { _stampHoldOsc.stop(); } catch(e) {} _stampHoldOsc = null; _stampHoldGain = null; }
+    if (_typewriterTimer) { clearTimeout(_typewriterTimer); _typewriterTimer = null; }
+    document.getElementById('stamp-cursor').classList.remove('active', 'shaking');
     const caseElForReset = document.getElementById('case-file');
     caseElForReset.classList.remove('stamp-mode');
     caseElForReset.removeEventListener('mousedown', window._stampMouseDown); // Bug 4: clean up listeners
@@ -2817,12 +3659,28 @@ document.getElementById('restart-btn').addEventListener('click', () => {
             });
         });
     });
+    // Reset desk lamp (not in officeLights array — killed by standard ending)
+    if (lampLight.userData.origIntensity !== undefined) {
+        lampLight.userData.baseIntensity = lampLight.userData.origIntensity;
+        lampLight.intensity = lampLight.userData.origIntensity;
+    } else {
+        lampLight.userData.baseIntensity = 0.8;
+        lampLight.intensity = 0.8;
+    }
     // B3: Reset typing cadence on restart
     if (window._typingDelayMultiplier) window._typingDelayMultiplier = 1.0;
     // B5: Restore master gain if silenced
     if (window._audioMasterGain) window._audioMasterGain.gain.value = 1.0;
-    // Reset red corruption
+    // Reset red corruption and fog density
     noirPass.uniforms.redTint.value = 0.0;
+    scene.fog.density = 0.012;
+    // Reset case file shift classes
+    const caseResetEl = document.getElementById('case-file');
+    caseResetEl.classList.remove('mercy-dismiss', 'case-enter', 'case-enter-fast', 'case-enter-urgent',
+        'stamp-impact', 'shift3-degraded', 'shift3-late', 'shift3-blank', 'shift3-final');
+    caseResetEl.style.background = '';
+    caseResetEl.style.color = '';
+    caseResetEl.style.display = '';
     document.getElementById('end-screen').style.opacity = '0';
     setTimeout(() => {
         document.getElementById('end-screen').style.display = 'none';
@@ -2909,24 +3767,29 @@ function initAudio() {
     }
     scheduleTyping();
 
-    // --- 3. Horror drone (very low, evolving) ---
+    // --- 3. Horror drone (low, evolving — third osc at 76Hz for laptop audibility) ---
     const droneOsc1 = audioCtx.createOscillator();
     droneOsc1.type = 'sine';
     droneOsc1.frequency.value = 38;
     const droneOsc2 = audioCtx.createOscillator();
     droneOsc2.type = 'sine';
     droneOsc2.frequency.value = 39.5; // slight detuning creates unease
+    const droneOsc3 = audioCtx.createOscillator();
+    droneOsc3.type = 'triangle';
+    droneOsc3.frequency.value = 76; // octave above — audible on laptop speakers
     const droneGain = audioCtx.createGain();
     droneGain.gain.value = 0.0; // starts silent, builds with suspicion
     const droneFilter = audioCtx.createBiquadFilter();
     droneFilter.type = 'lowpass';
-    droneFilter.frequency.value = 100;
+    droneFilter.frequency.value = 120; // raised to let 76Hz through
     droneOsc1.connect(droneFilter);
     droneOsc2.connect(droneFilter);
+    droneOsc3.connect(droneFilter);
     droneFilter.connect(droneGain);
     droneGain.connect(masterGain);
     droneOsc1.start();
     droneOsc2.start();
+    droneOsc3.start();
 
     // Store references for dynamic control
     window._audioDroneGain = droneGain;
@@ -3112,8 +3975,8 @@ function updateAudio() {
     if (!audioCtx || !window._audioDroneGain) return;
     // Resume context if it got suspended
     if (audioCtx.state === 'suspended') audioCtx.resume();
-    // Horror drone grows with suspicion — max 0.15 gain at full suspicion
-    const droneTarget = (state.suspicion / 100) * 0.15;
+    // Horror drone grows with suspicion — max 0.25 gain at full suspicion (audible on laptops)
+    const droneTarget = (state.suspicion / 100) * 0.25;
     const currentDrone = window._audioDroneGain.gain.value;
     window._audioDroneGain.gain.value = currentDrone + (droneTarget - currentDrone) * 0.01;
 
@@ -3243,18 +4106,23 @@ function animate() {
     }
     camera.rotation.x += (targetX - camera.rotation.x) * lookSpeed * dt;
 
-    // Breathing sway
+    // Suspicion percentage — used by breathing, flicker, fog, etc.
+    const suspPct = state.suspicion / 100;
+
+    // Breathing sway — rate and amplitude scale with suspicion
     if (state.started && !state.gameOver) {
-        state.breathCycle += dt * 0.8;
-        const breathY = Math.sin(state.breathCycle) * 0.008;
-        const breathZ = Math.sin(state.breathCycle * 0.7) * 0.002;
+        const breathRate = 0.8 + suspPct * 0.6;
+        const breathAmp = 0.008 + suspPct * 0.006;
+        state.breathCycle += dt * breathRate;
+        const breathY = Math.sin(state.breathCycle) * breathAmp;
+        const breathZ = Math.sin(state.breathCycle * 0.7) * (0.002 + suspPct * 0.002);
 
         camera.position.y = 1.8 + breathY;
         camera.position.x = 0;
         camera.rotation.z = breathZ;
     }
 
-    // Subtle fluorescent flicker
+    // Subtle fluorescent flicker — lamp flicker intensifies with suspicion
     scene.traverse(child => {
         if (child instanceof THREE.PointLight) {
             if (child.userData.baseIntensity === undefined) {
@@ -3263,10 +4131,25 @@ function animate() {
             }
             const base = child.userData.baseIntensity;
             if (base <= 0) { child.intensity = 0; return; } // dead light stays dead
-            const flicker = Math.sin(t * 20 + child.id * 5) * 0.08 + Math.random() * 0.04;
+            // Desk lamp (lampLight) gets amplified flicker at high suspicion
+            const isDesklamp = (child === lampLight);
+            const flickerAmp = isDesklamp ? (0.08 + suspPct * 0.35) : 0.08;
+            const flicker = Math.sin(t * 20 + child.id * 5) * flickerAmp + Math.random() * 0.04;
             child.intensity = Math.max(0.1, base + flicker);
         }
     });
+
+    // Fog density scales with suspicion — far workers disappear
+    const targetFogDensity = 0.012 + suspPct * 0.018;
+    scene.fog.density += (targetFogDensity - scene.fog.density) * 0.01;
+
+    // Monitor screen color shifts from green toward amber/red with suspicion
+    if (typeof screenMat !== 'undefined') {
+        const r = Math.floor(0x1a + suspPct * 0x30);
+        const g = Math.floor(0x3a - suspPct * 0x1d);
+        const b = Math.floor(0x1a);
+        screenMat.emissive.setRGB(r / 255, g / 255, b / 255);
+    }
 
     // Aisle watcher sway
     if (aisleWatcher.visible) {
