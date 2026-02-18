@@ -2616,7 +2616,9 @@ window._executeStamp = function(stampX, stampY) {
     const holdTime = 800 + Math.min(400, absIdx * 25);
     state.transitioning = true;
     setTimeout(() => {
-        document.getElementById('case-file').classList.add('hidden');
+        const cfStampEl = document.getElementById('case-file');
+        cfStampEl.classList.remove('case-enter', 'case-enter-fast', 'case-enter-urgent');
+        cfStampEl.classList.add('hidden');
         // Empty desk beat — hold on empty desk before next case
         const deskBeat = 400 + Math.min(600, absIdx * 40);
         setTimeout(() => {
@@ -2644,7 +2646,12 @@ function lookUp() {
     if (state.isLookingUp || state.gameOver || !state.started || state.transitioning) return;
     state.isLookingUp = true;
     state.targetLook = 1;
-    document.getElementById('case-file').classList.add('hidden');
+    // Kill typewriter if running (prevents it fighting with hide)
+    if (_typewriterTimer) { clearTimeout(_typewriterTimer); _typewriterTimer = null; }
+    // Remove entrance animation (its 'forwards' fill overrides hidden opacity)
+    const cfEl = document.getElementById('case-file');
+    cfEl.classList.remove('case-enter', 'case-enter-fast', 'case-enter-urgent');
+    cfEl.classList.add('hidden');
     document.getElementById('look-hint').textContent = '[ SPACE ] look back down';
     // B7: Show lateral hint when looking up (if available)
     if (state.lateralLookAvailable && !state.lateralLookUsed) {
@@ -3314,7 +3321,10 @@ document.getElementById('start-btn').addEventListener('click', () => {
 
 function endGame(caught) {
     state.gameOver = true;
-    document.getElementById('case-file').classList.add('hidden');
+    if (_typewriterTimer) { clearTimeout(_typewriterTimer); _typewriterTimer = null; }
+    const cfEndEl = document.getElementById('case-file');
+    cfEndEl.classList.remove('case-enter', 'case-enter-fast', 'case-enter-urgent');
+    cfEndEl.classList.add('hidden');
     document.getElementById('look-hint').style.display = 'none';
     // Bug 10: clean up approach figure
     approachFigure.visible = false;
@@ -4187,7 +4197,9 @@ animate();
         state.targetLook = 1;
         state.isLookingUp = true;
         camera.rotation.x = UP_ROT_X;
-        document.getElementById('case-file').classList.add('hidden');
+        const cfDbg = document.getElementById('case-file');
+        cfDbg.classList.remove('case-enter', 'case-enter-fast', 'case-enter-urgent');
+        cfDbg.classList.add('hidden');
     }
 
     function resetAll() {
