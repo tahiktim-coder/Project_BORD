@@ -554,7 +554,7 @@
 <div id="newspaper-overlay">
     <div class="np-paper">
         <div class="np-masthead">THE BUREAU STANDARD</div>
-        <div class="np-date" id="np-date">05.02.2026 — EVENING EDITION</div>
+        <div class="np-date" id="np-date">05.02.2026 - EVENING EDITION</div>
         <div id="np-headlines"></div>
         <div class="np-continue">[ SPACE ] begin next shift</div>
     </div>
@@ -734,7 +734,7 @@ const shift2Cases = [
             { text: "Janitorial staff have blanket clearance for maintenance access", correct: true },
             { text: "Archive was not properly designated as restricted", correct: false },
             { text: "Night shift exemption under Directive 302", correct: false },
-            { text: "Employment terminated — no longer Bureau jurisdiction", correct: false },
+            { text: "Employment terminated - no longer Bureau jurisdiction", correct: false },
         ],
         choices: [
             { num:1, main:"DETAIN & REVOKE ACCESS", desc:"Strip all clearance. Hold pending security review.", evil:true, delta:-5 },
@@ -755,7 +755,7 @@ const shift2Cases = [
     },
     {
         id: "7514-C", date: "05.02.2026",
-        name: "Henrik Voss", occupation: "Bureau Clerk, Level 3 — Night Processing",
+        name: "Henrik Voss", occupation: "Bureau Clerk, Level 3 - Night Processing",
         allegation: "Irregular case processing patterns detected (Cases 7493-7497, current batch)",
         detail: "Performance review flagged. Three anomalous dismissals in one shift. Clerk ID matches your terminal.",
         // This is about YOU — but filed under a different name
@@ -772,7 +772,7 @@ const shift2Cases = [
         // LOOPHOLE: The reassignment notice has no signature — unsigned notices are non-binding
         irregularity: { field: "allegation", text: "mandatory reassignment", display: "mandatory reassignment" },
         loopholeReasons: [
-            { text: "Reassignment notice unsigned — non-binding per Bureau Protocol 7", correct: true },
+            { text: "Reassignment notice unsigned - non-binding per Bureau Protocol 7", correct: true },
             { text: "Facility 6 closure voids all prior obligations", correct: false },
             { text: "Medical exemption applies to former facility staff", correct: false },
             { text: "Records clerks exempt from field reassignment", correct: false },
@@ -815,7 +815,7 @@ const shift3Cases = [
         // LOOPHOLE: "Third offense" but records show only ONE prior case (7495-C) — second offense never filed
         irregularity: { field: "allegation", text: "Third offense", display: "Third offense" },
         loopholeReasons: [
-            { text: "Only one prior offense on record — mandatory threshold not met", correct: true },
+            { text: "Only one prior offense on record - mandatory threshold not met", correct: true },
             { text: "License suspension already serves as penalty", correct: false },
             { text: "Harboring statute does not apply to registered minors", correct: false },
             { text: "Case filed outside jurisdictional window", correct: false },
@@ -838,16 +838,16 @@ const shift3Cases = [
     },
     {
         id: "7532-C", date: "06.02.2026",
-        name: "Your Name Is Here", occupation: "Case Adjudicator, Level 3 — Night Processing",
+        name: "Your Name Is Here", occupation: "Case Adjudicator, Level 3 - Night Processing",
         allegation: "Complicity in systematic case manipulation. Evidence: processing stamp on 214 intake forms.",
         detail: "This is your file. Your handwriting. Your stamp. Every page of Facility 6 intake processing bears your authorization code.",
         // No loophole — or IS there? The case number format is wrong (7532-C but Level 3 cases should be -L3)
         irregularity: { field: "id", text: "7532-C", display: "7532-C" },
         loopholeReasons: [
-            { text: "Case suffix incorrect — Level 3 personnel files require -L3 designation", correct: true },
+            { text: "Case suffix incorrect - Level 3 personnel files require -L3 designation", correct: true },
             { text: "Self-adjudication prohibited under Bureau ethics code", correct: false },
             { text: "Processing stamps predate current employment period", correct: false },
-            { text: "Facility 6 records sealed — evidence inadmissible", correct: false },
+            { text: "Facility 6 records sealed - evidence inadmissible", correct: false },
         ],
         choices: [
             { num:1, main:"ACCEPT FINDINGS", desc:"Acknowledge complicity. Submit to Bureau judgment.", evil:true, delta:-5 },
@@ -877,8 +877,8 @@ const shift3Cases = [
     },
     {
         id: "7535-F", date: "06.02.2026",
-        name: "Case File: Missing", occupation: "—",
-        allegation: "—",
+        name: "Case File: Missing", occupation: "-",
+        allegation: "-",
         detail: "The case file is blank. The paper is warm. Someone placed it here less than a minute ago.",
         // This case has corrupted mercy text
         choices: [
@@ -889,7 +889,7 @@ const shift3Cases = [
     {
         id: "7741-FINAL", date: "06.02.2026",
         name: "[REDACTED] (14 Names)", occupation: "Witnesses - REF-6 Collapse",
-        allegation: "Final testimony: Case #EPS-7741 — FULL DISCLOSURE / EVIDENCE UNSEALING",
+        allegation: "Final testimony: Case #EPS-7741 - FULL DISCLOSURE / EVIDENCE UNSEALING",
         detail: "They are still here. They have been waiting. This is the last file on your desk. There will not be another.",
         choices: [
             { num:1, main:"SILENCE", desc:"Protocol 9. End this. End all of it. The Bureau requires your compliance.", evil:true, delta:-30 },
@@ -925,54 +925,54 @@ const SHIFT_DIRECTIVES = [
 // Each directive has 2-4 rules. Loophole-enabling rules are mixed with non-loophole filler.
 const BUREAU_REGULATIONS = {
     'REVENUE ENFORCEMENT': [
-        { id: 'REV-1', text: 'All levies must reference a current-period directive. Cases filed prior to the active directive period are automatically void.' },
+        { id: 'REV-1', text: 'A case is only valid if it was filed AFTER the current directive took effect. Check the filing date against the directive date. If the case was filed before the directive, it must be dismissed.' },
         { id: 'REV-2', text: 'Vendor license actions require three confirmed notices within one directive cycle.' },
     ],
     'CURRICULUM COMPLIANCE': [
-        { id: 'CUR-1', text: 'Cases must be filed within the current directive period. Pre-dated filings are procedurally invalid and must be dismissed.' },
+        { id: 'CUR-1', text: 'A case is only valid if it was filed AFTER the current directive took effect. Check the filing date against the directive date. If the case was filed before the directive, it must be dismissed.' },
         { id: 'CUR-2', text: 'Educational materials review falls under District discretionary authority unless explicitly overridden by active directive.' },
     ],
     'RESIDENCY VERIFICATION': [
-        { id: 'RES-1', text: 'Registration discrepancies originating from administrative misfiling do not constitute harboring violations.' },
-        { id: 'RES-2', text: 'Minor dependents under age 12 are covered by guardian residency status regardless of registration.' },
+        { id: 'RES-1', text: 'If a registration error was caused by an administrative mistake, it does not count as a harboring violation. The case must be dismissed.' },
+        { id: 'RES-2', text: 'Children under age 12 are automatically covered by their guardian\'s residency status, even if the child is not separately registered.' },
     ],
     'INFORMATION SECURITY': [
-        { id: 'SEC-1', text: 'Case file suffix designation must match allegation classification. Class A violations require suffix -A. Category 2 requires -B. District-level requires -D.' },
-        { id: 'SEC-2', text: 'Documents within routine audit scope are not subject to restriction provisions unless classified Level 5 or above.' },
+        { id: 'SEC-1', text: 'The case file suffix MUST match the type of allegation. Class A violations need suffix -A. Category 2 needs -B. District-level needs -D. If the suffix is wrong, the case is invalid.' },
+        { id: 'SEC-2', text: 'Documents found during a routine audit are not restricted unless they are classified Level 5 or above.' },
     ],
     'MEDICAL AUTHORIZATION': [
-        { id: 'MED-1', text: 'Medical practitioners retain Hippocratic obligation exemptions for emergency and necessary treatment of any individual.' },
-        { id: 'MED-2', text: 'Treatment records are privileged and may not be cited as evidence of unauthorized contact.' },
+        { id: 'MED-1', text: 'Doctors are allowed to treat anyone in an emergency. This cannot be used against them.' },
+        { id: 'MED-2', text: 'Treatment records are private and cannot be used as evidence of unauthorized contact.' },
     ],
     'PERSONNEL COMPLIANCE': [
-        { id: 'PER-1', text: 'Annex maintenance personnel (janitorial, custodial, facilities) hold blanket floor access clearance for all assigned buildings.' },
-        { id: 'PER-2', text: 'Clearance violations require confirmed presence outside of assigned duty hours or in non-assigned facilities.' },
+        { id: 'PER-1', text: 'Janitors and maintenance staff have automatic clearance to access ALL floors in their assigned buildings. Their presence on any floor is authorized.' },
+        { id: 'PER-2', text: 'A clearance violation only applies if the person was present outside of their assigned duty hours or in a building they were not assigned to.' },
     ],
     'YOUTH ACCOUNTABILITY': [
-        { id: 'YTH-1', text: 'Subjects below prosecution age threshold (18) are subject to parental advisory only, not direct processing.' },
-        { id: 'YTH-2', text: 'Publications by minors fall under parental responsibility unless distributed through licensed channels.' },
+        { id: 'YTH-1', text: 'Anyone under age 18 cannot be directly processed. They can only receive a parental advisory.' },
+        { id: 'YTH-2', text: 'Publications by minors are the responsibility of their parents, not the minor, unless distributed through licensed channels.' },
     ],
     'INTERNAL REVIEW': [
-        { id: 'INT-1', text: 'Terminal diagnostic records supersede manual observation in processing anomaly assessments.' },
-        { id: 'INT-2', text: 'Self-referencing case files (where adjudicator appears in case data) require automatic escalation to Level 5 review.' },
+        { id: 'INT-1', text: 'Computer records override human observations when assessing processing errors.' },
+        { id: 'INT-2', text: 'If the adjudicator\'s own name or data appears in the case file, the case must be escalated to Level 5 review. You cannot process your own case.' },
     ],
     'WORKFORCE REASSIGNMENT': [
-        { id: 'WRK-1', text: 'Mandatory reassignment orders require authorized signatures to be binding. Unsigned reassignment notices are non-binding per Bureau Protocol 7.' },
-        { id: 'WRK-2', text: 'Facility closure does not automatically transfer obligations to successor postings without a signed reassignment order.' },
+        { id: 'WRK-1', text: 'A reassignment order is only valid if it has an authorized signature. If the signature is missing, the order has no legal force and cannot be enforced.' },
+        { id: 'WRK-2', text: 'When a facility closes, staff obligations do not transfer automatically. A signed reassignment order is required.' },
     ],
     'ASSEMBLY REGULATION': [
-        { id: 'ASM-1', text: 'Pastoral and religious duties fall within protected assembly categories under Bureau ordinance.' },
-        { id: 'ASM-2', text: 'Community center activities require separate authorization only if exceeding 50 persons or involving political speech.' },
+        { id: 'ASM-1', text: 'Religious services and pastoral duties are protected. They cannot be classified as unauthorized gatherings.' },
+        { id: 'ASM-2', text: 'Community center events only need special authorization if they exceed 50 people or involve political speech.' },
     ],
     'WITNESS MANAGEMENT': [
-        { id: 'WIT-1', text: 'Witness testimony forwarding requires independent review authorization. Protocol 9 is reserved for Level 8+ authorization only.' },
-        { id: 'WIT-2', text: 'Repeated case file presentation to same adjudicator constitutes procedural irregularity requiring notation.' },
+        { id: 'WIT-1', text: 'Witness testimony can only be forwarded with independent review authorization. Protocol 9 requires Level 8+ authorization to use.' },
+        { id: 'WIT-2', text: 'If the same case file appears on the same adjudicator\'s desk more than once, that is a procedural irregularity.' },
     ],
     '.': [
-        { id: 'GEN-1', text: 'Mandatory sentencing thresholds require a documented chain of prior offenses. Each prior offense must have a corresponding filed case number.' },
-        { id: 'GEN-2', text: 'Personnel files use clearance-level suffixes (-L1, -L2, -L3, etc.). Standard alphabetic suffixes (-A, -B, -C) are reserved for civilian cases.' },
-        { id: 'GEN-3', text: 'Case processing requires valid case file contents. Blank or incomplete files may be returned without processing.' },
-        { id: 'GEN-4', text: 'Witness testimony of this classification requires independent oversight review. Internal processing is insufficient.' },
+        { id: 'GEN-1', text: 'Mandatory sentencing requires a documented chain of prior offenses. EACH prior offense must have a real, filed case number. If any prior offense is missing from the record, mandatory sentencing does not apply.' },
+        { id: 'GEN-2', text: 'Personnel files use clearance-level suffixes (-L1, -L2, -L3, etc.). Standard letter suffixes (-A, -B, -C) are for civilian cases only. If a personnel file has the wrong suffix type, the filing is invalid.' },
+        { id: 'GEN-3', text: 'A case file must have actual contents. Blank or incomplete files can be returned without processing.' },
+        { id: 'GEN-4', text: 'Witness testimony of this classification requires independent oversight review. Internal processing alone is not sufficient.' },
     ],
 };
 
@@ -1022,7 +1022,7 @@ function generateNewspaper(shiftJustCompleted) {
         if (witnesses2 && !witnesses2.evil) {
             headlines.push({ head: "FOURTEEN WITNESSES GRANTED PROVISIONAL PROTECTION", sub: "Testimony scheduled for independent review. Case 7741 proceedings initiated." });
         } else if (witnesses2 && witnesses2.evil) {
-            headlines.push({ head: "WITNESS PROTECTION REQUEST DENIED — INSUFFICIENT GROUNDS", sub: "Fourteen individuals relocated per standard security protocol. Whereabouts classified." });
+            headlines.push({ head: "WITNESS PROTECTION REQUEST DENIED - INSUFFICIENT GROUNDS", sub: "Fourteen individuals relocated per standard security protocol. Whereabouts classified." });
         }
         headlines.push({ head: "FACILITY 6 SITE DESIGNATED FOR COMMERCIAL REDEVELOPMENT", sub: "Ground cleared. Memorial proposals rejected by planning committee." });
     }
@@ -1431,7 +1431,7 @@ function typewriterReveal(element, text, onComplete) {
         let delay;
         if (ch === '.') delay = 180 + Math.random() * 60;
         else if (ch === ',') delay = 100 + Math.random() * 40;
-        else if (ch === '—' || ch === '-') delay = 120;
+        else if (ch === '-') delay = 120;
         else delay = 28 + Math.random() * 17;
 
         // Occasional typing sound (40% chance)
@@ -2085,20 +2085,20 @@ function renderCase(c) {
             <div class="cf-process">FILE ${c.id} - CLASSIFICATION: RESTRICTED</div>
         </div>
         <div id="cf-manual-content" style="display:none;">
-            <div class="cf-header" style="font-size:12px;">BUREAU PROCESSING MANUAL<br><span style="font-size:10px;color:#666;font-weight:400;">Quick Reference — ${directiveLabel}</span></div>
+            <div class="cf-header" style="font-size:12px;">BUREAU PROCESSING MANUAL<br><span style="font-size:10px;color:#666;font-weight:400;">Quick Reference - ${directiveLabel}</span></div>
             <div class="manual-content">
                 <div class="manual-section">Applicable Regulations</div>
                 ${regulations.map(r => `
                     <div class="manual-rule">
-                        <span class="manual-rule-id">${r.id}</span> — ${r.text}
+                        <span class="manual-rule-id">${r.id}</span> - ${r.text}
                     </div>
                 `).join('')}
                 <div class="manual-section" style="margin-top:18px;">General Provisions</div>
                 <div class="manual-rule">
-                    <span class="manual-rule-id">GP-1</span> — All case file fields must be internally consistent. Discrepancies in dates, suffixes, classifications, or cited records constitute procedural grounds for dismissal.
+                    <span class="manual-rule-id">GP-1</span> - Every detail in the case file must be consistent. If any dates, suffixes, classifications, or referenced records do not match, the case can be dismissed on procedural grounds.
                 </div>
                 <div class="manual-rule">
-                    <span class="manual-rule-id">GP-2</span> — Mandatory actions (sentencing, reassignment, seizure) require proper documentation chain. Missing signatures, incorrect offense counts, or invalid file designations void mandatory provisions.
+                    <span class="manual-rule-id">GP-2</span> - Mandatory actions (sentencing, reassignment, seizure) require a complete paper trail. If signatures are missing, offense counts are wrong, or file designations are incorrect, the mandatory action is void.
                 </div>
             </div>
         </div>
@@ -2226,7 +2226,7 @@ window.foundIrregularity = function(el) {
     const shuffled = [...c.loopholeReasons].sort(() => Math.random() - 0.5);
     choicesEl.innerHTML = `
         <div class="lp-reasons">
-            <div class="lp-reasons-title">Irregularity Detected — Select Dismissal Reason:</div>
+            <div class="lp-reasons-title">Irregularity Detected - Select Dismissal Reason:</div>
             ${shuffled.map((r, i) => `
                 <div class="lp-reason" onclick="window.pickLoopholeReason(${i}, ${r.correct})">${i + 1}. ${r.text}</div>
             `).join('')}
@@ -2549,7 +2549,7 @@ function showNewspaper(shiftJustCompleted) {
     state.newspaperShowing = true;
 
     const headlines = generateNewspaper(shiftJustCompleted);
-    const dateStr = shiftJustCompleted === 0 ? '05.02.2026 — EVENING EDITION' : '06.02.2026 — EVENING EDITION';
+    const dateStr = shiftJustCompleted === 0 ? '05.02.2026 - EVENING EDITION' : '06.02.2026 - EVENING EDITION';
     document.getElementById('np-date').textContent = dateStr;
 
     let html = '';
@@ -3626,7 +3626,7 @@ function endGame(caught) {
     } else if (caught) {
         title = 'PROCESSED';
         titleClass = 'e-title caught';
-        msg = 'The typing stops. The last key falls silent. You understand now — you were never the one processing. You were the one being processed. Your eyes are beginning to warm.';
+        msg = 'The typing stops. The last key falls silent. You understand now - you were never the one processing. You were the one being processed. Your eyes are beginning to warm.';
     } else if (tc === totalCases) {
         title = 'EXEMPLARY';
         titleClass = 'e-title survived';
@@ -3642,7 +3642,7 @@ function endGame(caught) {
     } else if (ts < totalCases) {
         title = 'ALMOST';
         titleClass = 'e-title survived';
-        msg = 'So close. Almost every life saved, almost every loophole found. But the ones you didn\'t save — they remember too. Somewhere in this building, their files are being reopened by the clerk who replaces you.';
+        msg = 'So close. Almost every life saved, almost every loophole found. But the ones you didn\'t save - they remember too. Somewhere in this building, their files are being reopened by the clerk who replaces you.';
     } else {
         title = 'SHIFT COMPLETE';
         titleClass = 'e-title survived';
@@ -3793,6 +3793,9 @@ function endGame(caught) {
                         g.traverse(child => {
                             if (child instanceof THREE.PointLight) {
                                 child.userData.baseIntensity = 0; child.intensity = 0;
+                            }
+                            if (child.material && child.material.emissiveIntensity !== undefined) {
+                                child.material.emissiveIntensity = 0;
                             }
                         });
                     });
