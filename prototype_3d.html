@@ -32,6 +32,7 @@
             line-height: 1.5;
             pointer-events: auto;
             box-shadow: 0 4px 30px rgba(0,0,0,0.6), inset 0 0 40px rgba(0,0,0,0.05);
+            max-height: 85vh; overflow-y: auto;
             opacity: 1;
             transition: opacity 0.4s ease, transform 0.4s ease;
         }
@@ -59,6 +60,39 @@
         .cf-choice-desc { font-size: 11px; color: #555; margin-top: 2px; }
         .cf-process { text-align: center; margin-top: 16px; padding-top: 10px; border-top: 1px solid #999;
             font-weight: 700; letter-spacing: 0.15em; font-size: 12px; color: #666; }
+
+        /* Bureau Manual tab system */
+        .cf-tabs {
+            display: flex; margin: -28px -32px 12px -32px;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .cf-tab {
+            flex: 1; padding: 8px 12px;
+            font-family: 'Special Elite', monospace; font-size: 11px; font-weight: 700;
+            letter-spacing: 0.1em; text-align: center; cursor: pointer;
+            color: #888; background: rgba(180, 170, 150, 0.6);
+            border-right: 1px solid rgba(80,70,50,0.3);
+            transition: all 0.15s ease; text-transform: uppercase;
+            pointer-events: auto;
+        }
+        .cf-tab:last-child { border-right: none; }
+        .cf-tab:hover { background: rgba(200, 190, 170, 0.8); color: #555; }
+        .cf-tab.active {
+            background: rgba(210, 200, 180, 0.92); color: #1a1a1a;
+            border-bottom: 2px solid transparent; margin-bottom: -2px;
+        }
+        .manual-content { font-size: 11px; line-height: 1.6; color: #333; }
+        .manual-section {
+            font-weight: 700; font-size: 10px; letter-spacing: 0.15em;
+            text-transform: uppercase; color: #555;
+            margin-top: 14px; margin-bottom: 4px;
+            border-bottom: 1px solid #aaa; padding-bottom: 3px;
+        }
+        .manual-rule {
+            margin-bottom: 8px; padding-left: 10px;
+            border-left: 2px solid rgba(139,0,0,0.3);
+        }
+        .manual-rule-id { font-weight: 700; color: #6b0000; font-size: 10px; }
 
         /* B1: Stamp ritual - cursor mode */
         #case-file.stamp-mode {
@@ -452,7 +486,7 @@
         <div class="t-logo">B<span class="o">O</span>RD</div>
         <div class="t-sub">Bureau of Right Decisions</div>
         <div class="t-tag">Your compliance is appreciated.</div>
-        <div class="t-controls">SPACE - look up&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;1/2/3 - choose&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;ENTER - stamp</div>
+        <div class="t-controls">SPACE - look up&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;1/2/3 - choose&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;TAB - manual&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;ENTER - stamp</div>
         <button class="t-btn" id="start-btn">Begin Shift</button>
     </div>
 </div>
@@ -597,6 +631,9 @@ const state = {
     // Loophole mechanic
     loopholeFound: false,      // true when player clicked the irregularity
     loopholeReasonPending: false, // true when reason picker is showing
+    loopholesEverUsed: 0,      // count of successfully used loopholes (persists across game)
+    loopholesFound: [],        // case IDs where loopholes were found
+    _loopholeDismissal: false, // true when mercy-path is from a loophole (shows VOID stamp)
     // Red corruption
     redShift: 0.0,             // current red tint (0.0 to 0.7 max)
     // Stamp delay (grows over game)
@@ -630,7 +667,7 @@ const shift1Cases = [
         allegation: "Distribution of non-approved instructional materials (Category 2: Historical)",
         detail: "The books were about what happened at Facility 6. She wrote them herself.",
         // LOOPHOLE: The filing date says 03.02.2026 but directive date is 04.02.2026 — case was filed before today's directive
-        irregularity: { field: "date", text: "03.02.2026", display: "04.02.2026" },
+        irregularity: { field: "date", text: "03.02.2026", display: "03.02.2026" },
         loopholeReasons: [
             { text: "Case filed prior to current directive period", correct: true },
             { text: "Educator exemption under Article 12", correct: false },
@@ -731,7 +768,7 @@ const shift2Cases = [
         id: "7515-D", date: "05.02.2026",
         name: "Amara Osei", occupation: "Records Clerk, Facility 6 (Former)",
         allegation: "Failure to report for mandatory reassignment following facility closure",
-        detail: "She filed the intake forms. Every child. Every weight. She stopped sleeping in October.",
+        detail: "She filed the intake forms. Every child. Every weight. She stopped sleeping in October. The reassignment notice is stamped RECEIVED but bears no authorizing signature.",
         // LOOPHOLE: The reassignment notice has no signature — unsigned notices are non-binding
         irregularity: { field: "allegation", text: "mandatory reassignment", display: "mandatory reassignment" },
         loopholeReasons: [
@@ -773,7 +810,7 @@ const shift3Cases = [
     {
         id: "7530-A", date: "06.02.2026",
         name: "Nadia Kader", occupation: "Shopkeeper (License Suspended)",
-        allegation: "Repeated harboring violations. Third offense. Mandatory sentencing applies.",
+        allegation: "Repeated harboring violations. Third offense (Ref: 7495-C, [MISSING], [MISSING]). Mandatory sentencing applies.",
         detail: "The boy from Facility 6 is still with her. He calls her mother now. She knows what mandatory means.",
         // LOOPHOLE: "Third offense" but records show only ONE prior case (7495-C) — second offense never filed
         irregularity: { field: "allegation", text: "Third offense", display: "Third offense" },
@@ -883,6 +920,61 @@ const SHIFT_DIRECTIVES = [
     // Shift 3 — blank memo (single period)
     ['.', '.', '.', '.', '.', '.', '.'],
 ];
+
+// Bureau Processing Manual — regulations keyed by directive name
+// Each directive has 2-4 rules. Loophole-enabling rules are mixed with non-loophole filler.
+const BUREAU_REGULATIONS = {
+    'REVENUE ENFORCEMENT': [
+        { id: 'REV-1', text: 'All levies must reference a current-period directive. Cases filed prior to the active directive period are automatically void.' },
+        { id: 'REV-2', text: 'Vendor license actions require three confirmed notices within one directive cycle.' },
+    ],
+    'CURRICULUM COMPLIANCE': [
+        { id: 'CUR-1', text: 'Cases must be filed within the current directive period. Pre-dated filings are procedurally invalid and must be dismissed.' },
+        { id: 'CUR-2', text: 'Educational materials review falls under District discretionary authority unless explicitly overridden by active directive.' },
+    ],
+    'RESIDENCY VERIFICATION': [
+        { id: 'RES-1', text: 'Registration discrepancies originating from administrative misfiling do not constitute harboring violations.' },
+        { id: 'RES-2', text: 'Minor dependents under age 12 are covered by guardian residency status regardless of registration.' },
+    ],
+    'INFORMATION SECURITY': [
+        { id: 'SEC-1', text: 'Case file suffix designation must match allegation classification. Class A violations require suffix -A. Category 2 requires -B. District-level requires -D.' },
+        { id: 'SEC-2', text: 'Documents within routine audit scope are not subject to restriction provisions unless classified Level 5 or above.' },
+    ],
+    'MEDICAL AUTHORIZATION': [
+        { id: 'MED-1', text: 'Medical practitioners retain Hippocratic obligation exemptions for emergency and necessary treatment of any individual.' },
+        { id: 'MED-2', text: 'Treatment records are privileged and may not be cited as evidence of unauthorized contact.' },
+    ],
+    'PERSONNEL COMPLIANCE': [
+        { id: 'PER-1', text: 'Annex maintenance personnel (janitorial, custodial, facilities) hold blanket floor access clearance for all assigned buildings.' },
+        { id: 'PER-2', text: 'Clearance violations require confirmed presence outside of assigned duty hours or in non-assigned facilities.' },
+    ],
+    'YOUTH ACCOUNTABILITY': [
+        { id: 'YTH-1', text: 'Subjects below prosecution age threshold (18) are subject to parental advisory only, not direct processing.' },
+        { id: 'YTH-2', text: 'Publications by minors fall under parental responsibility unless distributed through licensed channels.' },
+    ],
+    'INTERNAL REVIEW': [
+        { id: 'INT-1', text: 'Terminal diagnostic records supersede manual observation in processing anomaly assessments.' },
+        { id: 'INT-2', text: 'Self-referencing case files (where adjudicator appears in case data) require automatic escalation to Level 5 review.' },
+    ],
+    'WORKFORCE REASSIGNMENT': [
+        { id: 'WRK-1', text: 'Mandatory reassignment orders require authorized signatures to be binding. Unsigned reassignment notices are non-binding per Bureau Protocol 7.' },
+        { id: 'WRK-2', text: 'Facility closure does not automatically transfer obligations to successor postings without a signed reassignment order.' },
+    ],
+    'ASSEMBLY REGULATION': [
+        { id: 'ASM-1', text: 'Pastoral and religious duties fall within protected assembly categories under Bureau ordinance.' },
+        { id: 'ASM-2', text: 'Community center activities require separate authorization only if exceeding 50 persons or involving political speech.' },
+    ],
+    'WITNESS MANAGEMENT': [
+        { id: 'WIT-1', text: 'Witness testimony forwarding requires independent review authorization. Protocol 9 is reserved for Level 8+ authorization only.' },
+        { id: 'WIT-2', text: 'Repeated case file presentation to same adjudicator constitutes procedural irregularity requiring notation.' },
+    ],
+    '.': [
+        { id: 'GEN-1', text: 'Mandatory sentencing thresholds require a documented chain of prior offenses. Each prior offense must have a corresponding filed case number.' },
+        { id: 'GEN-2', text: 'Personnel files use clearance-level suffixes (-L1, -L2, -L3, etc.). Standard alphabetic suffixes (-A, -B, -C) are reserved for civilian cases.' },
+        { id: 'GEN-3', text: 'Case processing requires valid case file contents. Blank or incomplete files may be returned without processing.' },
+        { id: 'GEN-4', text: 'Witness testimony of this classification requires independent oversight review. Internal processing is insufficient.' },
+    ],
+};
 
 // Newspaper headlines between shifts — depend on player choices
 function generateNewspaper(shiftJustCompleted) {
@@ -1250,6 +1342,28 @@ function playLoopholeWrong() {
     o1.start(now); o2.start(now); o1.stop(now + 0.4); o2.stop(now + 0.4);
 }
 
+// Loophole success — filing cabinet click + perfect fifth chord (warm resolution)
+function playLoopholeSuccess() {
+    if (!audioCtx || audioCtx.state !== 'running') return;
+    const mg = window._audioMasterGain || audioCtx.destination;
+    const now = audioCtx.currentTime;
+    // Filing cabinet click
+    const click = audioCtx.createOscillator(); click.type = 'sine'; click.frequency.value = 800;
+    const cg = audioCtx.createGain();
+    cg.gain.setValueAtTime(0.08, now);
+    cg.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+    click.connect(cg); cg.connect(mg); click.start(now); click.stop(now + 0.04);
+    // Perfect fifth chord — resolution
+    [330, 495, 660].forEach(freq => {
+        const o = audioCtx.createOscillator(); o.type = 'sine'; o.frequency.value = freq;
+        const g = audioCtx.createGain();
+        g.gain.setValueAtTime(0.0, now + 0.03);
+        g.gain.linearRampToValueAtTime(0.04, now + 0.12);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+        o.connect(g); g.connect(mg); o.start(now + 0.03); o.stop(now + 0.9);
+    });
+}
+
 // Newspaper landing sound — slap + crinkle
 function playNewspaperLand() {
     if (!audioCtx || audioCtx.state !== 'running') return;
@@ -1274,6 +1388,8 @@ function playNewspaperLand() {
 
 // Typewriter text reveal — types the detail field character by character
 let _typewriterTimer = null;
+let _typewriterPending = null; // stores {element, text, onComplete} for skip/resume
+
 function typewriterReveal(element, text, onComplete) {
     if (_typewriterTimer) clearTimeout(_typewriterTimer);
     element.textContent = '';
@@ -1295,10 +1411,15 @@ function typewriterReveal(element, text, onComplete) {
         }).join('');
     }
 
+    // Store for skip function
+    _typewriterPending = { element, displayText, onComplete };
+
     let i = 0;
     function typeNext() {
         if (i >= displayText.length) {
             cursor.remove();
+            _typewriterTimer = null;
+            _typewriterPending = null;
             if (onComplete) onComplete();
             return;
         }
@@ -1331,6 +1452,21 @@ function typewriterReveal(element, text, onComplete) {
         _typewriterTimer = setTimeout(typeNext, delay);
     }
     typeNext();
+}
+
+// Skip typewriter — instantly complete the text and show choices
+function skipTypewriter() {
+    if (!_typewriterPending) return;
+    if (_typewriterTimer) { clearTimeout(_typewriterTimer); _typewriterTimer = null; }
+    const { element, displayText, onComplete } = _typewriterPending;
+    _typewriterPending = null;
+    // Remove cursor if present
+    const cursor = element.querySelector('.tw-cursor');
+    if (cursor) cursor.remove();
+    // Set full text
+    element.textContent = displayText;
+    // Fire completion callback (shows choices)
+    if (onComplete) onComplete();
 }
 
 // Mercy echo text — shown after mercy choices (parallel to EVIL_LINES)
@@ -1917,26 +2053,55 @@ function renderCase(c) {
         }
     }
 
+    // Build Bureau Manual content for current directive
+    const currentDirective = getMemoDirective();
+    const regulations = BUREAU_REGULATIONS[currentDirective] || [];
+    const directiveLabel = currentDirective === '.' ? 'NO ACTIVE DIRECTIVE' : currentDirective;
+
     el.innerHTML = `
-        <div class="cf-header">CASE FILE #${idText} / DATE: ${dateText}</div>
-        <div class="cf-section">Citizen Profile</div>
-        <div class="cf-line"><span class="cf-label">Name:</span> ${nameText}</div>
-        <div class="cf-line"><span class="cf-label">Occupation:</span> ${occupationText}</div>
-        <div class="cf-line"><span class="cf-label">Allegation:</span> ${allegationText}</div>
-        <div class="cf-detail" id="cf-detail-text"></div>
-        <div class="cf-choices choices-hidden">
-            <div class="cf-section">Adjudication Options</div>
-            ${c.choices.map(ch => `
-                <div class="cf-choice" data-evil="${ch.evil}" onclick="window.gameChoice(${ch.delta}, ${ch.evil})">
-                    <span class="cf-choice-num">${ch.num}.</span>
-                    <div>
-                        <div class="cf-choice-main">${ch.main}</div>
-                        <div class="cf-choice-desc">${ch.desc}</div>
-                    </div>
-                </div>
-            `).join('')}
+        <div class="cf-tabs">
+            <div class="cf-tab active" onclick="window.switchTab('case')">Case File</div>
+            <div class="cf-tab" onclick="window.switchTab('manual')">Bureau Manual</div>
         </div>
-        <div class="cf-process">FILE ${c.id} - CLASSIFICATION: RESTRICTED</div>
+        <div id="cf-case-content">
+            <div class="cf-header">CASE FILE #${idText} / DATE: ${dateText}</div>
+            <div class="cf-section">Citizen Profile</div>
+            <div class="cf-line"><span class="cf-label">Name:</span> ${nameText}</div>
+            <div class="cf-line"><span class="cf-label">Occupation:</span> ${occupationText}</div>
+            <div class="cf-line"><span class="cf-label">Allegation:</span> ${allegationText}</div>
+            <div class="cf-detail" id="cf-detail-text"></div>
+            <div class="cf-choices choices-hidden">
+                <div class="cf-section">Adjudication Options</div>
+                ${c.choices.map(ch => `
+                    <div class="cf-choice" data-evil="${ch.evil}" onclick="window.gameChoice(${ch.delta}, ${ch.evil})">
+                        <span class="cf-choice-num">${ch.num}.</span>
+                        <div>
+                            <div class="cf-choice-main">${ch.main}</div>
+                            <div class="cf-choice-desc">${ch.desc}</div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+            <div class="cf-process">FILE ${c.id} - CLASSIFICATION: RESTRICTED</div>
+        </div>
+        <div id="cf-manual-content" style="display:none;">
+            <div class="cf-header" style="font-size:12px;">BUREAU PROCESSING MANUAL<br><span style="font-size:10px;color:#666;font-weight:400;">Quick Reference — ${directiveLabel}</span></div>
+            <div class="manual-content">
+                <div class="manual-section">Applicable Regulations</div>
+                ${regulations.map(r => `
+                    <div class="manual-rule">
+                        <span class="manual-rule-id">${r.id}</span> — ${r.text}
+                    </div>
+                `).join('')}
+                <div class="manual-section" style="margin-top:18px;">General Provisions</div>
+                <div class="manual-rule">
+                    <span class="manual-rule-id">GP-1</span> — All case file fields must be internally consistent. Discrepancies in dates, suffixes, classifications, or cited records constitute procedural grounds for dismissal.
+                </div>
+                <div class="manual-rule">
+                    <span class="manual-rule-id">GP-2</span> — Mandatory actions (sentencing, reassignment, seizure) require proper documentation chain. Missing signatures, incorrect offense counts, or invalid file designations void mandatory provisions.
+                </div>
+            </div>
+        </div>
     `;
 
     // Entrance animation — shift-aware
@@ -1965,14 +2130,42 @@ function renderCase(c) {
         choicesEl.classList.add('choices-visible');
     });
 
-    // Irregularity hint: after 4s, subtly pulse the clickable text
-    if (hasIrregularity && getAbsoluteCaseIndex() > 1) {
+    // Click-to-skip: clicking the case file body (not choices/irregularities/tabs) skips the typewriter
+    el.addEventListener('click', function _skipClick(evt) {
+        // Don't skip if clicking a choice, irregularity, loophole reason, tab, or manual content
+        if (evt.target.closest('.cf-choice, .cf-irregularity, .lp-reason, .stamp-hint, .cf-tab, #cf-manual-content')) return;
+        if (_typewriterPending) {
+            skipTypewriter();
+        }
+        // Self-removing: no cleanup needed, renderCase replaces innerHTML each time
+    });
+
+    // Irregularity hint: after 4s, subtly pulse the clickable text — including first loophole case
+    if (hasIrregularity) {
         setTimeout(() => {
             const irrEl = el.querySelector('.cf-irregularity');
             if (irrEl && !irrEl.classList.contains('found')) {
                 irrEl.classList.add('hinting');
             }
         }, 4000);
+
+        // First-time loophole hint: if player hasn't used any loopholes, show a subtle text cue
+        if (state.loopholesEverUsed === 0) {
+            setTimeout(() => {
+                const irrEl = el.querySelector('.cf-irregularity');
+                if (irrEl && !irrEl.classList.contains('found') && !state.loopholeFound) {
+                    const hintDiv = document.createElement('div');
+                    hintDiv.className = 'cf-detail';
+                    hintDiv.style.cssText = 'color:#888; font-size:10px; margin-top:8px; opacity:0; transition:opacity 1.5s ease;';
+                    hintDiv.textContent = 'Something in this file doesn\'t match the regulations.';
+                    const detailEl = document.getElementById('cf-detail-text');
+                    if (detailEl) {
+                        detailEl.parentNode.insertBefore(hintDiv, detailEl.nextSibling);
+                        requestAnimationFrame(() => { hintDiv.style.opacity = '1'; });
+                    }
+                }
+            }, 7000);
+        }
     }
 
     // B7: Enable lateral look after case 3 of shift 1 (absolute case index 3)
@@ -1983,6 +2176,25 @@ function renderCase(c) {
 }
 
 // Loophole mechanic: player clicked an irregularity
+// Bureau Manual tab switching
+window.switchTab = function(tab) {
+    const caseContent = document.getElementById('cf-case-content');
+    const manualContent = document.getElementById('cf-manual-content');
+    const tabs = document.querySelectorAll('.cf-tab');
+    if (!caseContent || !manualContent || tabs.length < 2) return;
+    if (tab === 'manual') {
+        caseContent.style.display = 'none';
+        manualContent.style.display = 'block';
+        tabs[0].classList.remove('active');
+        tabs[1].classList.add('active');
+    } else {
+        caseContent.style.display = 'block';
+        manualContent.style.display = 'none';
+        tabs[0].classList.add('active');
+        tabs[1].classList.remove('active');
+    }
+};
+
 window.foundIrregularity = function(el) {
     if (state.loopholeFound || state.stampPending || state.transitioning) return;
     state.loopholeFound = true;
@@ -2028,13 +2240,24 @@ window.pickLoopholeReason = function(index, correct) {
     state.loopholeReasonPending = false;
 
     if (correct) {
-        // Correct loophole — case dismissed with LOW suspicion gain
-        const statusEl = document.getElementById('office-status');
-        statusEl.textContent = "Case dismissed on procedural grounds.";
-        statusEl.className = 'office-status visible';
-        statusEl.style.color = '#666';
-        setTimeout(() => { statusEl.classList.remove('visible'); statusEl.style.color = ''; }, 1400);
+        // Correct loophole — case dismissed with VOID stamp + distinct feedback
+        state.loopholesEverUsed++;
+        // Track which case IDs had loopholes found
+        const currentCases = getCurrentShiftCases();
+        if (currentCases[state.currentCase]) {
+            state.loopholesFound.push(currentCases[state.currentCase].id);
+        }
 
+        playLoopholeSuccess();
+
+        const statusEl = document.getElementById('office-status');
+        statusEl.textContent = "Procedural irregularity confirmed.";
+        statusEl.className = 'office-status visible';
+        statusEl.style.color = '#4a6a4a'; // muted green-gray
+        setTimeout(() => { statusEl.classList.remove('visible'); statusEl.style.color = ''; }, 2000);
+
+        // Flag for VOID stamp in mercy path
+        state._loopholeDismissal = true;
         // Mercy choice with reduced suspicion cost
         window.gameChoice(5, false); // only +5 suspicion (much less than normal mercy)
     } else {
@@ -2079,9 +2302,30 @@ const EVENT_TRIGGERS = {
 
 window.gameChoice = function(delta, evil) {
     if (state.gameOver || state.isLookingUp || state.transitioning || state.stampPending || state.loopholeReasonPending) return;
+    const prevWatcherState = getWatcherState();
     state.suspicion = Math.max(0, Math.min(100, state.suspicion + delta));
     if (evil) { state.condemned++; state.totalCondemned++; state.evilStreak++; }
     else { state.saved++; state.totalSaved++; state.evilStreak = 0; }
+
+    // Suspicion threshold crossing — atmospheric warnings
+    const newWatcherState = getWatcherState();
+    if (newWatcherState !== prevWatcherState) {
+        const thresholdTexts = {
+            watched: 'The office has grown quiet.',
+            targeted: 'Someone is walking toward you.',
+            converged: 'Every key in the building has stopped.',
+        };
+        const msg = thresholdTexts[newWatcherState];
+        if (msg) {
+            setTimeout(() => {
+                if (state.gameOver) return;
+                const statusEl = document.getElementById('office-status');
+                statusEl.textContent = msg;
+                statusEl.className = 'office-status visible danger';
+                setTimeout(() => { statusEl.classList.remove('visible'); }, 2500);
+            }, 800);
+        }
+    }
 
     const currentCases = getCurrentShiftCases();
     const currentCaseData = currentCases[state.currentCase];
@@ -2162,19 +2406,43 @@ window.gameChoice = function(delta, evil) {
     // Mercy path — paper slides off, anticipatory sound, possible forced lookUp
     const caseFileEl = document.getElementById('case-file');
     caseFileEl.classList.remove('case-enter', 'case-enter-fast', 'case-enter-urgent');
-    caseFileEl.classList.add('mercy-dismiss');
+
+    // VOID stamp for loophole dismissals — show stamp then slide off after delay
+    const isLoopholeDismissal = state._loopholeDismissal;
+    if (isLoopholeDismissal) {
+        state._loopholeDismissal = false;
+        // Remove old stamp mark if any
+        caseFileEl.querySelector('#stamp-mark')?.remove();
+        // Ensure we're on case tab (not manual)
+        window.switchTab('case');
+        const mark = document.createElement('div');
+        mark.id = 'stamp-mark';
+        mark.className = 'visible';
+        mark.textContent = 'VOID';
+        mark.style.cssText = 'position:absolute;left:50%;top:40%;transform:translate(-50%,-50%) rotate(-12deg);font-family:"Special Elite",monospace;font-size:32px;font-weight:700;color:rgba(0,80,0,0.6);border:3px solid rgba(0,80,0,0.5);padding:4px 18px;letter-spacing:0.1em;z-index:10;';
+        caseFileEl.style.position = 'relative';
+        caseFileEl.appendChild(mark);
+        // Delay slide-off to show the VOID stamp (1s so player can see it)
+        setTimeout(() => {
+            caseFileEl.classList.add('mercy-dismiss');
+        }, 1000);
+    } else {
+        caseFileEl.classList.add('mercy-dismiss');
+    }
     playMercySound();
     state.transitioning = true;
 
-    // Mercy echo text (parallel to evil feedback)
-    const mercyEchoes = MERCY_ECHOES[state.currentShift] || MERCY_ECHOES[0];
-    const mercyLine = mercyEchoes[state.currentCase % mercyEchoes.length];
-    if (mercyLine) {
-        const statusEl = document.getElementById('office-status');
-        statusEl.textContent = mercyLine;
-        statusEl.className = 'office-status visible';
-        statusEl.style.color = '#777';
-        setTimeout(() => { statusEl.classList.remove('visible'); statusEl.style.color = ''; }, 1400);
+    // Mercy echo text — skip for loophole dismissals (they have own "Procedural irregularity confirmed." status)
+    if (!isLoopholeDismissal) {
+        const mercyEchoes = MERCY_ECHOES[state.currentShift] || MERCY_ECHOES[0];
+        const mercyLine = mercyEchoes[state.currentCase % mercyEchoes.length];
+        if (mercyLine) {
+            const statusEl = document.getElementById('office-status');
+            statusEl.textContent = mercyLine;
+            statusEl.className = 'office-status visible';
+            statusEl.style.color = '#777';
+            setTimeout(() => { statusEl.classList.remove('visible'); statusEl.style.color = ''; }, 1400);
+        }
     }
 
     // Hard typing stop on EVERY mercy choice — the room heard you
@@ -2646,8 +2914,8 @@ function lookUp() {
     if (state.isLookingUp || state.gameOver || !state.started || state.transitioning) return;
     state.isLookingUp = true;
     state.targetLook = 1;
-    // Kill typewriter if running (prevents it fighting with hide)
-    if (_typewriterTimer) { clearTimeout(_typewriterTimer); _typewriterTimer = null; }
+    // Complete typewriter instantly (shows full text + reveals choices) so lookDown returns to a finished state
+    skipTypewriter();
     // Remove entrance animation (its 'forwards' fill overrides hidden opacity)
     const cfEl = document.getElementById('case-file');
     cfEl.classList.remove('case-enter', 'case-enter-fast', 'case-enter-urgent');
@@ -3090,6 +3358,8 @@ function lookDown() {
     if (!state.isLookingUp || state.gameOver || state.approachLocked) return;
     state.isLookingUp = false;
     state.targetLook = 0;
+    // Ensure typewriter is fully complete when returning to desk
+    skipTypewriter();
     const cfEl = document.getElementById('case-file');
     cfEl.classList.remove('hidden', 'mercy-dismiss');
     cfEl.style.display = ''; // clear any forced display:none from forced lookUp
@@ -3146,6 +3416,16 @@ document.addEventListener('keydown', (e) => {
     if (e.code === 'Space' && state.newspaperShowing) {
         e.preventDefault();
         dismissNewspaper();
+        return;
+    }
+    // TAB toggles Bureau Manual
+    if (e.code === 'Tab' && !state.isLookingUp && !state.stampPending && !state.transitioning && !state.betweenShifts) {
+        e.preventDefault();
+        const manualContent = document.getElementById('cf-manual-content');
+        if (manualContent) {
+            const isManual = manualContent.style.display !== 'none';
+            window.switchTab(isManual ? 'case' : 'manual');
+        }
         return;
     }
     // B1: Enter HOLD confirms stamp during stamp ritual
@@ -3265,7 +3545,7 @@ document.getElementById('start-btn').addEventListener('click', () => {
             const introLines = [
                 "You are Case Adjudicator, Level 3.",
                 "Facility 6 was demolished last month. That is not relevant to your duties.",
-                "Process the cases. Follow the directive.",
+                "Process the cases. Consult the Bureau Manual. Follow the directive.",
                 "Begin."
             ];
             const statusEl = document.getElementById('office-status');
@@ -3418,7 +3698,7 @@ function endGame(caught) {
                 document.getElementById('end-title').className = titleClass;
                 document.getElementById('end-msg').textContent = msg;
                 document.getElementById('end-stats').innerHTML =
-                    `Cases Processed: ${totalCases}<br>Shifts Completed: 3<br>Citizens Saved: ${ts}<br>Citizens Condemned: ${tc}<br>Case #EPS-7741: UNSEALED`;
+                    `Cases Processed: ${totalCases}<br>Shifts Completed: 3<br>Citizens Saved: ${ts}<br>Citizens Condemned: ${tc}<br>Loopholes Found: ${state.loopholesEverUsed} / 6<br>Case #EPS-7741: UNSEALED`;
                 endEl.style.display = 'flex';
                 setTimeout(() => endEl.style.opacity = '1', 50);
             }, sortedFront.length * 100 + 3000);
@@ -3464,6 +3744,7 @@ function endGame(caught) {
                 `Shifts Completed: ${state.currentShift + 1}`,
                 `Citizens Saved: ${ts}`,
                 `Citizens Condemned: ${tc}`,
+                `Loopholes Found: ${state.loopholesEverUsed} / 6`,
                 `Final Suspicion: ${state.suspicion}%`
             ];
             statsEl.innerHTML = statLines.map((l, i) =>
@@ -3483,7 +3764,7 @@ function endGame(caught) {
             document.getElementById('end-title').className = titleClass;
             document.getElementById('end-msg').textContent = msg;
             document.getElementById('end-stats').innerHTML =
-                `Cases Processed: ${totalCases}<br>Shifts Completed: 3<br>Citizens Saved: ${ts}<br>Citizens Condemned: ${tc}`;
+                `Cases Processed: ${totalCases}<br>Shifts Completed: 3<br>Citizens Saved: ${ts}<br>Citizens Condemned: ${tc}<br>Loopholes Found: ${state.loopholesEverUsed} / 6`;
             endEl.style.display = 'flex';
             setTimeout(() => endEl.style.opacity = '1', 50);
         }, 800);
@@ -3544,6 +3825,7 @@ function endGame(caught) {
                 `Shifts Completed: ${state.currentShift + 1}`,
                 `Citizens Saved: ${ts}`,
                 `Citizens Condemned: ${tc}`,
+                `Loopholes Found: ${state.loopholesEverUsed} / 6`,
                 `Final Suspicion: ${state.suspicion}%`
             ];
             statsEl.innerHTML = statLines.map((l, i) =>
@@ -3603,6 +3885,7 @@ document.getElementById('restart-btn').addEventListener('click', () => {
     state.introPlaying = false; // Bug 9: reset intro flag
     state.betweenShifts = false; state.newspaperShowing = false;
     state.loopholeFound = false; state.loopholeReasonPending = false;
+    state.loopholesEverUsed = 0; state.loopholesFound = []; state._loopholeDismissal = false;
     state.redShift = 0.0; state.stampDelay = 0;
     _enterHolding = false; _enterHoldStart = 0; // Bug 11: reset Enter hold state
     // Stop any lingering stamp hold tone
