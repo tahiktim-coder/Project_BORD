@@ -1060,23 +1060,23 @@ const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerH
 camera.position.set(0, 1.8, 0);
 
 const DESK_ROT_X = -0.85;
-const UP_ROT_X = 0.05;
+const UP_ROT_X = -0.12;
 camera.rotation.order = 'XYZ';
 camera.rotation.x = DESK_ROT_X;
 
 // ============================================================
 // MATERIALS - Noir palette
 // ============================================================
-const deskMat = new THREE.MeshStandardMaterial({ color: 0x5a4830, roughness: 0.75, metalness: 0.1 });
-const darkWoodMat = new THREE.MeshStandardMaterial({ color: 0x4a3a22, roughness: 0.85 });
+const deskMat = new THREE.MeshStandardMaterial({ color: 0x5a4830, roughness: 0.75, metalness: 0.1, emissive: 0x3a3018, emissiveIntensity: 0.8 });
+const darkWoodMat = new THREE.MeshStandardMaterial({ color: 0x4a3a22, roughness: 0.85, emissive: 0x2a2010, emissiveIntensity: 0.6 });
 const floorMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.95 });
 const ceilingMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.95 });
-const dividerMat = new THREE.MeshStandardMaterial({ color: 0x333330, roughness: 0.9 });
+const dividerMat = new THREE.MeshStandardMaterial({ color: 0x333330, roughness: 0.9, emissive: 0x333330, emissiveIntensity: 0.7 });
 
-// Workers - dark but visible suits, faces shadowed under hats
-const suitMat = new THREE.MeshStandardMaterial({ color: 0x383838, roughness: 0.85 });
-const hatMat = new THREE.MeshStandardMaterial({ color: 0x252525, roughness: 0.8 });
-const skinMat = new THREE.MeshStandardMaterial({ color: 0x3a3530, roughness: 0.9 }); // dark enough to shadow under hat
+// Workers - dark silhouettes visible after noir shader (need high emissive to survive smoothstep crush)
+const suitMat = new THREE.MeshStandardMaterial({ color: 0x383838, roughness: 0.85, emissive: 0x555555, emissiveIntensity: 1.2 });
+const hatMat = new THREE.MeshStandardMaterial({ color: 0x252525, roughness: 0.8, emissive: 0x444444, emissiveIntensity: 1.0 });
+const skinMat = new THREE.MeshStandardMaterial({ color: 0x3a3530, roughness: 0.9, emissive: 0x332820, emissiveIntensity: 0.6 }); // shadow under hat
 const monitorMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.3, metalness: 0.5 });
 const screenMat = new THREE.MeshStandardMaterial({ color: 0x1a2a1a, emissive: 0x1a3a1a, emissiveIntensity: 0.8, roughness: 0.5 });
 const paperMat = new THREE.MeshStandardMaterial({ color: 0xd8d0c0, roughness: 0.9 });
@@ -1706,7 +1706,7 @@ scene.add(backWall);
 // ============================================================
 
 // Ambient - enough to see shapes in shadows
-const ambient = new THREE.AmbientLight(0x444444, 1.0);
+const ambient = new THREE.AmbientLight(0x444444, 1.4);
 scene.add(ambient);
 
 // Fluorescent light fixture
@@ -1743,6 +1743,14 @@ for (let row = 0; row < 18; row++) {
 // Hemisphere fill
 const hemiLight = new THREE.HemisphereLight(0x444444, 0x111111, 0.5);
 scene.add(hemiLight);
+
+// LookUp fill light — directional, only active when looking up at office
+// Illuminates workers/desks from above-forward so silhouettes read after noir shader
+const lookUpLight = new THREE.DirectionalLight(0xccccbb, 0);
+lookUpLight.position.set(0, 3, 1); // from above and slightly behind camera
+lookUpLight.target.position.set(0, 1.2, -10); // aimed at worker row height, into office
+scene.add(lookUpLight);
+scene.add(lookUpLight.target);
 
 // ============================================================
 // POST-PROCESSING
@@ -1784,8 +1792,12 @@ const noirShader = {
             // Convert to greyscale
             float lum = dot(color.rgb, vec3(0.299, 0.587, 0.114));
 
-            // Gentle S-curve: wider range so darks aren't crushed to black
+            // S-curve with raised floor so dark geometry reads as silhouettes
+            float rawLum = lum;
             lum = smoothstep(0.02, 1.0, lum) * 1.05;
+            // Lift dark geometry to visible gray (rawLum 0.01-0.15 maps to 0.0-0.18 floor)
+            float darkLift = smoothstep(0.01, 0.15, rawLum) * 0.18;
+            lum = max(lum, darkLift);
 
             // Detect red (for eyes) - keep red if emissive red is dominant
             float redDom = color.r - max(color.g, color.b);
@@ -1972,8 +1984,8 @@ scene.add(approachFigure);
 const closeUpWatcher = new THREE.Group();
 closeUpWatcher.visible = false;
 
-// Pitch-black head — blocks background, no emissive, just a dark void shape
-const cuHeadMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+// Dark head silhouette — enough emissive to read as a shape against office background
+const cuHeadMat = new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0x333333, emissiveIntensity: 0.6 });
 const cuHead = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 8), cuHeadMat);
 cuHead.position.set(0, 1.82, -0.05);
 closeUpWatcher.add(cuHead);
@@ -4369,7 +4381,7 @@ const clock = new THREE.Clock();
 
 function animate() {
     requestAnimationFrame(animate);
-    const dt = clock.getDelta();
+    const dt = Math.min(clock.getDelta(), 0.1); // clamp to 100ms max to prevent spiral on tab-switch
     const t = clock.getElapsedTime();
 
     // Don't render scene until title is dismissed — just clear black
@@ -4398,6 +4410,11 @@ function animate() {
         state._hesitationTimer = 0;
     }
     camera.rotation.x += (targetX - camera.rotation.x) * lookSpeed * dt;
+
+    // LookUp fill light — fade in when looking up, fade out when looking down
+    const lookUpTarget = state.targetLook === 1 ? 1.8 : 0;
+    lookUpLight.intensity += (lookUpTarget - lookUpLight.intensity) * 2.5 * dt;
+    lookUpLight.intensity = Math.max(0, Math.min(lookUpLight.intensity, 2.0));
 
     // Suspicion percentage — used by breathing, flicker, fog, etc.
     const suspPct = state.suspicion / 100;
