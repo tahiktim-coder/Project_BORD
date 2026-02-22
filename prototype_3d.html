@@ -214,32 +214,64 @@
         /* Newspaper overlay */
         #newspaper-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.92); z-index: 50;
+            background: rgba(0,0,0,0.95); z-index: 50;
             display: none; flex-direction: column; align-items: center; justify-content: center;
             opacity: 0; transition: opacity 0.8s ease;
         }
         #newspaper-overlay.visible { display: flex; opacity: 1; }
         .np-paper {
-            width: 480px; background: rgba(220, 215, 200, 0.95);
-            padding: 30px 35px; font-family: 'Special Elite', monospace;
-            color: #1a1a1a; box-shadow: 0 4px 40px rgba(0,0,0,0.8);
+            width: 560px; background: #e8e0d0;
+            padding: 0; font-family: 'Special Elite', monospace;
+            color: #1a1a1a; box-shadow: 0 8px 60px rgba(0,0,0,0.9);
+            border: 1px solid rgba(80,70,50,0.3);
+            position: relative; overflow: hidden;
+        }
+        .np-paper::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.015) 2px, rgba(0,0,0,0.015) 4px);
+            pointer-events: none;
+        }
+        .np-header {
+            padding: 20px 30px 0 30px; text-align: center;
+            border-bottom: 2px solid #1a1a1a; margin: 0 20px;
         }
         .np-masthead {
-            text-align: center; font-size: 22px; font-weight: 700;
-            letter-spacing: 0.15em; border-bottom: 3px double #1a1a1a;
-            padding-bottom: 8px; margin-bottom: 12px;
+            font-size: 28px; font-weight: 700;
+            letter-spacing: 0.2em; line-height: 1;
+            text-transform: uppercase;
         }
-        .np-date { text-align: center; font-size: 10px; color: #666; margin-bottom: 16px; letter-spacing: 0.2em; }
+        .np-subtitle {
+            font-size: 9px; letter-spacing: 0.3em; color: #666;
+            margin: 4px 0 2px 0; text-transform: uppercase;
+        }
+        .np-date {
+            font-size: 9px; color: #888; letter-spacing: 0.15em;
+            padding: 6px 0 12px 0;
+        }
+        .np-body { padding: 16px 30px 10px 30px; }
         .np-headline {
-            font-size: 14px; font-weight: 700; line-height: 1.3;
-            margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.03em;
+            font-size: 15px; font-weight: 700; line-height: 1.25;
+            margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.02em;
         }
-        .np-sub { font-size: 11px; color: #444; line-height: 1.4; margin-bottom: 16px; font-style: italic; }
-        .np-divider { border: none; border-top: 1px solid #999; margin: 12px 0; }
+        .np-headline:first-child { font-size: 18px; margin-bottom: 6px; }
+        .np-sub {
+            font-size: 10px; color: #555; line-height: 1.5; margin-bottom: 14px;
+            font-style: normal; padding-left: 8px;
+            border-left: 2px solid rgba(80,70,50,0.2);
+        }
+        .np-divider { border: none; border-top: 1px solid #bbb; margin: 10px 0; }
+        .np-footer {
+            padding: 10px 30px 16px 30px; text-align: center;
+            border-top: 1px solid #ccc; margin: 0 20px;
+        }
         .np-continue {
-            text-align: center; font-size: 10px; color: #888;
-            letter-spacing: 0.15em; margin-top: 16px;
+            font-size: 10px; color: #888;
+            letter-spacing: 0.15em;
             animation: pulse 2.5s ease infinite;
+        }
+        .np-shift-label {
+            font-size: 10px; color: #999; letter-spacing: 0.2em;
+            text-transform: uppercase; margin-bottom: 6px;
         }
 
         /* Loophole reason picker */
@@ -258,22 +290,19 @@
         }
         .lp-reason:hover { background: rgba(0,100,0,0.08); border-color: rgba(0,100,0,0.2); }
 
-        /* Clickable irregularity highlight — always visible, not hidden */
+        /* Clickable irregularity — barely visible, just slightly "off" */
         .cf-irregularity {
-            cursor: help;
-            letter-spacing: 0.06em;
-            background: rgba(139,0,0,0.08);
-            border-bottom: 1px dashed rgba(139,0,0,0.25);
-            padding: 0 2px;
+            cursor: pointer;
+            letter-spacing: 0.03em;
+            border-bottom: 1px dotted rgba(80,70,50,0.25);
             transition: all 0.2s ease;
         }
         .cf-irregularity:hover {
-            background: rgba(139,0,0,0.18);
-            border-bottom-color: rgba(139,0,0,0.5);
+            border-bottom-color: rgba(80,70,50,0.5);
+            background: rgba(80,70,50,0.06);
         }
         .cf-irregularity.found {
-            color: #8b0000; border-bottom: 1px solid #8b0000;
-            background: rgba(139,0,0,0.15);
+            color: #555; border-bottom: 1px solid #555;
         }
 
         /* Case file entrance animation */
@@ -358,24 +387,23 @@
             animation: headlineReveal 400ms ease forwards;
         }
 
-        /* Irregularity glow pulse */
+        /* Irregularity found pulse — subtle, no red */
         @keyframes irregularityPulse {
-            0% { background: rgba(139,0,0,0.3); text-shadow: 0 0 8px rgba(139,0,0,0.5); }
-            100% { background: transparent; text-shadow: none; }
+            0% { background: rgba(80,70,50,0.15); }
+            100% { background: transparent; }
         }
         .cf-irregularity.found {
-            color: #8b0000; border-bottom: 1px solid #8b0000;
-            background: rgba(139,0,0,0.15);
+            color: #555; border-bottom: 1px solid #555;
             animation: irregularityPulse 600ms ease forwards;
         }
 
-        /* Irregularity hint pulse (after 4s on loophole cases) — brighter pulse since always visible */
+        /* Irregularity hint pulse (after 4s) — very subtle underline pulse */
         @keyframes irregularityHintPulse {
-            0%, 100% { background: rgba(139,0,0,0.08); }
-            50% { background: rgba(139,0,0,0.2); }
+            0%, 100% { border-bottom-color: rgba(80,70,50,0.15); }
+            50% { border-bottom-color: rgba(80,70,50,0.45); }
         }
         .cf-irregularity.hinting {
-            animation: irregularityHintPulse 2s ease infinite;
+            animation: irregularityHintPulse 3s ease infinite;
         }
 
         /* Differentiated choice hover */
@@ -589,10 +617,18 @@
 
 <div id="newspaper-overlay">
     <div class="np-paper">
-        <div class="np-masthead">THE BUREAU STANDARD</div>
-        <div class="np-date" id="np-date">05.02.2026 - EVENING EDITION</div>
-        <div id="np-headlines"></div>
-        <div class="np-continue">[ SPACE ] begin next shift</div>
+        <div class="np-header">
+            <div class="np-masthead">THE BUREAU STANDARD</div>
+            <div class="np-subtitle">Official Publication of the Bureau of Right Decisions</div>
+            <div class="np-date" id="np-date">05.02.2026 — EVENING EDITION</div>
+        </div>
+        <div class="np-body">
+            <div class="np-shift-label" id="np-shift-label">END OF SHIFT 1</div>
+            <div id="np-headlines"></div>
+        </div>
+        <div class="np-footer">
+            <div class="np-continue">[ SPACE ] begin next shift</div>
+        </div>
     </div>
 </div>
 
@@ -1919,27 +1955,17 @@ function updateWatchers(staggered = false) {
                 d.eyesActive = true;
             }, delay);
         });
-        // Turn OFF eyes that should no longer be on (suspicion dropped)
-        eyeTargets.forEach(({ worker: w, eyesOn }) => {
-            if (!eyesOn && w.userData.eyesActive) {
-                w.userData.leftEye.material = eyeMatOff;
-                w.userData.rightEye.material = eyeMatOff;
-                w.userData.eyesActive = false;
-            }
-        });
+        // Eyes NEVER close once opened — permanent watchers
     } else {
-        // Instant update - eyes follow suspicion both ways
+        // Instant update - only ADD eyes, never remove (permanent once activated)
         eyeTargets.forEach(({ worker: w, eyesOn }) => {
             const d = w.userData;
             if (eyesOn && !d.eyesActive) {
                 d.leftEye.material = eyeMat;
                 d.rightEye.material = eyeMat;
                 d.eyesActive = true;
-            } else if (!eyesOn && d.eyesActive) {
-                d.leftEye.material = eyeMatOff;
-                d.rightEye.material = eyeMatOff;
-                d.eyesActive = false;
             }
+            // Never turn off: once eyes are on, they stay on
         });
     }
 
@@ -2073,11 +2099,6 @@ function renderCase(c) {
         }
     }
 
-    // Build Bureau Manual content — 2 relevant rules per case
-    const absRuleIdx = getAbsoluteCaseIndex();
-    const ruleIndices = CASE_RULES[absRuleIdx] || [0, 1];
-    const regulations = ruleIndices.map(i => BUREAU_RULES[i]);
-
     el.innerHTML = `
         <div class="cf-tabs">
             <div class="cf-tab active" onclick="window.switchTab('case')">Case File</div>
@@ -2107,8 +2128,7 @@ function renderCase(c) {
         <div id="cf-manual-content" style="display:none;">
             <div class="cf-header" style="font-size:12px;">BUREAU MANUAL</div>
             <div class="manual-content">
-                <div class="manual-section">Rules for this case</div>
-                ${regulations.map(r => `
+                ${BUREAU_RULES.map(r => `
                     <div class="manual-rule">
                         <span class="manual-rule-id">${r.id}</span> — ${r.text}
                     </div>
@@ -2245,8 +2265,13 @@ window.foundIrregularity = function(el) {
     if (!c || !c.loopholeReasons) return;
 
     state.loopholeReasonPending = true;
+    // Complete typewriter if still running (so choices area is usable)
+    skipTypewriter();
     const choicesEl = document.querySelector('.cf-choices');
     if (!choicesEl) return;
+    // Ensure choices area is visible for the reason picker
+    choicesEl.classList.remove('choices-hidden');
+    choicesEl.classList.add('choices-visible');
 
     // Replace choices with reason picker
     const shuffled = [...c.loopholeReasons].sort(() => Math.random() - 0.5);
@@ -2593,8 +2618,9 @@ function showNewspaper(shiftJustCompleted) {
     state.newspaperShowing = true;
 
     const headlines = generateNewspaper(shiftJustCompleted);
-    const dateStr = shiftJustCompleted === 0 ? '05.02.2026 - EVENING EDITION' : '06.02.2026 - EVENING EDITION';
+    const dateStr = shiftJustCompleted === 0 ? '05.02.2026 — EVENING EDITION' : '06.02.2026 — EVENING EDITION';
     document.getElementById('np-date').textContent = dateStr;
+    document.getElementById('np-shift-label').textContent = shiftJustCompleted === 0 ? 'END OF SHIFT 1' : 'END OF SHIFT 2';
 
     let html = '';
     let elemCount = 0;
