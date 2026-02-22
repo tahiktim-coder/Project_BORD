@@ -2472,23 +2472,40 @@ window.gameChoice = function(delta, evil) {
         }
     }
 
-    // Hard typing stop on EVERY mercy choice — the room heard you
-    if (window._typingDelayMultiplier !== undefined) {
-        const savedMul = window._typingDelayMultiplier;
-        window._typingDelayMultiplier = 999;
-        setTimeout(() => { window._typingDelayMultiplier = savedMul; }, 800);
+    // Room feedback depends on dismissal type
+    if (isLoopholeDismissal) {
+        // Loophole: system can't punish what it authored — typing continues, lamp brightens
+        if (typeof lampLight !== 'undefined') {
+            const origLamp = lampLight.intensity;
+            lampLight.intensity = origLamp * 1.3;
+            setTimeout(() => { lampLight.intensity = origLamp; }, 600);
+        }
+    } else if (delta === 0) {
+        // Tier A (rules mandate dismiss): minimal room response — slight pause
+        if (window._typingDelayMultiplier !== undefined) {
+            const savedMul = window._typingDelayMultiplier;
+            window._typingDelayMultiplier = 3;
+            setTimeout(() => { window._typingDelayMultiplier = savedMul; }, 400);
+        }
+    } else {
+        // Pure mercy: the room heard you — typing stops, lamp dims
+        if (window._typingDelayMultiplier !== undefined) {
+            const savedMul = window._typingDelayMultiplier;
+            window._typingDelayMultiplier = 999;
+            setTimeout(() => { window._typingDelayMultiplier = savedMul; }, 800);
+        }
+        if (typeof lampLight !== 'undefined') {
+            const origLamp = lampLight.intensity;
+            lampLight.intensity = origLamp * 0.4;
+            setTimeout(() => { lampLight.intensity = origLamp * 1.2; }, 200);
+            setTimeout(() => { lampLight.intensity = origLamp; }, 500);
+        }
     }
 
-    // Lamp flicker on mercy — dims briefly (something noticed)
-    if (typeof lampLight !== 'undefined') {
-        const origLamp = lampLight.intensity;
-        lampLight.intensity = origLamp * 0.4;
-        setTimeout(() => { lampLight.intensity = origLamp * 1.2; }, 200);
-        setTimeout(() => { lampLight.intensity = origLamp; }, 500);
+    // B2: Anticipatory cue during mercy transition — skip for loopholes/Tier A (system isn't threatened)
+    if (!isLoopholeDismissal && delta > 0) {
+        setTimeout(() => playAnticipatoryCue(), 300 + Math.random() * 200);
     }
-
-    // B2: Anticipatory cue during mercy transition
-    setTimeout(() => playAnticipatoryCue(), 300 + Math.random() * 200);
 
     // Forced look-up on FIRST mercy (case 0): teach the mechanic
     if (absIdx === 0 && !state.firedEvents.has('_forcedFirstLookUp')) {
@@ -3799,6 +3816,10 @@ function endGame(caught) {
         }, 3000);
     } else if (tc === totalCases) {
         // EXEMPLARY ending — no drama, instant. The machine does not celebrate you.
+        // Subtle lamp brighten: "A nicer lamp." The only reward compliance gets.
+        if (typeof lampLight !== 'undefined') {
+            setTimeout(() => { lampLight.intensity = lampLight.intensity * 1.4; }, 400);
+        }
         setTimeout(() => {
             document.getElementById('end-title').textContent = title;
             document.getElementById('end-title').className = titleClass;
@@ -3844,6 +3865,20 @@ function endGame(caught) {
         }, 4000);
         // 7-9s: total silence
         setTimeout(() => { if (epochGuard()) audioSilence(3000); }, 7000);
+        // 8.5s: single keystroke in the dark — your replacement is here
+        setTimeout(() => {
+            if (!epochGuard() || !audioCtx || audioCtx.state !== 'running') return;
+            const mg = window._audioMasterGain || audioCtx.destination;
+            const now = audioCtx.currentTime;
+            const s = Math.floor(audioCtx.sampleRate * 0.015);
+            const b = audioCtx.createBuffer(1, s, audioCtx.sampleRate);
+            const d = b.getChannelData(0);
+            for (let i = 0; i < s; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (s * 0.15));
+            const src = audioCtx.createBufferSource(); src.buffer = b;
+            const g = audioCtx.createGain(); g.gain.value = 0.15; // louder than ambient typing
+            const f = audioCtx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 3000; f.Q.value = 2;
+            src.connect(f); f.connect(g); g.connect(mg); src.start(now);
+        }, 8500);
         // 9-11s: desk lamp flickers and dies
         setTimeout(() => {
             if (!epochGuard()) return;
@@ -4182,8 +4217,10 @@ function initAudio() {
     setTimeout(scheduleCreak, 6000);
 
     // --- 6. Paper shuffling (high-frequency noise bursts) ---
+    // Suspicion gate: shuffle cuts when watched (suspicion >= 30)
     function scheduleShuffle() {
         if (!audioCtx || audioCtx.state === 'closed') return;
+        if (state.suspicion >= 30) { setTimeout(scheduleShuffle, 3000 + Math.random() * 8000); return; }
         const now = audioCtx.currentTime;
         const dur = 0.08 + Math.random() * 0.15;
         const bufSize = Math.floor(audioCtx.sampleRate * dur);
@@ -4208,8 +4245,10 @@ function initAudio() {
     setTimeout(scheduleShuffle, 4000);
 
     // --- 7. Distant murmurs / whispers (very low filtered noise) ---
+    // Suspicion gate: murmurs cut when noticed (suspicion > 5)
     function scheduleMurmur() {
         if (!audioCtx || audioCtx.state === 'closed') return;
+        if (state.suspicion > 5) { setTimeout(scheduleMurmur, 5000 + Math.random() * 10000); return; }
         const now = audioCtx.currentTime;
         const dur = 0.4 + Math.random() * 0.8;
         const bufSize = Math.floor(audioCtx.sampleRate * dur);
@@ -4239,8 +4278,10 @@ function initAudio() {
     setTimeout(scheduleMurmur, 8000);
 
     // --- 8. Distant phone ring (two-tone oscillator, rare) ---
+    // Suspicion gate: phone cuts when targeted (suspicion >= 55)
     function schedulePhone() {
         if (!audioCtx || audioCtx.state === 'closed') return;
+        if (state.suspicion >= 55) { setTimeout(schedulePhone, 20000 + Math.random() * 30000); return; }
         const now = audioCtx.currentTime;
         // Two-tone ring: 440Hz + 480Hz, pulsed
         for (let ring = 0; ring < 2; ring++) {
@@ -4272,8 +4313,10 @@ function initAudio() {
     setTimeout(schedulePhone, 15000);
 
     // --- 9. Pen scratch (high, thin, scratchy) ---
+    // Suspicion gate: pen scratch cuts when targeted (suspicion >= 55)
     function schedulePenScratch() {
         if (!audioCtx || audioCtx.state === 'closed') return;
+        if (state.suspicion >= 55) { setTimeout(schedulePenScratch, 5000 + Math.random() * 10000); return; }
         const now = audioCtx.currentTime;
         const dur = 0.05 + Math.random() * 0.1;
         const bufSize = Math.floor(audioCtx.sampleRate * dur);
