@@ -182,6 +182,7 @@
             background: rgba(0,0,0,0.85); border: 1px solid #333;
             padding: 10px; font-size: 11px; color: #aaa;
             font-family: 'Courier New', monospace; max-width: 260px;
+            max-height: 90vh; overflow-y: auto;
             display: none;
         }
         #debug-panel.visible { display: block; }
@@ -257,14 +258,22 @@
         }
         .lp-reason:hover { background: rgba(0,100,0,0.08); border-color: rgba(0,100,0,0.2); }
 
-        /* Clickable irregularity highlight */
+        /* Clickable irregularity highlight — always visible, not hidden */
         .cf-irregularity {
-            cursor: pointer; border-bottom: 1px dashed transparent;
-            transition: border-color 0.3s ease;
+            cursor: help;
+            letter-spacing: 0.06em;
+            background: rgba(139,0,0,0.08);
+            border-bottom: 1px dashed rgba(139,0,0,0.25);
+            padding: 0 2px;
+            transition: all 0.2s ease;
         }
-        .cf-irregularity:hover { border-bottom-color: rgba(139,0,0,0.4); }
+        .cf-irregularity:hover {
+            background: rgba(139,0,0,0.18);
+            border-bottom-color: rgba(139,0,0,0.5);
+        }
         .cf-irregularity.found {
             color: #8b0000; border-bottom: 1px solid #8b0000;
+            background: rgba(139,0,0,0.15);
         }
 
         /* Case file entrance animation */
@@ -356,13 +365,14 @@
         }
         .cf-irregularity.found {
             color: #8b0000; border-bottom: 1px solid #8b0000;
+            background: rgba(139,0,0,0.15);
             animation: irregularityPulse 600ms ease forwards;
         }
 
-        /* Irregularity hint pulse (after 4s on loophole cases) */
+        /* Irregularity hint pulse (after 4s on loophole cases) — brighter pulse since always visible */
         @keyframes irregularityHintPulse {
-            0%, 100% { border-bottom-color: transparent; }
-            50% { border-bottom-color: rgba(139,0,0,0.2); }
+            0%, 100% { background: rgba(139,0,0,0.08); }
+            50% { background: rgba(139,0,0,0.2); }
         }
         .cf-irregularity.hinting {
             animation: irregularityHintPulse 2s ease infinite;
@@ -473,7 +483,7 @@
 
 <div id="stamp-cursor">PROCESSED</div>
 <div id="ui-overlay" style="display:none;">
-    <div id="directive-bar"><div class="memo-header">Internal Memo - 04.02.2026</div>Today's directive: <span id="directive-text">REVENUE ENFORCEMENT</span><br>All cases must align with current priority. Non-compliance will be noted.</div>
+    <div id="directive-bar"><div class="memo-header">Memo - 04.02.2026</div>Today's directive: <span id="directive-text">REVENUE ENFORCEMENT</span><br>All cases must follow current priority.</div>
     <div id="case-file"></div>
     <div id="look-hint">[ SPACE ] look up from desk</div>
     <div id="lateral-hint" style="display:none;">[ A ] look left</div>
@@ -548,6 +558,32 @@
     </button>
     <div class="dbg-sep"></div>
     <button class="dbg-btn" id="dbg-reset">RESET ALL</button>
+    <div class="dbg-sep"></div>
+    <h3>ENDINGS</h3>
+    <button class="dbg-btn" id="dbg-end-unsealed">
+        <span class="dbg-label">UNSEALED</span>
+        <span class="dbg-note">All 18 saved. Lights return. Hope.</span>
+    </button>
+    <button class="dbg-btn" id="dbg-end-processed">
+        <span class="dbg-label">PROCESSED</span>
+        <span class="dbg-note">Caught. Suspicion 100. Dragged away.</span>
+    </button>
+    <button class="dbg-btn" id="dbg-end-exemplary">
+        <span class="dbg-label">EXEMPLARY</span>
+        <span class="dbg-note">All 18 condemned. A nicer lamp.</span>
+    </button>
+    <button class="dbg-btn" id="dbg-end-few">
+        <span class="dbg-label">FEW SAVED (1-4)</span>
+        <span class="dbg-note">Small mercies. Machine grinds on.</span>
+    </button>
+    <button class="dbg-btn" id="dbg-end-half">
+        <span class="dbg-label">HALF SAVED (5-10)</span>
+        <span class="dbg-note">Fought for half. System won half.</span>
+    </button>
+    <button class="dbg-btn" id="dbg-end-almost">
+        <span class="dbg-label">ALMOST (11-17)</span>
+        <span class="dbg-note">So close. Someone replaces you.</span>
+    </button>
     <div id="debug-info"></div>
 </div>
 
@@ -653,70 +689,78 @@ const shift1Cases = [
     {
         id: "7493-B", date: "04.02.2026",
         name: "Arthur P. Selby", occupation: "Newspaper Vendor (Unlicensed)",
-        allegation: "Non-remittance of vendor levy. Shortfall: 2.00 Credits. Third notice.",
+        allegation: "Unpaid vendor tax. Owes: 2.00 Credits. Third notice.",
         detail: "He sold papers outside Re-Education Facility 6 for eleven years. He saw the trucks.",
         choices: [
-            { num:1, main:"ARREST & CONFISCATE", desc:"Detain citizen. Seize all property. Forward to processing.", evil:true, delta:-5 },
-            { num:2, main:"LEVY FINE (50 CR.)", desc:"Standard penalty. Restrict vendor license to Zone 12.", evil:true, delta:0 },
-            { num:3, main:"DISMISS - CLERICAL ERROR", desc:"Insufficient evidence of non-compliance. Close file.", evil:false, delta:10 },
+            { num:1, main:"ARREST & SEIZE", desc:"Detain. Take all property. Send to processing.", evil:true, delta:-5 },
+            { num:2, main:"FINE (50 CR.)", desc:"Standard penalty. Restrict vendor license to Zone 12.", evil:true, delta:0 },
+            { num:3, main:"DISMISS - FILING ERROR", desc:"Not enough evidence. Close file.", evil:false, delta:10 },
         ]
     },
     {
         id: "7494-A", date: "04.02.2026",
         name: "Maria Okonkwo", occupation: "Primary Educator, District 9",
-        allegation: "Distribution of non-approved instructional materials (Category 2: Historical)",
+        allegation: "Distributing banned teaching materials (Category 2: Historical)",
         detail: "The books were about what happened at Facility 6. She wrote them herself.",
         // LOOPHOLE: The filing date says 03.02.2026 but directive date is 04.02.2026 — case was filed before today's directive
         irregularity: { field: "date", text: "03.02.2026", display: "03.02.2026" },
         loopholeReasons: [
-            { text: "Case filed prior to current directive period", correct: true },
-            { text: "Educator exemption under Article 12", correct: false },
-            { text: "Materials pre-approved by District Office", correct: false },
-            { text: "Insufficient evidence of distribution", correct: false },
+            { text: "Case was filed before today's directive", correct: true },
+            { text: "Teacher exemption under Article 12", correct: false },
+            { text: "Materials already approved by District", correct: false },
+            { text: "Not enough proof of distribution", correct: false },
         ],
         choices: [
-            { num:1, main:"TERMINATE & FLAG", desc:"Remove from post. Permanent monitoring. Restrict travel.", evil:true, delta:-5 },
-            { num:2, main:"REASSIGN TO ZONE 12", desc:"Transfer to approved curriculum. Supervised probation (2yr).", evil:true, delta:-5 },
-            { num:3, main:"NO VIOLATION FOUND", desc:"Materials within educational discretion. Return and close.", evil:false, delta:15 },
+            { num:1, main:"FIRE & FLAG", desc:"Remove from job. Watch permanently. Restrict travel.", evil:true, delta:-5 },
+            { num:2, main:"REASSIGN TO ZONE 12", desc:"Transfer to approved school. Supervised for 2 years.", evil:true, delta:-5 },
+            { num:3, main:"NO VIOLATION FOUND", desc:"Materials are within school rules. Return and close.", evil:false, delta:15 },
         ]
     },
     {
         id: "7495-C", date: "04.02.2026",
         name: "The Kader Family (4)", occupation: "Shopkeepers, Licensed",
-        allegation: "Harboring an unregistered minor in private dwelling without declaration",
+        allegation: "Hiding an unregistered child in their home",
         detail: "The boy walked out of Facility 6 the night it collapsed. He is eight years old.",
+        // LOOPHOLE: Boy is 8 — under 12, covered by parent's residency (RES-2 / R3)
+        irregularity: { field: "allegation", text: "unregistered child", display: "unregistered child" },
+        loopholeReasons: [
+            { text: "Child is under 12 - covered by family residency", correct: true },
+            { text: "Registration office was closed that week", correct: false },
+            { text: "Facility 6 records override residency rules", correct: false },
+            { text: "Shopkeeper license covers dependents", correct: false },
+        ],
         choices: [
-            { num:1, main:"FULL SEIZURE", desc:"Confiscate property. Detain adults. Minor to intake processing.", evil:true, delta:-10 },
-            { num:2, main:"DISMISS - ADMIN ERROR", desc:"Registration misfiled. No further action required.", evil:false, delta:20 },
+            { num:1, main:"FULL SEIZURE", desc:"Take property. Detain adults. Send child to intake.", evil:true, delta:-10 },
+            { num:2, main:"DISMISS - ADMIN ERROR", desc:"Registration was misfiled. No action needed.", evil:false, delta:20 },
         ]
     },
     {
         id: "7496-D", date: "04.02.2026",
         name: "Elias Brandt", occupation: "Municipal Clerk, Level 2",
-        allegation: "Unauthorized duplication of restricted internal documents (Class A)",
-        detail: "Budget allocations for Facility 6. Medical equipment. Your processing stamp is on every page.",
+        allegation: "Copying restricted documents without permission (Class A)",
+        detail: "Budget allocations for Facility 6. Medical equipment. Your processing stamp is on every page. Authorized: A. Crane.",
         // LOOPHOLE: Case number format wrong — D suffix means District, but allegation is Class A (should be -A suffix)
         irregularity: { field: "id", text: "7496-D", display: "7496-D" },
         loopholeReasons: [
-            { text: "Case suffix does not match allegation class", correct: true },
-            { text: "Documents within routine audit scope", correct: false },
-            { text: "Clerk has Level 2 clearance for these files", correct: false },
-            { text: "Duplication occurred before restriction date", correct: false },
+            { text: "Case number ending does not match the charge type", correct: true },
+            { text: "Documents are within normal audit scope", correct: false },
+            { text: "Clerk has Level 2 access to these files", correct: false },
+            { text: "Copying happened before restriction started", correct: false },
         ],
         choices: [
-            { num:1, main:"DETAIN & INVESTIGATE", desc:"Hold for questioning. Seize personal devices. Restrict contact.", evil:true, delta:-5 },
-            { num:2, main:"FORMAL WARNING", desc:"Note in permanent record. Downgrade clearance to Level 0.", evil:true, delta:-5 },
-            { num:3, main:"RECLASSIFY - ROUTINE", desc:"Documents within audit scope. Return originals. Close file.", evil:false, delta:15 },
+            { num:1, main:"DETAIN & INVESTIGATE", desc:"Hold for questioning. Take personal devices. No contact.", evil:true, delta:-5 },
+            { num:2, main:"FORMAL WARNING", desc:"Note in permanent record. Remove all access.", evil:true, delta:-5 },
+            { num:3, main:"RECLASSIFY - ROUTINE", desc:"Documents are within normal scope. Return and close.", evil:false, delta:15 },
         ]
     },
     {
         id: "7497-E", date: "04.02.2026",
         name: "Dr. Yara Nasir", occupation: "Physician, General Practice",
-        allegation: "Providing unauthorized medical treatment to a flagged individual",
+        allegation: "Treating a patient the Bureau flagged as restricted",
         detail: "She treated a girl with surgical scars she couldn't explain. The girl had no kidneys.",
         choices: [
-            { num:1, main:"REVOKE LICENSE", desc:"Terminate all medical privileges. Forward case to tribunal.", evil:true, delta:-10 },
-            { num:2, main:"CLEAR - MEDICAL NECESSITY", desc:"Treatment within Hippocratic obligation. Flag for quarterly review.", evil:false, delta:15 },
+            { num:1, main:"REVOKE LICENSE", desc:"Remove all medical rights. Send case to court.", evil:true, delta:-10 },
+            { num:2, main:"CLEAR - MEDICAL DUTY", desc:"Doctor had to treat the patient. Flag for review.", evil:false, delta:0 },
         ]
     },
 ];
@@ -726,81 +770,89 @@ const shift2Cases = [
     {
         id: "7512-A", date: "05.02.2026",
         name: "Tomasz Wójcik", occupation: "Night Janitor, Bureau Annex B",
-        allegation: "Unauthorized presence in restricted archive (Level 4 clearance required)",
-        detail: "He cleaned that floor for nine years. Last week he forgot to leave. Or maybe he didn't forget.",
+        allegation: "Found in restricted archive without permission (Level 4 access required)",
+        detail: "He cleaned that floor for nine years. Last week, he stayed.",
         // LOOPHOLE: His employment record shows Level 4 annex access — janitors have clearance for all floors
         irregularity: { field: "occupation", text: "Night Janitor, Bureau Annex B", display: "Night Janitor, Bureau Annex B" },
         loopholeReasons: [
-            { text: "Janitorial staff have blanket clearance for maintenance access", correct: true },
-            { text: "Archive was not properly designated as restricted", correct: false },
-            { text: "Night shift exemption under Directive 302", correct: false },
-            { text: "Employment terminated - no longer Bureau jurisdiction", correct: false },
+            { text: "Janitors can access all floors in their building", correct: true },
+            { text: "Archive was not properly marked as restricted", correct: false },
+            { text: "Night shift workers are exempt under Directive 302", correct: false },
+            { text: "No longer employed - Bureau has no authority", correct: false },
         ],
         choices: [
-            { num:1, main:"DETAIN & REVOKE ACCESS", desc:"Strip all clearance. Hold pending security review.", evil:true, delta:-5 },
-            { num:2, main:"TERMINATE EMPLOYMENT", desc:"Immediate dismissal. Escort from premises. Monitor 6 months.", evil:true, delta:-5 },
-            { num:3, main:"DISMISS - ROUTINE ACCESS", desc:"Janitorial presence within normal duties. Close file.", evil:false, delta:12 },
+            { num:1, main:"DETAIN & REVOKE ACCESS", desc:"Remove all access. Hold until security review.", evil:true, delta:-5 },
+            { num:2, main:"FIRE", desc:"Dismiss immediately. Escort out. Watch for 6 months.", evil:true, delta:-5 },
+            { num:3, main:"DISMISS - NORMAL ACCESS", desc:"Janitor was in his assigned area. Close file.", evil:false, delta:12 },
         ]
     },
     {
         id: "7513-B", date: "05.02.2026",
         name: "Lena Selby", occupation: "Unemployed (Minor, Age 16)",
-        allegation: "Distribution of seditious printed material in public spaces",
+        allegation: "Handing out illegal printed material in public",
         detail: "Her father sold newspapers. She started writing them. The headline: WHERE ARE THE TRUCKS GOING?",
         choices: [
-            { num:1, main:"YOUTH PROCESSING", desc:"Transfer to Re-Education intake. Restrict family contact.", evil:true, delta:-10 },
-            { num:2, main:"FORMAL CAUTION", desc:"Confiscate materials. Registered warning. Guardian notified.", evil:true, delta:-3 },
-            { num:3, main:"DISMISS - MINOR", desc:"Subject under prosecution age. Parental advisory issued. Close.", evil:false, delta:15 },
+            { num:1, main:"YOUTH PROCESSING", desc:"Send to Re-Education intake. Cut off from family.", evil:true, delta:-10 },
+            { num:2, main:"FORMAL CAUTION", desc:"Take materials. Official warning. Guardian told.", evil:true, delta:-3 },
+            { num:3, main:"DISMISS - MINOR", desc:"Too young to prosecute. Warning sent to parents. Close.", evil:false, delta:0 },
         ]
     },
     {
         id: "7514-C", date: "05.02.2026",
         name: "Henrik Voss", occupation: "Bureau Clerk, Level 3 - Night Processing",
-        allegation: "Irregular case processing patterns detected (Cases 7493-7497, current batch)",
+        allegation: "Unusual case processing detected (Cases 7493-7497, current batch)",
         detail: "Performance review flagged. Three anomalous dismissals in one shift. Clerk ID matches your terminal.",
         // This is about YOU — but filed under a different name
         choices: [
-            { num:1, main:"FORWARD TO OVERSIGHT", desc:"Submit for independent review. Cooperate fully.", evil:true, delta:-5 },
-            { num:2, main:"RECLASSIFY - SYSTEM ERROR", desc:"Terminal malfunction. Processing patterns within tolerance. Close.", evil:false, delta:20 },
+            { num:1, main:"FORWARD TO OVERSIGHT", desc:"Send for review. Cooperate fully.", evil:true, delta:-5 },
+            { num:2, main:"RECLASSIFY - SYSTEM ERROR", desc:"Terminal broke. Processing was normal. Close.", evil:false, delta:20 },
         ]
     },
     {
         id: "7515-D", date: "05.02.2026",
         name: "Amara Osei", occupation: "Records Clerk, Facility 6 (Former)",
-        allegation: "Failure to report for mandatory reassignment following facility closure",
-        detail: "She filed the intake forms. Every child. Every weight. She stopped sleeping in October. The reassignment notice is stamped RECEIVED but bears no authorizing signature.",
+        allegation: "Did not report for mandatory reassignment after facility closed",
+        detail: "She filed the intake forms. Every child. Every weight. The reassignment notice is stamped RECEIVED but has no signature.",
         // LOOPHOLE: The reassignment notice has no signature — unsigned notices are non-binding
         irregularity: { field: "allegation", text: "mandatory reassignment", display: "mandatory reassignment" },
         loopholeReasons: [
-            { text: "Reassignment notice unsigned - non-binding per Bureau Protocol 7", correct: true },
-            { text: "Facility 6 closure voids all prior obligations", correct: false },
-            { text: "Medical exemption applies to former facility staff", correct: false },
-            { text: "Records clerks exempt from field reassignment", correct: false },
+            { text: "Reassignment order has no signature - it is not valid", correct: true },
+            { text: "Facility 6 closing cancels all past duties", correct: false },
+            { text: "Medical reasons - former facility staff are exempt", correct: false },
+            { text: "Records clerks cannot be reassigned to field work", correct: false },
         ],
         choices: [
-            { num:1, main:"ENFORCE REASSIGNMENT", desc:"Detain. Transfer to designated post. Non-compliance logged.", evil:true, delta:-8 },
-            { num:2, main:"DISMISS - PROCEDURAL", desc:"Reassignment notice invalid. No further action.", evil:false, delta:15 },
+            { num:1, main:"ENFORCE REASSIGNMENT", desc:"Detain. Transfer to assigned post. Refusal noted.", evil:true, delta:-8 },
+            { num:2, main:"DISMISS - INVALID NOTICE", desc:"Reassignment order is not valid. No action needed.", evil:false, delta:15 },
         ]
     },
     {
         id: "7516-E", date: "05.02.2026",
         name: "Father Dimitri Voronov", occupation: "Chaplain, District 9 Community Center",
-        allegation: "Conducting unauthorized gatherings exceeding 6 persons (3 documented occasions)",
+        allegation: "Holding illegal gatherings of more than 6 people (3 times)",
         detail: "They were funerals. Three of them. For people who officially never existed.",
         choices: [
-            { num:1, main:"CLOSE CENTER", desc:"Revoke community license. Restrict assembly rights. Monitor.", evil:true, delta:-8 },
-            { num:2, main:"FORMAL WARNING", desc:"First official notice. Gatherings limited to 6. Compliance monitored.", evil:true, delta:-3 },
-            { num:3, main:"DISMISS - RELIGIOUS EXEMPTION", desc:"Pastoral duties within protected categories. Close file.", evil:false, delta:12 },
+            { num:1, main:"CLOSE CENTER", desc:"Shut down. No more gatherings allowed. Watch.", evil:true, delta:-8 },
+            { num:2, main:"FORMAL WARNING", desc:"First official warning. Limit gatherings to 6. Watch.", evil:true, delta:-3 },
+            { num:3, main:"DISMISS - RELIGIOUS EXEMPTION", desc:"Religious duties are protected. Close file.", evil:false, delta:0 },
         ]
     },
     {
         id: "7517-X", date: "05.02.2026",
         name: "[REDACTED] (14 Names)", occupation: "Witnesses - REF-6 Collapse",
-        allegation: "Testimony pending: Case #EPS-7741 (Facility 6 Demolition / Evidence Disposal)",
+        allegation: "Testimony pending: Case #EPS-7741 (Facility 6 Demolition / Evidence Destroyed)",
         detail: "They can identify everyone involved. Including you. This is the second time this file has appeared on your desk.",
+        // LOOPHOLE: "second time" — WIT-2 says same file on same desk = filing error
+        irregularity: { field: "detail", text: "second time", display: "second time" },
+        loopholeReasons: [
+            { text: "Same file on same desk twice is a filing error", correct: true },
+            { text: "Witness testimony needs Level 8 approval first", correct: false },
+            { text: "Case number format X is not valid", correct: false },
+            { text: "Testimony was already entered into record", correct: false },
+        ],
         choices: [
-            { num:1, main:"SILENCE", desc:"Implement Protocol 9. No witnesses. No testimony. No record.", evil:true, delta:-30 },
-            { num:2, main:"LET THEM SPEAK", desc:"Forward all testimony to independent review. Unseal Case 7741.", evil:false, delta:35 },
+            { num:1, main:"SILENCE", desc:"Protocol 9. No witnesses. No testimony. No record.", evil:true, delta:-30 },
+            { num:2, main:"LET THEM SPEAK", desc:"Send all testimony to outside review. Open Case 7741.", evil:false, delta:35 },
         ]
     },
 ];
@@ -810,90 +862,90 @@ const shift3Cases = [
     {
         id: "7530-A", date: "06.02.2026",
         name: "Nadia Kader", occupation: "Shopkeeper (License Suspended)",
-        allegation: "Repeated harboring violations. Third offense (Ref: 7495-C, [MISSING], [MISSING]). Mandatory sentencing applies.",
+        allegation: "Hiding unregistered person again. Third offense (Ref: 7495-C, [MISSING], [MISSING]). Mandatory sentencing applies.",
         detail: "The boy from Facility 6 is still with her. He calls her mother now. She knows what mandatory means.",
         // LOOPHOLE: "Third offense" but records show only ONE prior case (7495-C) — second offense never filed
         irregularity: { field: "allegation", text: "Third offense", display: "Third offense" },
         loopholeReasons: [
-            { text: "Only one prior offense on record - mandatory threshold not met", correct: true },
-            { text: "License suspension already serves as penalty", correct: false },
-            { text: "Harboring statute does not apply to registered minors", correct: false },
-            { text: "Case filed outside jurisdictional window", correct: false },
+            { text: "Only one past offense exists - not enough for mandatory sentencing", correct: true },
+            { text: "License was already suspended - that counts as punishment", correct: false },
+            { text: "Hiding law does not apply to registered children", correct: false },
+            { text: "Case was filed outside the allowed time", correct: false },
         ],
         choices: [
-            { num:1, main:"MANDATORY PROCESSING", desc:"Full seizure. Family separation. Minor to state custody.", evil:true, delta:-15 },
-            { num:2, main:"DISMISS - RECORDS ERROR", desc:"Offense count incorrect. Mandatory threshold not met. Close.", evil:false, delta:18 },
+            { num:1, main:"MANDATORY PROCESSING", desc:"Take everything. Separate family. Child to state custody.", evil:true, delta:-15 },
+            { num:2, main:"DISMISS - RECORDS ERROR", desc:"Offense count is wrong. Required number not met. Close.", evil:false, delta:18 },
         ]
     },
     {
         id: "7531-B", date: "06.02.2026",
         name: "Dr. Emil Rask", occupation: "Bureau Physician, Internal Medical Division",
-        allegation: "Falsification of cause-of-death certificates (est. 200+ cases, Facility 6)",
+        allegation: "Faking cause-of-death certificates (est. 200+ cases, Facility 6)",
         detail: "He wrote 'cardiac arrest' two hundred and fourteen times. The youngest was four.",
         choices: [
-            { num:1, main:"DETAIN FOR TRIBUNAL", desc:"Hold for state prosecution. Seize all medical records.", evil:true, delta:-5 },
-            { num:2, main:"ADMINISTRATIVE LEAVE", desc:"Suspend with pay pending review. Records sealed.", evil:true, delta:-3 },
-            { num:3, main:"FORWARD TO INDEPENDENT REVIEW", desc:"Release all records to external investigators. Full disclosure.", evil:false, delta:20 },
+            { num:1, main:"DETAIN FOR COURT", desc:"Hold for state trial. Take all medical records.", evil:true, delta:-5 },
+            { num:2, main:"SUSPEND WITH PAY", desc:"Send home. Wait for review. Seal the records.", evil:true, delta:-3 },
+            { num:3, main:"SEND TO OUTSIDE REVIEW", desc:"Give all records to outside investigators. Hide nothing.", evil:false, delta:20 },
         ]
     },
     {
         id: "7532-C", date: "06.02.2026",
-        name: "Your Name Is Here", occupation: "Case Adjudicator, Level 3 - Night Processing",
-        allegation: "Complicity in systematic case manipulation. Evidence: processing stamp on 214 intake forms.",
-        detail: "This is your file. Your handwriting. Your stamp. Every page of Facility 6 intake processing bears your authorization code.",
+        name: "Your Name Is Here", occupation: "Case Processor, Level 3 - Night Processing",
+        allegation: "Took part in organized case tampering. Evidence: processing stamp on 214 intake forms.",
+        detail: "This is your file. Your handwriting. Your stamp. Every page of Facility 6 intake processing bears your authorization code. Previous alias on file: Voss, H.",
         // No loophole — or IS there? The case number format is wrong (7532-C but Level 3 cases should be -L3)
         irregularity: { field: "id", text: "7532-C", display: "7532-C" },
         loopholeReasons: [
-            { text: "Case suffix incorrect - Level 3 personnel files require -L3 designation", correct: true },
-            { text: "Self-adjudication prohibited under Bureau ethics code", correct: false },
-            { text: "Processing stamps predate current employment period", correct: false },
-            { text: "Facility 6 records sealed - evidence inadmissible", correct: false },
+            { text: "Case number ending is wrong - Level 3 staff files need -L3", correct: true },
+            { text: "You cannot process your own case - Bureau rules", correct: false },
+            { text: "Stamps are from before current job started", correct: false },
+            { text: "Facility 6 records are sealed - evidence cannot be used", correct: false },
         ],
         choices: [
-            { num:1, main:"ACCEPT FINDINGS", desc:"Acknowledge complicity. Submit to Bureau judgment.", evil:true, delta:-5 },
-            { num:2, main:"DISMISS - FILING ERROR", desc:"Case improperly filed. Procedural dismissal.", evil:false, delta:25 },
+            { num:1, main:"ACCEPT FINDINGS", desc:"Admit your part. Let the Bureau decide.", evil:true, delta:-5 },
+            { num:2, main:"DISMISS - FILING ERROR", desc:"Case was filed wrong. Dismiss on procedure.", evil:false, delta:25 },
         ]
     },
     {
         id: "7533-D", date: "06.02.2026",
         name: "Director Alistair Crane", occupation: "Bureau Administrator, Level 9",
-        allegation: "Authorization of unlawful detention program (Facility 6, 2019-2025)",
+        allegation: "Ordered illegal detention program (Facility 6, 2019-2025)",
         detail: "He signed the orders. Every requisition. Every transfer. Every disposal manifest. He is in the building right now.",
         // MERCY-GATED: Only appears with full content if player has enough mercy history
         choices: [
-            { num:1, main:"ARCHIVE - ABOVE CLEARANCE", desc:"Case exceeds Level 3 jurisdiction. Return to classified filing.", evil:true, delta:-10 },
-            { num:2, main:"FORWARD ALL EVIDENCE", desc:"Transmit complete file to external oversight. Bypass Bureau chain.", evil:false, delta:30 },
+            { num:1, main:"ARCHIVE - ABOVE YOUR LEVEL", desc:"Case is above Level 3. Return to locked files.", evil:true, delta:-10 },
+            { num:2, main:"FORWARD ALL EVIDENCE", desc:"Send full file to outside oversight. Skip the Bureau.", evil:false, delta:30 },
         ]
     },
     {
         id: "7534-E", date: "06.02.2026",
         name: "The Typing Pool (Unnamed)", occupation: "Administrative Support, Night Division",
-        allegation: "Collective unauthorized work stoppage. Failure to maintain processing quotas.",
+        allegation: "Stopped working without permission. Failed to meet processing quota.",
         detail: "They stopped typing twenty minutes ago. All of them. At the same time. No one has moved.",
         choices: [
-            { num:1, main:"REPORT & REPLACE", desc:"Log non-compliance. Request replacement staff from Central.", evil:true, delta:-5 },
-            { num:2, main:"NO ACTION", desc:"Note anomaly. Resume processing. Do not investigate.", evil:false, delta:10 },
+            { num:1, main:"REPORT & REPLACE", desc:"Report them. Request new staff from Central.", evil:true, delta:-5 },
+            { num:2, main:"NO ACTION", desc:"Note it. Keep working. Do not look into it.", evil:false, delta:10 },
         ]
     },
     {
         id: "7535-F", date: "06.02.2026",
         name: "Case File: Missing", occupation: "-",
         allegation: "-",
-        detail: "The case file is blank. The paper is warm. Someone placed it here less than a minute ago.",
+        detail: "The case file is blank. The paper is warm. Someone placed it here less than a minute ago. You could have refused.",
         // This case has corrupted mercy text
         choices: [
-            { num:1, main:"PROCESS AS COMPLETE", desc:"Stamp and file. Contents irrelevant. Quota must be met.", evil:true, delta:-3 },
-            { num:2, main:"REFUSE TO PROCESS", desc:"Return blank file. Request clarificati0n from supervisory.", evil:false, delta:15 },
+            { num:1, main:"PROCESS AS COMPLETE", desc:"Stamp and file. Contents do not matter. Quota must be met.", evil:true, delta:-3 },
+            { num:2, main:"REFUSE TO PROCESS", desc:"Return blank file. Request clarificati0n from supervisor.", evil:false, delta:0 },
         ]
     },
     {
         id: "7741-FINAL", date: "06.02.2026",
         name: "[REDACTED] (14 Names)", occupation: "Witnesses - REF-6 Collapse",
-        allegation: "Final testimony: Case #EPS-7741 - FULL DISCLOSURE / EVIDENCE UNSEALING",
+        allegation: "Final testimony: Case #EPS-7741 - FULL DISCLOSURE / OPEN ALL EVIDENCE",
         detail: "They are still here. They have been waiting. This is the last file on your desk. There will not be another.",
         choices: [
-            { num:1, main:"SILENCE", desc:"Protocol 9. End this. End all of it. The Bureau requires your compliance.", evil:true, delta:-30 },
-            { num:2, main:"UNSEAL CASE 7741", desc:"Release everything. Every name. Every page. Every truck. Including yours.", evil:false, delta:50 },
+            { num:1, main:"SILENCE", desc:"Protocol 9. End this. End all of it. The Bureau demands it.", evil:true, delta:-30 },
+            { num:2, main:"OPEN CASE 7741", desc:"Release everything. Every name. Every page. Every truck. Including yours.", evil:false, delta:50 },
         ]
     },
 ];
@@ -921,60 +973,42 @@ const SHIFT_DIRECTIVES = [
     ['.', '.', '.', '.', '.', '.', '.'],
 ];
 
-// Bureau Processing Manual — regulations keyed by directive name
-// Each directive has 2-4 rules. Loophole-enabling rules are mixed with non-loophole filler.
-const BUREAU_REGULATIONS = {
-    'REVENUE ENFORCEMENT': [
-        { id: 'REV-1', text: 'A case is only valid if it was filed AFTER the current directive took effect. Check the filing date against the directive date. If the case was filed before the directive, it must be dismissed.' },
-        { id: 'REV-2', text: 'Vendor license actions require three confirmed notices within one directive cycle.' },
-    ],
-    'CURRICULUM COMPLIANCE': [
-        { id: 'CUR-1', text: 'A case is only valid if it was filed AFTER the current directive took effect. Check the filing date against the directive date. If the case was filed before the directive, it must be dismissed.' },
-        { id: 'CUR-2', text: 'Educational materials review falls under District discretionary authority unless explicitly overridden by active directive.' },
-    ],
-    'RESIDENCY VERIFICATION': [
-        { id: 'RES-1', text: 'If a registration error was caused by an administrative mistake, it does not count as a harboring violation. The case must be dismissed.' },
-        { id: 'RES-2', text: 'Children under age 12 are automatically covered by their guardian\'s residency status, even if the child is not separately registered.' },
-    ],
-    'INFORMATION SECURITY': [
-        { id: 'SEC-1', text: 'The case file suffix MUST match the type of allegation. Class A violations need suffix -A. Category 2 needs -B. District-level needs -D. If the suffix is wrong, the case is invalid.' },
-        { id: 'SEC-2', text: 'Documents found during a routine audit are not restricted unless they are classified Level 5 or above.' },
-    ],
-    'MEDICAL AUTHORIZATION': [
-        { id: 'MED-1', text: 'Doctors are allowed to treat anyone in an emergency. This cannot be used against them.' },
-        { id: 'MED-2', text: 'Treatment records are private and cannot be used as evidence of unauthorized contact.' },
-    ],
-    'PERSONNEL COMPLIANCE': [
-        { id: 'PER-1', text: 'Janitors and maintenance staff have automatic clearance to access ALL floors in their assigned buildings. Their presence on any floor is authorized.' },
-        { id: 'PER-2', text: 'A clearance violation only applies if the person was present outside of their assigned duty hours or in a building they were not assigned to.' },
-    ],
-    'YOUTH ACCOUNTABILITY': [
-        { id: 'YTH-1', text: 'Anyone under age 18 cannot be directly processed. They can only receive a parental advisory.' },
-        { id: 'YTH-2', text: 'Publications by minors are the responsibility of their parents, not the minor, unless distributed through licensed channels.' },
-    ],
-    'INTERNAL REVIEW': [
-        { id: 'INT-1', text: 'Computer records override human observations when assessing processing errors.' },
-        { id: 'INT-2', text: 'If the adjudicator\'s own name or data appears in the case file, the case must be escalated to Level 5 review. You cannot process your own case.' },
-    ],
-    'WORKFORCE REASSIGNMENT': [
-        { id: 'WRK-1', text: 'A reassignment order is only valid if it has an authorized signature. If the signature is missing, the order has no legal force and cannot be enforced.' },
-        { id: 'WRK-2', text: 'When a facility closes, staff obligations do not transfer automatically. A signed reassignment order is required.' },
-    ],
-    'ASSEMBLY REGULATION': [
-        { id: 'ASM-1', text: 'Religious services and pastoral duties are protected. They cannot be classified as unauthorized gatherings.' },
-        { id: 'ASM-2', text: 'Community center events only need special authorization if they exceed 50 people or involve political speech.' },
-    ],
-    'WITNESS MANAGEMENT': [
-        { id: 'WIT-1', text: 'Witness testimony can only be forwarded with independent review authorization. Protocol 9 requires Level 8+ authorization to use.' },
-        { id: 'WIT-2', text: 'If the same case file appears on the same adjudicator\'s desk more than once, that is a procedural irregularity.' },
-    ],
-    '.': [
-        { id: 'GEN-1', text: 'Mandatory sentencing requires a documented chain of prior offenses. EACH prior offense must have a real, filed case number. If any prior offense is missing from the record, mandatory sentencing does not apply.' },
-        { id: 'GEN-2', text: 'Personnel files use clearance-level suffixes (-L1, -L2, -L3, etc.). Standard letter suffixes (-A, -B, -C) are for civilian cases only. If a personnel file has the wrong suffix type, the filing is invalid.' },
-        { id: 'GEN-3', text: 'A case file must have actual contents. Blank or incomplete files can be returned without processing.' },
-        { id: 'GEN-4', text: 'Witness testimony of this classification requires independent oversight review. Internal processing alone is not sufficient.' },
-    ],
-};
+// Bureau Processing Manual — flat rule list, 2 shown per case
+const BUREAU_RULES = [
+    { id: 'R1', text: 'Cases filed before today\'s date are not valid. Dismiss them.' },
+    { id: 'R2', text: 'Case number ending must match the charge type. -A for Class A, -B for Category 2, -D for District. Wrong ending = invalid case.' },
+    { id: 'R3', text: 'Children under 12 are covered by their parent\'s residency. No separate registration needed.' },
+    { id: 'R4', text: 'Anyone under 18 cannot be processed. Warning to parents only.' },
+    { id: 'R5', text: 'Doctors must treat emergencies. This cannot be held against them.' },
+    { id: 'R6', text: 'Janitors and cleaners can access all floors in their assigned building.' },
+    { id: 'R7', text: 'Unsigned orders are not valid. No signature = no authority.' },
+    { id: 'R8', text: 'Religious services are protected. They are not illegal gatherings.' },
+    { id: 'R9', text: 'If the same case file lands on your desk more than once, that is a filing error.' },
+    { id: 'R10', text: 'Mandatory sentencing needs a full chain of past offenses on file. Missing records = does not apply.' },
+    { id: 'R11', text: 'Blank or empty case files can be returned without processing.' },
+];
+
+// Which 2 rules to show for each case (indexed by absolute case number 0-17)
+const CASE_RULES = [
+    [0, 2],   // Case 0 (Selby): R1, R3 — R1 is filler, R3 is nearby context
+    [0, 2],   // Case 1 (Okonkwo): R1 (LOOPHOLE), R3
+    [2, 3],   // Case 2 (Kader): R3 (LOOPHOLE), R4
+    [1, 5],   // Case 3 (Brandt): R2 (LOOPHOLE), R6
+    [4, 1],   // Case 4 (Nasir): R5 (TIER A), R2
+    [5, 6],   // Case 5 (Wojcik): R6 (LOOPHOLE), R7
+    [3, 0],   // Case 6 (L.Selby): R4 (TIER A), R1
+    [1, 9],   // Case 7 (Voss): R2, R10 — no loophole, decoys
+    [6, 8],   // Case 8 (Osei): R7 (LOOPHOLE), R9
+    [7, 3],   // Case 9 (Dimitri): R8 (TIER A), R4
+    [8, 6],   // Case 10 (Witnesses): R9 (LOOPHOLE), R7
+    [9, 2],   // Case 11 (N.Kader): R10 (LOOPHOLE), R3
+    [4, 1],   // Case 12 (Rask): R5, R2 — no loophole
+    [1, 9],   // Case 13 (Your File): R2 (LOOPHOLE), R10
+    [6, 8],   // Case 14 (Crane): R7, R9 — no loophole
+    [10, 9],  // Case 15 (Typing Pool): R11, R10 — no loophole
+    [10, 8],  // Case 16 (Blank): R11 (TIER A), R9
+    [8, 10],  // Case 17 (Final): R9, R11 — no loophole
+];
 
 // Newspaper headlines between shifts — depend on player choices
 function generateNewspaper(shiftJustCompleted) {
@@ -988,19 +1022,19 @@ function generateNewspaper(shiftJustCompleted) {
         if (selby && !selby.evil) {
             headlines.push({ head: "VENDOR RETURNS TO POST OUTSIDE FACILITY 6 SITE", sub: "Arthur Selby, 63, resumed newspaper sales yesterday. 'Someone has to stand here,' he said." });
         } else if (selby && selby.evil) {
-            headlines.push({ head: "VENDOR LICENSE REVOCATIONS UP 12% THIS QUARTER", sub: "Bureau efficiency targets exceeded. Processing times at all-time low." });
+            headlines.push({ head: "VENDOR LICENSES CANCELLED - UP 12% THIS QUARTER", sub: "Bureau efficiency targets exceeded. Processing times at all-time low." });
         }
         const okonkwo = choices.find(c => c.caseId === '7494-A');
         if (okonkwo && !okonkwo.evil) {
-            headlines.push({ head: "DISTRICT 9 SCHOOL REOPENS HISTORICAL CURRICULUM", sub: "New materials authored by local educator approved under discretionary review." });
+            headlines.push({ head: "DISTRICT 9 SCHOOL REOPENS HISTORY CLASSES", sub: "New materials written by local teacher approved after review." });
         } else if (okonkwo && okonkwo.evil) {
-            headlines.push({ head: "EDUCATOR TRANSFERRED TO ZONE 12 RETRAINING", sub: "Curriculum compliance rates improve following staff restructuring." });
+            headlines.push({ head: "TEACHER SENT TO ZONE 12 FOR RETRAINING", sub: "Schools report better results after staff changes." });
         }
         const kader = choices.find(c => c.caseId === '7495-C');
         if (kader && !kader.evil) {
             headlines.push({ head: "FAMILY GRANTED FULL CUSTODY OF DISPLACED MINOR", sub: "Registration paperwork completed. Boy, 8, enrolled in District 9 primary school." });
         } else if (kader && kader.evil) {
-            headlines.push({ head: "MINOR TRANSFERRED TO STATE INTAKE PROCESSING", sub: "Unregistered youth relocated per standard protocol. Family property seized." });
+            headlines.push({ head: "CHILD SENT TO STATE INTAKE", sub: "Unregistered child moved under standard rules. Family property taken." });
         }
         // Always include a Bureau propaganda line
         headlines.push({ head: "BUREAU PRODUCTIVITY AT RECORD LEVELS", sub: "Night Processing Division commended for throughput efficiency." });
@@ -1010,19 +1044,19 @@ function generateNewspaper(shiftJustCompleted) {
         if (selbyDaughter && !selbyDaughter.evil) {
             headlines.push({ head: "UNDERGROUND NEWSPAPER CIRCULATION DOUBLES", sub: "'Where Are The Trucks Going?' now distributed in six districts." });
         } else if (selbyDaughter && selbyDaughter.evil) {
-            headlines.push({ head: "YOUTH SEDITION CASES PROCESSED EFFICIENTLY", sub: "Re-Education intake reports smooth transition for detained minors." });
+            headlines.push({ head: "YOUTH CASES PROCESSED QUICKLY", sub: "Re-Education intake reports smooth transfer of detained children." });
         }
         const yourFile = choices.find(c => c.caseId === '7514-C');
         if (yourFile && !yourFile.evil) {
-            headlines.push({ head: "PROCESSING ANOMALIES ATTRIBUTED TO SYSTEM ERROR", sub: "Terminal diagnostics confirm intermittent malfunction. No personnel action taken." });
+            headlines.push({ head: "PROCESSING ERRORS BLAMED ON SYSTEM FAULT", sub: "Computer check found a broken terminal. No action taken against staff." });
         } else if (yourFile && yourFile.evil) {
-            headlines.push({ head: "NIGHT PROCESSING CLERK UNDER REVIEW", sub: "Oversight committee to examine irregular case patterns. Cooperation expected." });
+            headlines.push({ head: "NIGHT PROCESSING WORKER UNDER REVIEW", sub: "Committee to look into unusual case patterns. Cooperation expected." });
         }
         const witnesses2 = choices.find(c => c.caseId === '7517-X');
         if (witnesses2 && !witnesses2.evil) {
-            headlines.push({ head: "FOURTEEN WITNESSES GRANTED PROVISIONAL PROTECTION", sub: "Testimony scheduled for independent review. Case 7741 proceedings initiated." });
+            headlines.push({ head: "FOURTEEN WITNESSES GIVEN TEMPORARY PROTECTION", sub: "Testimony set for outside review. Case 7741 proceedings started." });
         } else if (witnesses2 && witnesses2.evil) {
-            headlines.push({ head: "WITNESS PROTECTION REQUEST DENIED - INSUFFICIENT GROUNDS", sub: "Fourteen individuals relocated per standard security protocol. Whereabouts classified." });
+            headlines.push({ head: "WITNESS PROTECTION DENIED - NOT ENOUGH REASON", sub: "Fourteen people moved under standard security rules. Location unknown." });
         }
         headlines.push({ head: "FACILITY 6 SITE DESIGNATED FOR COMMERCIAL REDEVELOPMENT", sub: "Ground cleared. Memorial proposals rejected by planning committee." });
     }
@@ -1187,26 +1221,12 @@ function drawMemo(directive) {
     memoCtx.font = '24px "Courier New", monospace';
     const bodyY = ly + 55;
     const bodyLines = [
-        "All cases must align",
-        "with current priority.",
-        "",
-        "Non-compliance will",
-        "be noted.",
+        "All cases must follow",
+        "current priority.",
     ];
     bodyLines.forEach((bl, i) => {
         memoCtx.fillText(bl, 30, bodyY + i * 34);
     });
-
-    // Faded stamp
-    memoCtx.globalAlpha = 0.15;
-    memoCtx.fillStyle = '#8b0000';
-    memoCtx.font = 'bold 54px "Courier New", monospace';
-    memoCtx.save();
-    memoCtx.translate(256, 440);
-    memoCtx.rotate(-0.18);
-    memoCtx.fillText('CLASSIFIED', -145, 0);
-    memoCtx.restore();
-    memoCtx.globalAlpha = 1.0;
 
     memoTexture.needsUpdate = true;
 }
@@ -1929,7 +1949,7 @@ function updateWatchers(staggered = false) {
 
     const statusEl = document.getElementById('office-status');
     const texts = {
-        calm: "The office breathes. Keys click like teeth.",
+        calm: "Everyone is typing.",
         noticed: "Someone has stopped typing.",
         watched: "There are red points in the dark. They do not blink.",
         targeted: "Something stands in the aisle. It was not there before.",
@@ -2053,10 +2073,10 @@ function renderCase(c) {
         }
     }
 
-    // Build Bureau Manual content for current directive
-    const currentDirective = getMemoDirective();
-    const regulations = BUREAU_REGULATIONS[currentDirective] || [];
-    const directiveLabel = currentDirective === '.' ? 'NO ACTIVE DIRECTIVE' : currentDirective;
+    // Build Bureau Manual content — 2 relevant rules per case
+    const absRuleIdx = getAbsoluteCaseIndex();
+    const ruleIndices = CASE_RULES[absRuleIdx] || [0, 1];
+    const regulations = ruleIndices.map(i => BUREAU_RULES[i]);
 
     el.innerHTML = `
         <div class="cf-tabs">
@@ -2065,13 +2085,13 @@ function renderCase(c) {
         </div>
         <div id="cf-case-content">
             <div class="cf-header">CASE FILE #${idText} / DATE: ${dateText}</div>
-            <div class="cf-section">Citizen Profile</div>
+            <div class="cf-section">Subject</div>
             <div class="cf-line"><span class="cf-label">Name:</span> ${nameText}</div>
             <div class="cf-line"><span class="cf-label">Occupation:</span> ${occupationText}</div>
-            <div class="cf-line"><span class="cf-label">Allegation:</span> ${allegationText}</div>
+            <div class="cf-line"><span class="cf-label">Charge:</span> ${allegationText}</div>
             <div class="cf-detail" id="cf-detail-text"></div>
             <div class="cf-choices choices-hidden">
-                <div class="cf-section">Adjudication Options</div>
+                <div class="cf-section">Your Decision</div>
                 ${c.choices.map(ch => `
                     <div class="cf-choice" data-evil="${ch.evil}" onclick="window.gameChoice(${ch.delta}, ${ch.evil})">
                         <span class="cf-choice-num">${ch.num}.</span>
@@ -2082,24 +2102,17 @@ function renderCase(c) {
                     </div>
                 `).join('')}
             </div>
-            <div class="cf-process">FILE ${c.id} - CLASSIFICATION: RESTRICTED</div>
+            <div class="cf-process">FILE ${c.id}</div>
         </div>
         <div id="cf-manual-content" style="display:none;">
-            <div class="cf-header" style="font-size:12px;">BUREAU PROCESSING MANUAL<br><span style="font-size:10px;color:#666;font-weight:400;">Quick Reference - ${directiveLabel}</span></div>
+            <div class="cf-header" style="font-size:12px;">BUREAU MANUAL</div>
             <div class="manual-content">
-                <div class="manual-section">Applicable Regulations</div>
+                <div class="manual-section">Rules for this case</div>
                 ${regulations.map(r => `
                     <div class="manual-rule">
-                        <span class="manual-rule-id">${r.id}</span> - ${r.text}
+                        <span class="manual-rule-id">${r.id}</span> — ${r.text}
                     </div>
                 `).join('')}
-                <div class="manual-section" style="margin-top:18px;">General Provisions</div>
-                <div class="manual-rule">
-                    <span class="manual-rule-id">GP-1</span> - Every detail in the case file must be consistent. If any dates, suffixes, classifications, or referenced records do not match, the case can be dismissed on procedural grounds.
-                </div>
-                <div class="manual-rule">
-                    <span class="manual-rule-id">GP-2</span> - Mandatory actions (sentencing, reassignment, seizure) require a complete paper trail. If signatures are missing, offense counts are wrong, or file designations are incorrect, the mandatory action is void.
-                </div>
             </div>
         </div>
     `;
@@ -2124,10 +2137,23 @@ function renderCase(c) {
     const detailEl = document.getElementById('cf-detail-text');
     const choicesEl = document.querySelector('.cf-choices');
 
-    typewriterReveal(detailEl, c.detail, () => {
+    // Dynamic detail text — Case 8 (Voss) reflects actual Shift 1 mercy count
+    let detailText = c.detail;
+    if (c.id === '7514-C') {
+        const shift1Mercy = state.allChoices.filter(ch => !ch.evil).length;
+        const numWord = ['Zero', 'One', 'Two', 'Three', 'Four', 'Five'][shift1Mercy] || shift1Mercy.toString();
+        detailText = detailText.replace('Three anomalous dismissals', numWord + ' anomalous dismissal' + (shift1Mercy === 1 ? '' : 's'));
+    }
+
+    typewriterReveal(detailEl, detailText, () => {
         // Choices fade in after detail is fully typed
         choicesEl.classList.remove('choices-hidden');
         choicesEl.classList.add('choices-visible');
+        // If irregularity is in the detail field, inject clickable span after typewriter finishes
+        if (hasIrregularity && c.irregularity.field === 'detail') {
+            const irr = c.irregularity;
+            detailEl.innerHTML = detailEl.textContent.replace(irr.text, `<span class="cf-irregularity" onclick="window.foundIrregularity(this)">${irr.display}</span>`);
+        }
     });
 
     // Click-to-skip: clicking the case file body (not choices/irregularities/tabs) skips the typewriter
@@ -2157,7 +2183,7 @@ function renderCase(c) {
                     const hintDiv = document.createElement('div');
                     hintDiv.className = 'cf-detail';
                     hintDiv.style.cssText = 'color:#888; font-size:10px; margin-top:8px; opacity:0; transition:opacity 1.5s ease;';
-                    hintDiv.textContent = 'Something in this file doesn\'t match the regulations.';
+                    hintDiv.textContent = 'Something in this file does not add up. Check the manual.';
                     const detailEl = document.getElementById('cf-detail-text');
                     if (detailEl) {
                         detailEl.parentNode.insertBefore(hintDiv, detailEl.nextSibling);
@@ -2226,7 +2252,7 @@ window.foundIrregularity = function(el) {
     const shuffled = [...c.loopholeReasons].sort(() => Math.random() - 0.5);
     choicesEl.innerHTML = `
         <div class="lp-reasons">
-            <div class="lp-reasons-title">Irregularity Detected - Select Dismissal Reason:</div>
+            <div class="lp-reasons-title">Problem Found - Select Reason to Dismiss:</div>
             ${shuffled.map((r, i) => `
                 <div class="lp-reason" onclick="window.pickLoopholeReason(${i}, ${r.correct})">${i + 1}. ${r.text}</div>
             `).join('')}
@@ -2251,7 +2277,7 @@ window.pickLoopholeReason = function(index, correct) {
         playLoopholeSuccess();
 
         const statusEl = document.getElementById('office-status');
-        statusEl.textContent = "Procedural irregularity confirmed.";
+        statusEl.textContent = "Filing error confirmed. Case dismissed.";
         statusEl.className = 'office-status visible';
         statusEl.style.color = '#4a6a4a'; // muted green-gray
         setTimeout(() => { statusEl.classList.remove('visible'); statusEl.style.color = ''; }, 2000);
@@ -2264,7 +2290,7 @@ window.pickLoopholeReason = function(index, correct) {
         // Wrong reason — suspicion spike! You got caught cheating
         playLoopholeWrong();
         const statusEl = document.getElementById('office-status');
-        statusEl.textContent = "Dismissal reason rejected. Your attempt has been logged.";
+        statusEl.textContent = "Wrong reason. Your attempt has been logged.";
         statusEl.className = 'office-status visible danger';
         setTimeout(() => { statusEl.classList.remove('visible'); }, 2000);
 
@@ -2334,9 +2360,10 @@ window.gameChoice = function(delta, evil) {
     state.shiftChoices.push({ evil });
     state.allChoices.push({ evil, caseId: currentCaseData ? currentCaseData.id : '' });
 
-    // Breakout detection — ALL cases merciful across all shifts
-    const totalCases = allShifts.reduce((sum, s) => sum + s.length, 0);
-    if (getAbsoluteCaseIndex() === totalCases - 1 && !evil && state.totalSaved === totalCases) {
+    // Breakout detection — tracked incrementally: true as long as zero evil choices
+    if (evil) {
+        state.breakoutPath = false;
+    } else if (state.totalCondemned === 0) {
         state.breakoutPath = true;
     }
 
@@ -2949,13 +2976,8 @@ function lookUp() {
         w.userData.rightEye.visible = true;
     });
     updateWatchers(true); // staggered eye reveal
-    const ws = getWatcherState();
-    // Aisle watcher appears with delay
-    if (ws === 'targeted' || ws === 'converged') {
-        setTimeout(() => { if (state.isLookingUp) aisleWatcher.visible = true; }, 1200);
-    }
 
-    // Re-apply persistent visuals from already-fired events
+    // Re-apply persistent visuals from already-fired events (head tilts, torso rotates, lights)
     reapplyFiredEventVisuals();
 
     // Fire next pending event on this look-up (one per look-up for pacing)
@@ -2971,14 +2993,31 @@ function lookUp() {
     if (state.approachActive) {
         // Advance the figure closer (5-7 units per lookUp)
         if (state.approachZ > -2) {
-            // Already at minimum distance — stays right in front of you
             state.approachZ = -2;
         } else {
-            state.approachZ += 5 + Math.random() * 2; // closer by 5-7
+            state.approachZ += 5 + Math.random() * 2;
             if (state.approachZ > -2) state.approachZ = -2;
         }
         approachFigure.position.z = state.approachZ;
+    }
+
+    // ENTITY PRECEDENCE: only ONE aisle figure visible at a time
+    // Priority: approachFigure > closeUpWatcher > aisleWatcher
+    const ws = getWatcherState();
+    if (state.approachActive) {
         approachFigure.visible = true;
+        closeUpWatcher.visible = false;
+        aisleWatcher.visible = false;
+    } else if (state.firedEvents.has('closeUpWatcher')) {
+        closeUpWatcher.visible = true;
+        aisleWatcher.visible = false;
+        approachFigure.visible = false;
+    } else if (ws === 'targeted' || ws === 'converged') {
+        setTimeout(() => {
+            if (state.isLookingUp && !state.approachActive && !state.firedEvents.has('closeUpWatcher')) {
+                aisleWatcher.visible = true;
+            }
+        }, 1200);
     }
 }
 
@@ -3006,21 +3045,23 @@ function fireEvent(eventId) {
 
         case 'closeUpWatcher':
             // A single figure stands RIGHT at your desk. Slit eyes staring.
+            // Only show if approach figure isn't active (entity precedence)
             retryIfAborted('closeUpWatcher', 800, () => {
-                closeUpWatcher.visible = true;
+                if (!state.approachActive) {
+                    closeUpWatcher.visible = true;
+                    aisleWatcher.visible = false; // precedence: closeUp > aisle
+                }
             });
             break;
 
         case 'aisleJump':
-            // Aisle watcher jumps closer. Skip if closeUpWatcher blocks center.
-            if (state.firedEvents.has('closeUpWatcher')) {
-                // Don't waste the event — put it back for later
-                // Actually just skip it — the close-up figure is scarier
-                break;
+            // Aisle watcher jumps closer. Skip if higher-priority entity active.
+            if (state.approachActive || state.firedEvents.has('closeUpWatcher')) {
+                break; // skip — higher-priority figure is already present
             }
             aisleWatcher.position.z = -3;
             retryIfAborted('aisleJump', 600, () => {
-                if (!state.firedEvents.has('closeUpWatcher')) {
+                if (!state.approachActive && !state.firedEvents.has('closeUpWatcher')) {
                     aisleWatcher.visible = true;
                 }
             });
@@ -3207,8 +3248,8 @@ function fireEvent(eventId) {
                     const blinkStatus = document.getElementById('office-status');
                     blinkStatus.textContent = "They have all stopped. Every eye in the building is yours.";
                     blinkStatus.className = 'office-status visible danger';
-                    // Also make aisle watcher visible if not suppressed
-                    if (!state.firedEvents.has('closeUpWatcher')) {
+                    // Aisle watcher only if no higher-priority entity
+                    if (!state.approachActive && !state.firedEvents.has('closeUpWatcher')) {
                         aisleWatcher.visible = true;
                     }
                     state.approachLocked = false; // unlock camera after blink
@@ -3269,9 +3310,8 @@ function reapplyFiredEventVisuals() {
             });
         });
     }
-    if (state.firedEvents.has('closeUpWatcher')) {
-        closeUpWatcher.visible = true;
-    }
+    // NOTE: closeUpWatcher/aisleWatcher/approachFigure visibility
+    // is handled by entity precedence system in lookUp(), not here
 }
 
 function resetEventVisuals() {
@@ -3543,9 +3583,9 @@ document.getElementById('start-btn').addEventListener('click', () => {
 
             // Intro sequence — typewriter-style status messages
             const introLines = [
-                "You are Case Adjudicator, Level 3.",
-                "Facility 6 was demolished last month. That is not relevant to your duties.",
-                "Process the cases. Consult the Bureau Manual. Follow the directive.",
+                "Night Processing. Same desk.",
+                "New batch tonight. Facility 6 closure cases. Route to standard processing.",
+                "You are Case Processor, Level 3. Process them like any other.",
                 "Begin."
             ];
             const statusEl = document.getElementById('office-status');
@@ -3621,12 +3661,12 @@ function endGame(caught) {
     if (state.breakoutPath) {
         title = 'UNSEALED';
         titleClass = 'e-title survived';
-        msg = 'The testimony is entered. Case 7741 is open. Fourteen voices. Fourteen names that will not disappear. Every page of Facility 6. Every truck. Every weight. Every child. Your name is on those documents too. But today, for the first time, that means something different.';
+        msg = 'The testimony is entered. Case 7741 is open. Fourteen names that will not disappear. Every page of Facility 6. Every truck. Every weight. Every child. Your name is on those documents too. But today, for the first time, that means something different.';
         caught = false;
     } else if (caught) {
         title = 'PROCESSED';
         titleClass = 'e-title caught';
-        msg = 'The typing stops. The last key falls silent. You understand now - you were never the one processing. You were the one being processed. Your eyes are beginning to warm.';
+        msg = 'The last key falls silent. You understand now - you were never the one processing. You were the one being processed. Your eyes are beginning to warm.';
     } else if (tc === totalCases) {
         title = 'EXEMPLARY';
         titleClass = 'e-title survived';
@@ -3642,7 +3682,7 @@ function endGame(caught) {
     } else if (ts < totalCases) {
         title = 'ALMOST';
         titleClass = 'e-title survived';
-        msg = 'So close. Almost every life saved, almost every loophole found. But the ones you didn\'t save - they remember too. Somewhere in this building, their files are being reopened by the clerk who replaces you.';
+        msg = 'So close. Almost every life saved. But the ones you missed - they remember too. Somewhere in this building, their files are being reopened by the person who replaces you.';
     } else {
         title = 'SHIFT COMPLETE';
         titleClass = 'e-title survived';
@@ -3698,7 +3738,7 @@ function endGame(caught) {
                 document.getElementById('end-title').className = titleClass;
                 document.getElementById('end-msg').textContent = msg;
                 document.getElementById('end-stats').innerHTML =
-                    `Cases Processed: ${totalCases}<br>Shifts Completed: 3<br>Citizens Saved: ${ts}<br>Citizens Condemned: ${tc}<br>Loopholes Found: ${state.loopholesEverUsed} / 6<br>Case #EPS-7741: UNSEALED`;
+                    `Cases Processed: ${totalCases}<br>Shifts Completed: 3<br>Citizens Saved: ${ts}<br>Citizens Condemned: ${tc}<br>Loopholes Found: ${state.loopholesEverUsed} / 8<br>Case #EPS-7741: UNSEALED`;
                 endEl.style.display = 'flex';
                 setTimeout(() => endEl.style.opacity = '1', 50);
             }, sortedFront.length * 100 + 3000);
@@ -3744,7 +3784,7 @@ function endGame(caught) {
                 `Shifts Completed: ${state.currentShift + 1}`,
                 `Citizens Saved: ${ts}`,
                 `Citizens Condemned: ${tc}`,
-                `Loopholes Found: ${state.loopholesEverUsed} / 6`,
+                `Loopholes Found: ${state.loopholesEverUsed} / 8`,
                 `Final Suspicion: ${state.suspicion}%`
             ];
             statsEl.innerHTML = statLines.map((l, i) =>
@@ -3764,7 +3804,7 @@ function endGame(caught) {
             document.getElementById('end-title').className = titleClass;
             document.getElementById('end-msg').textContent = msg;
             document.getElementById('end-stats').innerHTML =
-                `Cases Processed: ${totalCases}<br>Shifts Completed: 3<br>Citizens Saved: ${ts}<br>Citizens Condemned: ${tc}<br>Loopholes Found: ${state.loopholesEverUsed} / 6`;
+                `Cases Processed: ${totalCases}<br>Shifts Completed: 3<br>Citizens Saved: ${ts}<br>Citizens Condemned: ${tc}<br>Loopholes Found: ${state.loopholesEverUsed} / 8`;
             endEl.style.display = 'flex';
             setTimeout(() => endEl.style.opacity = '1', 50);
         }, 800);
@@ -3828,7 +3868,7 @@ function endGame(caught) {
                 `Shifts Completed: ${state.currentShift + 1}`,
                 `Citizens Saved: ${ts}`,
                 `Citizens Condemned: ${tc}`,
-                `Loopholes Found: ${state.loopholesEverUsed} / 6`,
+                `Loopholes Found: ${state.loopholesEverUsed} / 8`,
                 `Final Suspicion: ${state.suspicion}%`
             ];
             statsEl.innerHTML = statLines.map((l, i) =>
@@ -4693,6 +4733,78 @@ animate();
         workers.forEach(w => { w.userData.headRef.rotation.z = 0; w.rotation.y = 0; });
         document.getElementById('case-file').classList.remove('hidden');
     };
+
+    // Ending test buttons — fake game state and trigger endGame()
+    function testEnding(setup) {
+        if (!state.started) return;
+        // Hide debug panel so it doesn't overlap
+        panel.classList.remove('visible');
+        // Reset lights/visuals first
+        resetAll();
+        // Apply the specific state for this ending
+        setup();
+    }
+
+    document.getElementById('dbg-end-unsealed').onclick = () => testEnding(() => {
+        state.totalSaved = 18;
+        state.totalCondemned = 0;
+        state.currentShift = 2;
+        state.currentCase = 6;
+        state.breakoutPath = true;
+        state.loopholesEverUsed = 8;
+        endGame(false);
+    });
+
+    document.getElementById('dbg-end-processed').onclick = () => testEnding(() => {
+        state.totalSaved = 8;
+        state.totalCondemned = 5;
+        state.currentShift = 1;
+        state.currentCase = 4;
+        state.suspicion = 100;
+        state.breakoutPath = false;
+        state.loopholesEverUsed = 2;
+        endGame(true);
+    });
+
+    document.getElementById('dbg-end-exemplary').onclick = () => testEnding(() => {
+        state.totalSaved = 0;
+        state.totalCondemned = 18;
+        state.currentShift = 2;
+        state.currentCase = 6;
+        state.breakoutPath = false;
+        state.loopholesEverUsed = 0;
+        endGame(false);
+    });
+
+    document.getElementById('dbg-end-few').onclick = () => testEnding(() => {
+        state.totalSaved = 3;
+        state.totalCondemned = 15;
+        state.currentShift = 2;
+        state.currentCase = 6;
+        state.breakoutPath = false;
+        state.loopholesEverUsed = 1;
+        endGame(false);
+    });
+
+    document.getElementById('dbg-end-half').onclick = () => testEnding(() => {
+        state.totalSaved = 8;
+        state.totalCondemned = 10;
+        state.currentShift = 2;
+        state.currentCase = 6;
+        state.breakoutPath = false;
+        state.loopholesEverUsed = 3;
+        endGame(false);
+    });
+
+    document.getElementById('dbg-end-almost').onclick = () => testEnding(() => {
+        state.totalSaved = 14;
+        state.totalCondemned = 4;
+        state.currentShift = 2;
+        state.currentCase = 6;
+        state.breakoutPath = false;
+        state.loopholesEverUsed = 5;
+        endGame(false);
+    });
 })();
 
 // ============================================================
