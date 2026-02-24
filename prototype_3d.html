@@ -23,7 +23,7 @@
             left: 50%;
             transform: translate(-50%, -45%);
             width: 420px;
-            background: rgba(210, 200, 180, 0.92);
+            background: rgba(210, 200, 180, 0.97);
             border: 1px solid rgba(80,70,50,0.3);
             padding: 28px 32px;
             font-family: 'Special Elite', monospace;
@@ -78,7 +78,7 @@
         .cf-tab:last-child { border-right: none; }
         .cf-tab:hover { background: rgba(200, 190, 170, 0.8); color: #555; }
         .cf-tab.active {
-            background: rgba(210, 200, 180, 0.92); color: #1a1a1a;
+            background: rgba(210, 200, 180, 0.97); color: #1a1a1a;
             border-bottom: 2px solid transparent; margin-bottom: -2px;
         }
         .manual-content { font-size: 11px; line-height: 1.6; color: #333; }
@@ -454,18 +454,18 @@
             animation: titleSlam 250ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
         }
 
-        /* Shift 3 paper degradation */
+        /* Shift 3 paper degradation — opacity stays high to prevent 3D bloom bleed-through */
         #case-file.shift3-degraded {
-            background: rgba(215, 212, 205, 0.88);
+            background: rgba(215, 212, 205, 0.96);
         }
         #case-file.shift3-late {
-            background: rgba(225, 222, 218, 0.85);
+            background: rgba(220, 218, 214, 0.96);
         }
         #case-file.shift3-blank {
-            background: rgba(235, 233, 230, 0.5);
+            background: rgba(230, 228, 225, 0.96);
         }
         #case-file.shift3-final {
-            background: rgba(245, 245, 245, 0.9);
+            background: rgba(240, 240, 238, 0.97);
             color: #555;
         }
 
@@ -1455,14 +1455,15 @@ function typewriterReveal(element, text, onComplete) {
     cursor.className = 'tw-cursor';
     element.appendChild(cursor);
 
-    // Shift 3 corruption: replace ~5% of characters
+    // Shift 3 corruption: subtle character degradation (late cases only)
     let displayText = text;
-    if (state.currentShift === 2) {
-        const corruption = state.currentCase / 7;
+    if (state.currentShift === 2 && state.currentCase >= 3) {
+        // Only starts at case 4+ of Shift 3 (index 3), very subtle
+        const corruption = (state.currentCase - 3) / 4; // 0 at case 4, 0.75 at case 7
         displayText = text.split('').map(ch => {
-            if (ch === ' ' || ch === '.') return ch;
-            if (Math.random() < 0.03 * (1 + corruption)) {
-                const glitchChars = ['_', '.', ' ', '\u2588', '-'];
+            if (ch === ' ' || ch === '.' || ch === ',') return ch;
+            if (Math.random() < 0.015 * (1 + corruption)) {
+                const glitchChars = ['_', '-', '\u00B7']; // underscore, dash, middle dot — no ugly blocks or spaces
                 return glitchChars[Math.floor(Math.random() * glitchChars.length)];
             }
             return ch;
@@ -2002,7 +2003,7 @@ function updateWatchers(staggered = false) {
         (['watched','targeted','converged'].includes(displayState) ? ' danger' : '');
 
     // redTint is driven by state.redShift (evil choices) via animate() lerp — don't set here
-    bloomPass.strength = 0.2 + (state.suspicion / 100) * 0.4;
+    bloomPass.strength = 0.2 + (state.suspicion / 100) * 0.2; // capped lower to prevent bloom artifacts bleeding through paper
 }
 
 // Aisle watcher - standing figure
