@@ -2739,7 +2739,11 @@ function resetShiftAtmosphere() {
             });
         });
     });
-    // Clear event visuals (but NOT firedEvents set — they stay one-shot)
+    // Clear shift-scoped events from firedEvents so they don't persist into next shift
+    // Without this, lightsDie in shift 1 would re-kill lights on every lookUp in shifts 2-3
+    state.firedEvents.delete('lightsDie');
+    state.firedEvents.delete('theBlink');
+    // Clear event visuals
     resetEventVisuals();
     // Reduce red shift by half (corruption is sticky)
     state.redShift *= 0.5;
@@ -4362,10 +4366,10 @@ function initAudio() {
     setTimeout(scheduleShuffle, 4000);
 
     // --- 7. Distant murmurs / whispers (very low filtered noise) ---
-    // Suspicion gate: murmurs cut when noticed (suspicion > 5)
+    // Suspicion gate: murmurs cut when watched (suspicion >= 20)
     function scheduleMurmur() {
         if (!audioCtx || audioCtx.state === 'closed') return;
-        if (state.suspicion > 5) { setTimeout(scheduleMurmur, 5000 + Math.random() * 10000); return; }
+        if (state.suspicion >= 20) { setTimeout(scheduleMurmur, 5000 + Math.random() * 10000); return; }
         const now = audioCtx.currentTime;
         const dur = 0.4 + Math.random() * 0.8;
         const bufSize = Math.floor(audioCtx.sampleRate * dur);
