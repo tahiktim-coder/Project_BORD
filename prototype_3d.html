@@ -687,6 +687,7 @@ const state = {
     loopholesFound: [],        // case IDs where loopholes were found
     _loopholeDismissal: false, // true when mercy-path is from a loophole (shows VOID stamp)
     _irregularityHoverCuePlayed: false, // audio cue on first-ever irregularity hover
+    _watchersDirty: true,              // true = next lookUp should re-roll watcher eyes; false = restore previous
     // Red corruption
     redShift: 0.0,             // current red tint (0.0 to 0.7 max)
     // Stamp delay (grows over game)
@@ -819,7 +820,7 @@ const shift2Cases = [
         choices: [
             { num:1, main:"YOUTH PROCESSING", desc:"Send to Re-Education intake. Cut off from family.", evil:true, delta:-10 },
             { num:2, main:"FORMAL CAUTION", desc:"Take materials. Official warning. Guardian told.", evil:true, delta:-3 },
-            { num:3, main:"DISMISS - MINOR", desc:"Too young to prosecute. Warning sent to parents. Close.", evil:false, delta:0 },
+            { num:3, main:"DISMISS - MINOR", desc:"Too young to prosecute. Warning sent to parents. Close.", evil:false, delta:12 },
         ]
     },
     {
@@ -1009,6 +1010,26 @@ const BUREAU_RULES = [
     { id: 'R7', text: 'All orders, sentences and case records must be complete. Unsigned orders, missing offense records, and duplicate case files are not valid.' },
     { id: 'R8', text: 'Religious services are protected. Blank or empty case files can be returned without processing.' },
 ];
+
+// Directive-specific rule subsets: each directive shows 2-4 rules (not all 8)
+// This makes the manual useful without screaming "THE ANSWER IS HERE"
+const DIRECTIVE_RULES = {
+    // Shift 1
+    'REVENUE ENFORCEMENT':    ['R2', 'R7'],                // Case 1 (no loophole) — R2 + R7 as general
+    'CURRICULUM COMPLIANCE':  ['R1', 'R4', 'R7'],          // Case 2 (Okonkwo) — R1 is the key
+    'RESIDENCY VERIFICATION': ['R3', 'R7'],                // Case 3 (Kader) — R3 is the key
+    'INFORMATION SECURITY':   ['R2', 'R6', 'R7'],          // Case 4 (Brandt) — R2 is the key
+    'MEDICAL AUTHORIZATION':  ['R5', 'R7'],                // Case 5 (Nasir, no loophole in this shift)
+    // Shift 2
+    'PERSONNEL COMPLIANCE':   ['R6', 'R2', 'R7'],          // Case 6 (Wójcik) — R6 is the key
+    'YOUTH ACCOUNTABILITY':   ['R4', 'R3', 'R7'],          // Case 7 (Selby) — R4 is the key
+    'INTERNAL REVIEW':        ['R2', 'R7'],                // Case 8 (Voss, about you)
+    'WORKFORCE REASSIGNMENT': ['R7', 'R6', 'R2'],          // Case 9 (Osei) — R7 is the key (unsigned)
+    'ASSEMBLY REGULATION':    ['R8', 'R7'],                // Case 10 (Dimitri) — R8 is the key
+    'WITNESS MANAGEMENT':     ['R7', 'R2'],                // Case 11 (14 Names)
+    // Shift 3 — blank directives, show general rules
+    '.':                      ['R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8'],  // All rules — you're on your own
+};
 
 // Newspaper headlines between shifts — depend on player choices
 function generateNewspaper(shiftJustCompleted) {
@@ -1898,56 +1919,70 @@ function getWatcherState() {
 function updateWatchers(staggered = false) {
     const ws = getWatcherState();
 
-    // Determine which workers should have eyes on
-    const eyeTargets = [];
-    workers.forEach((w, i) => {
-        const d = w.userData;
-        let eyesOn = false;
-
-        if (ws === 'converged') {
-            eyesOn = true;
-        } else if (ws === 'targeted') {
-            const dist = Math.sqrt(w.parent.position.x ** 2 + w.parent.position.z ** 2);
-            eyesOn = dist < 15 || Math.random() < 0.4;
-        } else if (ws === 'watched') {
-            eyesOn = Math.random() < 0.12;
-        } else if (ws === 'noticed') {
-            eyesOn = Math.random() < 0.02;
-        }
-
-        eyeTargets.push({ worker: w, eyesOn });
-    });
-
-    if (staggered && state.isLookingUp) {
-        // Eyes appear one by one with stagger for drama
-        const newEyes = eyeTargets.filter(e => e.eyesOn && !e.worker.userData.eyesActive);
-        const sorted = newEyes.sort((a, b) => {
-            const da = Math.abs(a.worker.parent.position.z);
-            const db = Math.abs(b.worker.parent.position.z);
-            return da - db;
-        });
-        sorted.forEach((entry, idx) => {
-            const delay = 400 + idx * 120 + Math.random() * 300;
-            setTimeout(() => {
-                if (!state.isLookingUp && !state.gameOver) return;
-                const d = entry.worker.userData;
-                d.leftEye.material = eyeMat;
-                d.rightEye.material = eyeMat;
-                d.eyesActive = true;
-            }, delay);
-        });
-        // Eyes NEVER close once opened — permanent watchers
-    } else {
-        // Instant update - only ADD eyes, never remove (permanent once activated)
-        eyeTargets.forEach(({ worker: w, eyesOn }) => {
+    // If nothing changed since last lookUp (no new choice), just restore existing eyes — don't re-roll
+    if (!state._watchersDirty) {
+        workers.forEach(w => {
             const d = w.userData;
-            if (eyesOn && !d.eyesActive) {
+            if (d.eyesActive) {
                 d.leftEye.material = eyeMat;
                 d.rightEye.material = eyeMat;
-                d.eyesActive = true;
             }
-            // Never turn off: once eyes are on, they stay on
         });
+        // Skip to status text update (below)
+    } else {
+        state._watchersDirty = false;
+
+        // Determine which workers should have eyes on (fresh roll)
+        const eyeTargets = [];
+        workers.forEach((w, i) => {
+            const d = w.userData;
+            let eyesOn = false;
+
+            if (ws === 'converged') {
+                eyesOn = true;
+            } else if (ws === 'targeted') {
+                const dist = Math.sqrt(w.parent.position.x ** 2 + w.parent.position.z ** 2);
+                eyesOn = dist < 15 || Math.random() < 0.4;
+            } else if (ws === 'watched') {
+                eyesOn = Math.random() < 0.12;
+            } else if (ws === 'noticed') {
+                eyesOn = Math.random() < 0.02;
+            }
+
+            eyeTargets.push({ worker: w, eyesOn });
+        });
+
+        if (staggered && state.isLookingUp) {
+            // Eyes appear one by one with stagger for drama
+            const newEyes = eyeTargets.filter(e => e.eyesOn && !e.worker.userData.eyesActive);
+            const sorted = newEyes.sort((a, b) => {
+                const da = Math.abs(a.worker.parent.position.z);
+                const db = Math.abs(b.worker.parent.position.z);
+                return da - db;
+            });
+            sorted.forEach((entry, idx) => {
+                const delay = 400 + idx * 120 + Math.random() * 300;
+                setTimeout(() => {
+                    if (!state.isLookingUp && !state.gameOver) return;
+                    const d = entry.worker.userData;
+                    d.leftEye.material = eyeMat;
+                    d.rightEye.material = eyeMat;
+                    d.eyesActive = true;
+                }, delay);
+            });
+            // Eyes NEVER close once opened — permanent watchers
+        } else {
+            // Instant update - only ADD eyes, never remove (permanent once activated)
+            eyeTargets.forEach(({ worker: w, eyesOn }) => {
+                const d = w.userData;
+                if (eyesOn && !d.eyesActive) {
+                    d.leftEye.material = eyeMat;
+                    d.rightEye.material = eyeMat;
+                    d.eyesActive = true;
+                }
+                // Never turn off: once eyes are on, they stay on
+            });
+        }
     }
 
     // A5: If all eyes are actually on (post-theBlink), override to converged
@@ -1966,7 +2001,7 @@ function updateWatchers(staggered = false) {
     statusEl.className = 'office-status' + (state.isLookingUp ? ' visible' : '') +
         (['watched','targeted','converged'].includes(displayState) ? ' danger' : '');
 
-    noirPass.uniforms.redTint.value = state.suspicion / 100;
+    // redTint is driven by state.redShift (evil choices) via animate() lerp — don't set here
     bloomPass.strength = 0.2 + (state.suspicion / 100) * 0.4;
 }
 
@@ -2114,13 +2149,21 @@ function renderCase(c) {
             <div class="cf-process">FILE ${c.id}</div>
         </div>
         <div id="cf-manual-content" style="display:none;">
-            <div class="cf-header" style="font-size:12px;">BUREAU MANUAL</div>
+            <div class="cf-header" style="font-size:12px;">BUREAU PROCESSING MANUAL — ${getMemoDirective() === '.' ? 'GENERAL PROVISIONS' : getMemoDirective()}</div>
             <div class="manual-content">
-                ${BUREAU_RULES.map(r => `
-                    <div class="manual-rule">
-                        <span class="manual-rule-id">${r.id}</span> — ${r.text}
-                    </div>
-                `).join('')}
+                <div class="manual-section">${getMemoDirective() === '.' ? 'All Provisions Apply' : 'Applicable Regulations'}</div>
+                ${(function() {
+                    const directive = getMemoDirective();
+                    const ruleIds = DIRECTIVE_RULES[directive] || BUREAU_RULES.map(r => r.id);
+                    return ruleIds.map(id => {
+                        const r = BUREAU_RULES.find(rule => rule.id === id);
+                        return r ? '<div class="manual-rule"><span class="manual-rule-id">' + r.id + '</span> — ' + r.text + '</div>' : '';
+                    }).join('');
+                })()}
+                <div class="manual-section" style="margin-top:18px;">General</div>
+                <div class="manual-rule" style="font-size:10px; color:#666;">
+                    All case processing must follow posted directive. Inconsistencies between case data and Bureau records are grounds for dismissal of case.
+                </div>
             </div>
         </div>
     `;
@@ -2148,7 +2191,7 @@ function renderCase(c) {
     // Dynamic detail text — Case 8 (Voss) reflects actual Shift 1 mercy count
     let detailText = c.detail;
     if (c.id === '7514-C') {
-        const shift1Mercy = state.allChoices.filter(ch => !ch.evil).length;
+        const shift1Mercy = state.allChoices.slice(0, 5).filter(ch => !ch.evil).length;
         if (shift1Mercy === 0) {
             detailText = "Exemplary compliance noted. Zero deviations across five cases. Clerk ID matches your terminal. Flagged for routine commendation review.";
         } else {
@@ -2195,13 +2238,6 @@ function renderCase(c) {
 
     // Irregularity hint: after 4s, subtly pulse the clickable text — including first loophole case
     if (hasIrregularity) {
-        setTimeout(() => {
-            const irrEl = el.querySelector('.cf-irregularity');
-            if (irrEl && !irrEl.classList.contains('found')) {
-                irrEl.classList.add('hinting');
-            }
-        }, 4000);
-
         // First-time loophole hint: if player hasn't used any loopholes, show a subtle text cue
         if (state.loopholesEverUsed === 0) {
             setTimeout(() => {
@@ -2253,7 +2289,6 @@ window.foundIrregularity = function(el) {
     state.loopholeFound = true;
 
     // Highlight the found irregularity (CSS animation handles glow pulse)
-    el.classList.remove('hinting');
     el.classList.add('found');
 
     // Play discovery sound — lock tumbler click + warm resonance
@@ -2362,6 +2397,7 @@ window.gameChoice = function(delta, evil) {
     if (state.gameOver || state.isLookingUp || state.transitioning || state.stampPending || state.loopholeReasonPending) return;
     const prevWatcherState = getWatcherState();
     state.suspicion = Math.max(0, Math.min(100, state.suspicion + delta));
+    state._watchersDirty = true; // next lookUp should re-roll watcher eyes
     if (evil) { state.condemned++; state.totalCondemned++; state.evilStreak++; }
     else { state.saved++; state.totalSaved++; state.evilStreak = 0; }
 
@@ -2749,6 +2785,7 @@ function resetShiftAtmosphere() {
     state.redShift *= 0.5;
     // Carry over 40% of suspicion
     state.suspicion = Math.floor(state.suspicion * 0.4);
+    state._watchersDirty = true; // new shift = re-roll eyes
     // Shift 3: back 7 rows start dim
     if (state.currentShift === 2) {
         officeLights.forEach((rowData, i) => {
@@ -3029,6 +3066,7 @@ function lookUp() {
         w.userData.leftEye.visible = true;
         w.userData.rightEye.visible = true;
     });
+    const _wasDirty = state._watchersDirty; // capture before updateWatchers clears it
     updateWatchers(true); // staggered eye reveal
 
     // Re-apply persistent visuals from already-fired events (head tilts, torso rotates, lights)
@@ -3058,6 +3096,7 @@ function lookUp() {
     // ENTITY PRECEDENCE: only ONE aisle figure visible at a time
     // Priority: approachFigure > closeUpWatcher > aisleWatcher
     const ws = getWatcherState();
+    const wasAlreadySeen = !_wasDirty; // repeated lookUp on same case — no drama delay
     if (state.approachActive) {
         approachFigure.visible = true;
         closeUpWatcher.visible = false;
@@ -3067,11 +3106,16 @@ function lookUp() {
         aisleWatcher.visible = false;
         approachFigure.visible = false;
     } else if (ws === 'targeted' || ws === 'converged') {
-        setTimeout(() => {
-            if (state.isLookingUp && !state.approachActive && !state.firedEvents.has('closeUpWatcher')) {
-                aisleWatcher.visible = true;
-            }
-        }, 1200);
+        if (wasAlreadySeen) {
+            // Already saw this — show immediately, no suspense on repeat
+            aisleWatcher.visible = true;
+        } else {
+            setTimeout(() => {
+                if (state.isLookingUp && !state.approachActive && !state.firedEvents.has('closeUpWatcher')) {
+                    aisleWatcher.visible = true;
+                }
+            }, 1200);
+        }
     }
 }
 
@@ -3641,7 +3685,7 @@ document.getElementById('start-btn').addEventListener('click', () => {
             const introLines = [
                 "Night Processing. Same desk.",
                 "New batch tonight. Facility 6 closure cases. Route to standard processing.",
-                "You are Case Processor, Level 3. Process them like any other.",
+                "Consult the Bureau Manual. Follow the directive.",
                 "Begin."
             ];
             const statusEl = document.getElementById('office-status');
@@ -3714,8 +3758,9 @@ function endGame(caught) {
     const tc = state.totalCondemned;
     const totalCases = allShifts.reduce((sum, s) => sum + s.length, 0);
 
+    const reachedFinalCase = getAbsoluteCaseIndex() >= 17; // Case 18 (index 17) is the final testimony case
     if (state.breakoutPath && caught) {
-        // SACRIFICE ENDING — caught, but testimony already submitted
+        // SACRIFICE ENDING — caught, but refused to harm anyone
         // Starts as PROCESSED, morphs into UNSEALED
         title = 'PROCESSED';
         titleClass = 'e-title caught';
@@ -3821,14 +3866,17 @@ function endGame(caught) {
                         msgEl.style.transition = 'opacity 1.5s ease';
                         msgEl.style.opacity = '0';
                         setTimeout(() => {
-                            msgEl.textContent = 'But the testimony was already entered. You made sure of that. Case 7741 is open. Fourteen names that will not disappear. Every page. Every truck. Every weight. Every child. You are not here to see it. But it is seen.';
+                            msgEl.textContent = reachedFinalCase
+                            ? 'But the testimony was already entered. You made sure of that. Case 7741 is open. Fourteen names that will not disappear. Every page. Every truck. Every weight. Every child. You are not here to see it. But it is seen.'
+                            : 'But they could not undo what you did. Every case you touched, every stamp you refused — it is in the record now. Someone will find it. Someone always does. You are not here to see it. But it is seen.';
                             msgEl.style.opacity = '1';
                         }, 1500);
 
                         // Stats appear
                         setTimeout(() => {
-                            document.getElementById('end-stats').innerHTML =
-                                `Cases Processed: ${totalCases}<br>Shifts Completed: ${state.currentShift + 1}<br>Citizens Saved: ${ts}<br>Citizens Condemned: ${tc}<br>Loopholes Found: ${state.loopholesEverUsed} / 9<br>Case #EPS-7741: UNSEALED`;
+                            document.getElementById('end-stats').innerHTML = reachedFinalCase
+                                ? `Cases Processed: ${totalCases}<br>Shifts Completed: ${state.currentShift + 1}<br>Citizens Saved: ${ts}<br>Citizens Condemned: ${tc}<br>Loopholes Found: ${state.loopholesEverUsed} / 9<br>Case #EPS-7741: UNSEALED`
+                                : `Cases Processed: ${state.allChoices.length}<br>Shifts Completed: ${state.currentShift + 1}<br>Citizens Saved: ${ts}<br>Citizens Condemned: ${tc}<br>Loopholes Found: ${state.loopholesEverUsed} / 9<br>Zero Compromises`;
                         }, 3000);
 
                         document.getElementById('office-status').textContent = 'It sounds like testimony.';
@@ -4084,7 +4132,7 @@ document.getElementById('restart-btn').addEventListener('click', () => {
     state.introPlaying = false; // Bug 9: reset intro flag
     state.betweenShifts = false; state.newspaperShowing = false;
     state.loopholeFound = false; state.loopholeReasonPending = false;
-    state.loopholesEverUsed = 0; state.loopholesFound = []; state._loopholeDismissal = false; state._irregularityHoverCuePlayed = false;
+    state.loopholesEverUsed = 0; state.loopholesFound = []; state._loopholeDismissal = false; state._irregularityHoverCuePlayed = false; state._watchersDirty = true;
     state.redShift = 0.0; state.stampDelay = 0;
     _enterHolding = false; _enterHoldStart = 0; // Bug 11: reset Enter hold state
     // Stop any lingering stamp hold tone
