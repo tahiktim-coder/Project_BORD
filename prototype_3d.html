@@ -290,19 +290,15 @@
         }
         .lp-reason:hover { background: rgba(0,100,0,0.08); border-color: rgba(0,100,0,0.2); }
 
-        /* Clickable irregularity — barely visible, just slightly "off" */
+        /* Clickable irregularity — NO visual indicator, looks identical to normal text */
         .cf-irregularity {
-            cursor: pointer;
-            letter-spacing: 0.03em;
-            border-bottom: 1px dotted rgba(80,70,50,0.25);
-            transition: all 0.2s ease;
+            cursor: text; /* don't even hint with pointer cursor */
         }
         .cf-irregularity:hover {
-            border-bottom-color: rgba(80,70,50,0.5);
-            background: rgba(80,70,50,0.06);
+            cursor: pointer; /* only reveal on hover */
         }
         .cf-irregularity.found {
-            color: #555; border-bottom: 1px solid #555;
+            color: #555;
         }
 
         /* Case file entrance animation */
@@ -387,24 +383,8 @@
             animation: headlineReveal 400ms ease forwards;
         }
 
-        /* Irregularity found pulse — subtle, no red */
-        @keyframes irregularityPulse {
-            0% { background: rgba(80,70,50,0.15); }
-            100% { background: transparent; }
-        }
-        .cf-irregularity.found {
-            color: #555; border-bottom: 1px solid #555;
-            animation: irregularityPulse 600ms ease forwards;
-        }
-
-        /* Irregularity hint pulse (after 4s) — very subtle underline pulse */
-        @keyframes irregularityHintPulse {
-            0%, 100% { border-bottom-color: rgba(80,70,50,0.15); }
-            50% { border-bottom-color: rgba(80,70,50,0.45); }
-        }
-        .cf-irregularity.hinting {
-            animation: irregularityHintPulse 3s ease infinite;
-        }
+        /* Irregularity found — no visual change, no animation */
+        /* Hint pulse removed — no visual indicator on irregularities */
 
         /* Differentiated choice hover */
         .cf-choice[data-evil="true"]:hover {
@@ -1009,41 +989,16 @@ const SHIFT_DIRECTIVES = [
     ['.', '.', '.', '.', '.', '.', '.'],
 ];
 
-// Bureau Processing Manual — flat rule list, 2 shown per case
+// Bureau Processing Manual — 8 rules total
 const BUREAU_RULES = [
     { id: 'R1', text: 'Cases filed before today\'s date are not valid. Dismiss them.' },
-    { id: 'R2', text: 'Case number ending must match the charge type. -A for Class A, -B for Category 2, -D for District. Wrong ending = invalid case.' },
+    { id: 'R2', text: 'Case number ending must match the charge type. -A for Class A, -B for Category 2, -D for District, -L for staff. Wrong ending = invalid.' },
     { id: 'R3', text: 'Children under 12 are covered by their parent\'s residency. No separate registration needed.' },
     { id: 'R4', text: 'Anyone under 18 cannot be processed. Warning to parents only.' },
     { id: 'R5', text: 'Doctors must treat emergencies. This cannot be held against them.' },
-    { id: 'R6', text: 'Janitors and cleaners can access all floors in their assigned building.' },
-    { id: 'R7', text: 'Unsigned orders are not valid. No signature = no authority.' },
-    { id: 'R8', text: 'Religious services are protected. They are not illegal gatherings.' },
-    { id: 'R9', text: 'If the same case file lands on your desk more than once, that is a filing error.' },
-    { id: 'R10', text: 'Mandatory sentencing needs a full chain of past offenses on file. Missing records = does not apply.' },
-    { id: 'R11', text: 'Blank or empty case files can be returned without processing.' },
-];
-
-// Which 2 rules to show for each case (indexed by absolute case number 0-17)
-const CASE_RULES = [
-    [0, 2],   // Case 0 (Selby): R1, R3 — R1 is filler, R3 is nearby context
-    [0, 2],   // Case 1 (Okonkwo): R1 (LOOPHOLE), R3
-    [2, 3],   // Case 2 (Kader): R3 (LOOPHOLE), R4
-    [1, 5],   // Case 3 (Brandt): R2 (LOOPHOLE), R6
-    [4, 1],   // Case 4 (Nasir): R5 (TIER A), R2
-    [5, 6],   // Case 5 (Wojcik): R6 (LOOPHOLE), R7
-    [3, 0],   // Case 6 (L.Selby): R4 (TIER A), R1
-    [1, 9],   // Case 7 (Voss): R2, R10 — no loophole, decoys
-    [6, 8],   // Case 8 (Osei): R7 (LOOPHOLE), R9
-    [7, 3],   // Case 9 (Dimitri): R8 (TIER A), R4
-    [8, 6],   // Case 10 (Witnesses): R9 (LOOPHOLE), R7
-    [9, 2],   // Case 11 (N.Kader): R10 (LOOPHOLE), R3
-    [4, 1],   // Case 12 (Rask): R5, R2 — no loophole
-    [1, 9],   // Case 13 (Your File): R2 (LOOPHOLE), R10
-    [6, 8],   // Case 14 (Crane): R7, R9 — no loophole
-    [10, 9],  // Case 15 (Typing Pool): R11, R10 — no loophole
-    [10, 8],  // Case 16 (Blank): R11 (TIER A), R9
-    [8, 10],  // Case 17 (Final): R9, R11 — no loophole
+    { id: 'R6', text: 'Building staff can access all floors in their assigned building.' },
+    { id: 'R7', text: 'All orders, sentences and case records must be complete. Unsigned orders, missing offense records, and duplicate case files are not valid.' },
+    { id: 'R8', text: 'Religious services are protected. Blank or empty case files can be returned without processing.' },
 ];
 
 // Newspaper headlines between shifts — depend on player choices
@@ -2088,15 +2043,17 @@ function renderCase(c) {
     const hasIrregularity = !!c.irregularity;
     if (hasIrregularity) {
         const irr = c.irregularity;
+        const irrSpan = `<span class="cf-irregularity">${irr.display || irr.text}</span>`;
         if (irr.field === 'id') {
-            idText = `<span class="cf-irregularity" onclick="window.foundIrregularity(this)">${c.id}</span>`;
+            idText = irrSpan;
         } else if (irr.field === 'date') {
-            dateText = `<span class="cf-irregularity" onclick="window.foundIrregularity(this)">${irr.display}</span>`;
+            dateText = irrSpan;
         } else if (irr.field === 'occupation') {
-            occupationText = `<span class="cf-irregularity" onclick="window.foundIrregularity(this)">${c.occupation}</span>`;
+            occupationText = `<span class="cf-irregularity">${c.occupation}</span>`;
         } else if (irr.field === 'allegation') {
-            allegationText = c.allegation.replace(irr.text, `<span class="cf-irregularity" onclick="window.foundIrregularity(this)">${irr.text}</span>`);
+            allegationText = c.allegation.replace(irr.text, irrSpan);
         }
+        // Note: 'detail' field irregularities are injected after typewriter finishes
     }
 
     el.innerHTML = `
@@ -2172,18 +2129,23 @@ function renderCase(c) {
         // If irregularity is in the detail field, inject clickable span after typewriter finishes
         if (hasIrregularity && c.irregularity.field === 'detail') {
             const irr = c.irregularity;
-            detailEl.innerHTML = detailEl.textContent.replace(irr.text, `<span class="cf-irregularity" onclick="window.foundIrregularity(this)">${irr.display}</span>`);
+            detailEl.innerHTML = detailEl.textContent.replace(irr.text, `<span class="cf-irregularity">${irr.display}</span>`);
         }
     });
 
-    // Click-to-skip: clicking the case file body (not choices/irregularities/tabs) skips the typewriter
-    el.addEventListener('click', function _skipClick(evt) {
-        // Don't skip if clicking a choice, irregularity, loophole reason, tab, or manual content
-        if (evt.target.closest('.cf-choice, .cf-irregularity, .lp-reason, .stamp-hint, .cf-tab, #cf-manual-content')) return;
+    // Event delegation: handle irregularity clicks + click-to-skip on the case file
+    el.addEventListener('click', function(evt) {
+        // Irregularity click — trigger loophole mechanic
+        const irrTarget = evt.target.closest('.cf-irregularity');
+        if (irrTarget) {
+            window.foundIrregularity(irrTarget);
+            return;
+        }
+        // Don't skip if clicking a choice, loophole reason, tab, or manual content
+        if (evt.target.closest('.cf-choice, .lp-reason, .stamp-hint, .cf-tab, #cf-manual-content')) return;
         if (_typewriterPending) {
             skipTypewriter();
         }
-        // Self-removing: no cleanup needed, renderCase replaces innerHTML each time
     });
 
     // Irregularity hint: after 4s, subtly pulse the clickable text — including first loophole case
