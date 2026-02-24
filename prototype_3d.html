@@ -3072,8 +3072,8 @@ function lookUp() {
     // Re-apply persistent visuals from already-fired events (head tilts, torso rotates, lights)
     reapplyFiredEventVisuals();
 
-    // Fire next pending event on this look-up (one per look-up for pacing)
-    if (state.pendingEvents.length > 0) {
+    // Fire next pending event — ONLY on first lookUp after a choice (dirty), not on repeat looks
+    if (_wasDirty && state.pendingEvents.length > 0) {
         const eventId = state.pendingEvents.shift();
         if (!state.firedEvents.has(eventId)) {
             state.firedEvents.add(eventId);
@@ -3081,8 +3081,8 @@ function lookUp() {
         }
     }
 
-    // B6: Persistent approach — figure gets closer each lookUp
-    if (state.approachActive) {
+    // B6: Persistent approach — figure gets closer each lookUp (only when dirty)
+    if (state.approachActive && _wasDirty) {
         // Advance the figure closer (5-7 units per lookUp)
         if (state.approachZ > -2) {
             state.approachZ = -2;
@@ -3090,6 +3090,8 @@ function lookUp() {
             state.approachZ += 5 + Math.random() * 2;
             if (state.approachZ > -2) state.approachZ = -2;
         }
+    }
+    if (state.approachActive) {
         approachFigure.position.z = state.approachZ;
     }
 
@@ -3375,10 +3377,13 @@ function fireEvent(eventId) {
 // Called on each lookUp so visuals survive the lookDown reset
 function reapplyFiredEventVisuals() {
     if (state.firedEvents.has('headTilt')) {
-        // Workers with active eyes tilt their heads
+        // Workers with active eyes tilt their heads — use stored angle so it's stable across lookUps
         workers.forEach(w => {
             if (w.userData.eyesActive) {
-                w.userData.headRef.rotation.z = (Math.random() - 0.5) * 0.4;
+                if (w.userData._storedTilt === undefined) {
+                    w.userData._storedTilt = (Math.random() - 0.5) * 0.4;
+                }
+                w.userData.headRef.rotation.z = w.userData._storedTilt;
             }
         });
     }
@@ -3416,9 +3421,10 @@ function resetEventVisuals() {
     // Clear pending lightsDie timeouts (A4: prevent leaked kills after lookDown)
     state._lightsDieTimeouts.forEach(id => clearTimeout(id));
     state._lightsDieTimeouts = [];
-    // Reset head tilts (E2 headTilt)
+    // Reset head tilts (E2 headTilt) and clear stored angles
     workers.forEach(w => {
         w.userData.headRef.rotation.z = 0;
+        w.userData._storedTilt = undefined;
         w.rotation.y = 0; // E4 torsoRotate
     });
     // Restore lights (E6 lightsDie, E5 theBlink) — but NOT if lightsDie is permanent
