@@ -686,6 +686,7 @@ const state = {
     loopholesEverUsed: 0,      // count of successfully used loopholes (persists across game)
     loopholesFound: [],        // case IDs where loopholes were found
     _loopholeDismissal: false, // true when mercy-path is from a loophole (shows VOID stamp)
+    _irregularityHoverCuePlayed: false, // audio cue on first-ever irregularity hover
     // Red corruption
     redShift: 0.0,             // current red tint (0.0 to 0.7 max)
     // Stamp delay (grows over game)
@@ -807,6 +808,14 @@ const shift2Cases = [
         name: "Lena Selby", occupation: "Unemployed (Minor, Age 16)",
         allegation: "Handing out illegal printed material in public",
         detail: "Her father sold newspapers. She started writing them. The headline: WHERE ARE THE TRUCKS GOING?",
+        // LOOPHOLE: She is 16. R4 says under 18 cannot be processed.
+        irregularity: { field: "occupation", text: "Age 16", display: "Unemployed (Minor, Age 16)" },
+        loopholeReasons: [
+            { text: "Subject is under 18 - cannot be processed", correct: true },
+            { text: "Minors require parental consent for charges", correct: false },
+            { text: "Printed material exemption for students", correct: false },
+            { text: "Father already charged for same offense", correct: false },
+        ],
         choices: [
             { num:1, main:"YOUTH PROCESSING", desc:"Send to Re-Education intake. Cut off from family.", evil:true, delta:-10 },
             { num:2, main:"FORMAL CAUTION", desc:"Take materials. Official warning. Guardian told.", evil:true, delta:-3 },
@@ -912,7 +921,7 @@ const shift3Cases = [
         // No loophole — or IS there? The case number format is wrong (7532-C but Level 3 cases should be -L3)
         irregularity: { field: "id", text: "7532-C", display: "7532-C" },
         loopholeReasons: [
-            { text: "Case number ending is wrong - Level 3 staff files need -L3", correct: true },
+            { text: "Case number ending is wrong - staff files need -L suffix", correct: true },
             { text: "You cannot process your own case - Bureau rules", correct: false },
             { text: "Stamps are from before current job started", correct: false },
             { text: "Facility 6 records are sealed - evidence cannot be used", correct: false },
@@ -1317,6 +1326,22 @@ function playChairCreak() {
 }
 
 // Loophole discovery sound — lock tumbler click + warm resonance
+// Subtle paper crinkle on first-ever irregularity hover — teaches clickability
+function playIrregularityHoverCue() {
+    if (!audioCtx || audioCtx.state !== 'running') return;
+    const mg = window._audioMasterGain || audioCtx.destination;
+    const now = audioCtx.currentTime;
+    // Tiny paper crinkle — high-frequency noise burst, very quiet
+    const s = Math.floor(audioCtx.sampleRate * 0.04);
+    const b = audioCtx.createBuffer(1, s, audioCtx.sampleRate);
+    const d = b.getChannelData(0);
+    for (let i = 0; i < s; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (s * 0.3));
+    const src = audioCtx.createBufferSource(); src.buffer = b;
+    const g = audioCtx.createGain(); g.gain.value = 0.04; // barely audible
+    const f = audioCtx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 2000;
+    src.connect(f); f.connect(g); g.connect(mg); src.start(now);
+}
+
 function playLoopholeDiscovery() {
     if (!audioCtx || audioCtx.state !== 'running') return;
     const mg = window._audioMasterGain || audioCtx.destination;
@@ -1400,6 +1425,7 @@ function playNewspaperLand() {
 // Typewriter text reveal — types the detail field character by character
 let _typewriterTimer = null;
 let _typewriterPending = null; // stores {element, text, onComplete} for skip/resume
+let _caseFileAC = null; // AbortController for case file event listeners — prevents accumulation
 
 function typewriterReveal(element, text, onComplete) {
     if (_typewriterTimer) clearTimeout(_typewriterTimer);
@@ -2016,6 +2042,11 @@ function renderCase(c) {
     state.loopholeFound = false;
     state.loopholeReasonPending = false;
 
+    // Abort previous case file event listeners to prevent accumulation
+    if (_caseFileAC) _caseFileAC.abort();
+    _caseFileAC = new AbortController();
+    const _acSignal = { signal: _caseFileAC.signal };
+
     const el = document.getElementById('case-file');
 
     // Clear previous animation classes and shift styles
@@ -2118,8 +2149,12 @@ function renderCase(c) {
     let detailText = c.detail;
     if (c.id === '7514-C') {
         const shift1Mercy = state.allChoices.filter(ch => !ch.evil).length;
-        const numWord = ['Zero', 'One', 'Two', 'Three', 'Four', 'Five'][shift1Mercy] || shift1Mercy.toString();
-        detailText = detailText.replace('Three anomalous dismissals', numWord + ' anomalous dismissal' + (shift1Mercy === 1 ? '' : 's'));
+        if (shift1Mercy === 0) {
+            detailText = "Exemplary compliance noted. Zero deviations across five cases. Clerk ID matches your terminal. Flagged for routine commendation review.";
+        } else {
+            const numWord = ['Zero', 'One', 'Two', 'Three', 'Four', 'Five'][shift1Mercy] || shift1Mercy.toString();
+            detailText = detailText.replace('Three anomalous dismissals', numWord + ' anomalous dismissal' + (shift1Mercy === 1 ? '' : 's'));
+        }
     }
 
     typewriterReveal(detailEl, detailText, () => {
@@ -2132,6 +2167,16 @@ function renderCase(c) {
             detailEl.innerHTML = detailEl.textContent.replace(irr.text, `<span class="cf-irregularity">${irr.display}</span>`);
         }
     });
+
+    // Audio cue on first-ever irregularity hover — teaches that text is interactive
+    if (hasIrregularity && !state._irregularityHoverCuePlayed) {
+        el.addEventListener('mouseover', function(evt) {
+            if (evt.target.closest('.cf-irregularity') && !state._irregularityHoverCuePlayed) {
+                state._irregularityHoverCuePlayed = true;
+                playIrregularityHoverCue();
+            }
+        }, _acSignal);
+    }
 
     // Event delegation: handle irregularity clicks + click-to-skip on the case file
     el.addEventListener('click', function(evt) {
@@ -2146,7 +2191,7 @@ function renderCase(c) {
         if (_typewriterPending) {
             skipTypewriter();
         }
-    });
+    }, _acSignal);
 
     // Irregularity hint: after 4s, subtly pulse the clickable text — including first loophole case
     if (hasIrregularity) {
@@ -2384,8 +2429,8 @@ window.gameChoice = function(delta, evil) {
 
     updateWatchers();
 
-    // Breakout path overrides the suspicion cap
-    if (state.suspicion >= 100 && !state.breakoutPath) { endGame(true); return; }
+    // Suspicion cap — breakoutPath no longer grants immunity
+    if (state.suspicion >= 100) { endGame(true); return; }
 
     // B1: Evil choices require stamp ritual - mercy is quiet
     if (evil) {
@@ -3347,8 +3392,10 @@ function resetEventVisuals() {
             }
         });
     }
-    // Reset aisleWatcher position (E7 aisleJump)
-    aisleWatcher.position.z = -8;
+    // Reset aisleWatcher position — but keep close if aisleJump already fired
+    if (!state.firedEvents.has('aisleJump')) {
+        aisleWatcher.position.z = -8;
+    }
     // Reset closeUpWatcher position (in case theBlink moved it)
     closeUpWatcher.position.z = -2.5;
 }
@@ -3663,7 +3710,14 @@ function endGame(caught) {
     const tc = state.totalCondemned;
     const totalCases = allShifts.reduce((sum, s) => sum + s.length, 0);
 
-    if (state.breakoutPath) {
+    if (state.breakoutPath && caught) {
+        // SACRIFICE ENDING — caught, but testimony already submitted
+        // Starts as PROCESSED, morphs into UNSEALED
+        title = 'PROCESSED';
+        titleClass = 'e-title caught';
+        msg = 'The last key falls silent. You understand now - you were never the one processing. You were the one being processed.';
+    } else if (state.breakoutPath && !caught) {
+        // Perfect run without hitting 100 — pure UNSEALED
         title = 'UNSEALED';
         titleClass = 'e-title survived';
         msg = 'The testimony is entered. Case 7741 is open. Fourteen names that will not disappear. Every page of Facility 6. Every truck. Every weight. Every child. Your name is on those documents too. But today, for the first time, that means something different.';
@@ -3694,60 +3748,135 @@ function endGame(caught) {
         msg = 'You processed them all. Some lived. Some didn\'t. The Bureau does not distinguish. Continue.';
     }
 
-    // Breakout sequence — lights reverse, eyes off, freedom
-    if (state.breakoutPath && !caught) {
+    // Breakout sequence — sacrifice or pure UNSEALED
+    if (state.breakoutPath) {
         state.targetLook = 1;
         state.isLookingUp = true;
 
-        // Fire lightsDie first (the system punishes you)
+        // Fire lightsDie first (the system takes you)
         fireEvent('lightsDie');
 
-        // After lights finish dying (~18 rows * 150ms = ~2.7s), reverse everything
-        setTimeout(() => {
-            // Lights come BACK ON, front-to-back (reversal — first time anything reverses)
-            const sortedFront = [...officeLights].sort((a, b) => b.z - a.z); // closest first
-            sortedFront.forEach((rowData, idx) => {
-                setTimeout(() => {
-                    rowData.dead = false;
-                    rowData.groups.forEach(g => {
-                        g.traverse(child => {
-                            if (child instanceof THREE.PointLight && child.userData.origIntensity !== undefined) {
-                                child.userData.baseIntensity = child.userData.origIntensity;
-                                child.intensity = child.userData.origIntensity;
-                            }
-                            if (child.material && child.material.emissiveIntensity !== undefined && child.userData._origEmissive !== undefined) {
-                                child.material.emissiveIntensity = child.userData._origEmissive;
-                            }
-                        });
-                    });
-                }, idx * 100); // faster than dying — hope is faster than fear
-            });
-
-            // All eyes OFF simultaneously (first time eyes disappear)
+        if (caught) {
+            // SACRIFICE PATH: caught at 100 suspicion, but you saved everyone.
+            // Show PROCESSED first, then morph to UNSEALED after a long beat.
             setTimeout(() => {
-                workers.forEach(w => {
-                    w.userData.leftEye.material = eyeMatOff;
-                    w.userData.rightEye.material = eyeMatOff;
-                    w.userData.eyesActive = false;
-                });
-                closeUpWatcher.visible = false;
-                aisleWatcher.visible = false;
-
-                document.getElementById('office-status').textContent = 'The eyes are gone. The typing has changed. It sounds like testimony.';
-                document.getElementById('office-status').className = 'office-status visible';
-            }, sortedFront.length * 100 + 500);
-
-            // Show end screen after the full sequence
-            setTimeout(() => {
-                document.getElementById('end-title').textContent = title;
-                document.getElementById('end-title').className = titleClass;
+                // Show PROCESSED ending
+                document.getElementById('end-title').textContent = 'PROCESSED';
+                document.getElementById('end-title').className = 'e-title caught';
                 document.getElementById('end-msg').textContent = msg;
-                document.getElementById('end-stats').innerHTML =
-                    `Cases Processed: ${totalCases}<br>Shifts Completed: 3<br>Citizens Saved: ${ts}<br>Citizens Condemned: ${tc}<br>Loopholes Found: ${state.loopholesEverUsed} / 8<br>Case #EPS-7741: UNSEALED`;
+                document.getElementById('end-stats').innerHTML = '';
                 endEl.style.display = 'flex';
                 setTimeout(() => endEl.style.opacity = '1', 50);
-            }, sortedFront.length * 100 + 3000);
-        }, 3000); // wait for lightsDie to finish
+
+                // After 5 seconds of sitting with PROCESSED...
+                setTimeout(() => {
+                    // Lights come back on
+                    const sortedFront = [...officeLights].sort((a, b) => b.z - a.z);
+                    sortedFront.forEach((rowData, idx) => {
+                        setTimeout(() => {
+                            rowData.dead = false;
+                            rowData.groups.forEach(g => {
+                                g.traverse(child => {
+                                    if (child instanceof THREE.PointLight && child.userData.origIntensity !== undefined) {
+                                        child.userData.baseIntensity = child.userData.origIntensity;
+                                        child.intensity = child.userData.origIntensity;
+                                    }
+                                    if (child.material && child.material.emissiveIntensity !== undefined && child.userData._origEmissive !== undefined) {
+                                        child.material.emissiveIntensity = child.userData._origEmissive;
+                                    }
+                                });
+                            });
+                        }, idx * 100);
+                    });
+
+                    // Eyes OFF
+                    setTimeout(() => {
+                        workers.forEach(w => {
+                            w.userData.leftEye.material = eyeMatOff;
+                            w.userData.rightEye.material = eyeMatOff;
+                            w.userData.eyesActive = false;
+                        });
+                        closeUpWatcher.visible = false;
+                        aisleWatcher.visible = false;
+                    }, sortedFront.length * 100 + 500);
+
+                    // Morph PROCESSED → UNSEALED
+                    setTimeout(() => {
+                        // Title morphs
+                        const titleEl = document.getElementById('end-title');
+                        titleEl.style.transition = 'opacity 1.5s ease';
+                        titleEl.style.opacity = '0';
+                        setTimeout(() => {
+                            titleEl.textContent = 'UNSEALED';
+                            titleEl.className = 'e-title survived';
+                            titleEl.style.opacity = '1';
+                        }, 1500);
+
+                        // Message morphs
+                        const msgEl = document.getElementById('end-msg');
+                        msgEl.style.transition = 'opacity 1.5s ease';
+                        msgEl.style.opacity = '0';
+                        setTimeout(() => {
+                            msgEl.textContent = 'But the testimony was already entered. You made sure of that. Case 7741 is open. Fourteen names that will not disappear. Every page. Every truck. Every weight. Every child. You are not here to see it. But it is seen.';
+                            msgEl.style.opacity = '1';
+                        }, 1500);
+
+                        // Stats appear
+                        setTimeout(() => {
+                            document.getElementById('end-stats').innerHTML =
+                                `Cases Processed: ${totalCases}<br>Shifts Completed: ${state.currentShift + 1}<br>Citizens Saved: ${ts}<br>Citizens Condemned: ${tc}<br>Loopholes Found: ${state.loopholesEverUsed} / 9<br>Case #EPS-7741: UNSEALED`;
+                        }, 3000);
+
+                        document.getElementById('office-status').textContent = 'It sounds like testimony.';
+                        document.getElementById('office-status').className = 'office-status visible';
+                    }, sortedFront.length * 100 + 2000);
+                }, 5000);
+            }, 3000);
+        } else {
+            // PURE UNSEALED: survived without hitting 100
+            setTimeout(() => {
+                const sortedFront = [...officeLights].sort((a, b) => b.z - a.z);
+                sortedFront.forEach((rowData, idx) => {
+                    setTimeout(() => {
+                        rowData.dead = false;
+                        rowData.groups.forEach(g => {
+                            g.traverse(child => {
+                                if (child instanceof THREE.PointLight && child.userData.origIntensity !== undefined) {
+                                    child.userData.baseIntensity = child.userData.origIntensity;
+                                    child.intensity = child.userData.origIntensity;
+                                }
+                                if (child.material && child.material.emissiveIntensity !== undefined && child.userData._origEmissive !== undefined) {
+                                    child.material.emissiveIntensity = child.userData._origEmissive;
+                                }
+                            });
+                        });
+                    }, idx * 100);
+                });
+
+                setTimeout(() => {
+                    workers.forEach(w => {
+                        w.userData.leftEye.material = eyeMatOff;
+                        w.userData.rightEye.material = eyeMatOff;
+                        w.userData.eyesActive = false;
+                    });
+                    closeUpWatcher.visible = false;
+                    aisleWatcher.visible = false;
+
+                    document.getElementById('office-status').textContent = 'The eyes are gone. The typing has changed. It sounds like testimony.';
+                    document.getElementById('office-status').className = 'office-status visible';
+                }, sortedFront.length * 100 + 500);
+
+                setTimeout(() => {
+                    document.getElementById('end-title').textContent = title;
+                    document.getElementById('end-title').className = titleClass;
+                    document.getElementById('end-msg').textContent = msg;
+                    document.getElementById('end-stats').innerHTML =
+                        `Cases Processed: ${totalCases}<br>Shifts Completed: 3<br>Citizens Saved: ${ts}<br>Citizens Condemned: ${tc}<br>Loopholes Found: ${state.loopholesEverUsed} / 9<br>Case #EPS-7741: UNSEALED`;
+                    endEl.style.display = 'flex';
+                    setTimeout(() => endEl.style.opacity = '1', 50);
+                }, sortedFront.length * 100 + 3000);
+            }, 3000);
+        }
 
         return; // skip normal end flow
     }
@@ -3789,7 +3918,7 @@ function endGame(caught) {
                 `Shifts Completed: ${state.currentShift + 1}`,
                 `Citizens Saved: ${ts}`,
                 `Citizens Condemned: ${tc}`,
-                `Loopholes Found: ${state.loopholesEverUsed} / 8`,
+                `Loopholes Found: ${state.loopholesEverUsed}`,
                 `Final Suspicion: ${state.suspicion}%`
             ];
             statsEl.innerHTML = statLines.map((l, i) =>
@@ -3813,7 +3942,7 @@ function endGame(caught) {
             document.getElementById('end-title').className = titleClass;
             document.getElementById('end-msg').textContent = msg;
             document.getElementById('end-stats').innerHTML =
-                `Cases Processed: ${totalCases}<br>Shifts Completed: 3<br>Citizens Saved: ${ts}<br>Citizens Condemned: ${tc}<br>Loopholes Found: ${state.loopholesEverUsed} / 8`;
+                `Cases Processed: ${totalCases}<br>Shifts Completed: 3<br>Citizens Saved: ${ts}<br>Citizens Condemned: ${tc}<br>Loopholes Found: ${state.loopholesEverUsed}`;
             endEl.style.display = 'flex';
             setTimeout(() => endEl.style.opacity = '1', 50);
         }, 800);
@@ -3891,7 +4020,7 @@ function endGame(caught) {
                 `Shifts Completed: ${state.currentShift + 1}`,
                 `Citizens Saved: ${ts}`,
                 `Citizens Condemned: ${tc}`,
-                `Loopholes Found: ${state.loopholesEverUsed} / 8`,
+                `Loopholes Found: ${state.loopholesEverUsed}`,
                 `Final Suspicion: ${state.suspicion}%`
             ];
             statsEl.innerHTML = statLines.map((l, i) =>
@@ -3951,7 +4080,7 @@ document.getElementById('restart-btn').addEventListener('click', () => {
     state.introPlaying = false; // Bug 9: reset intro flag
     state.betweenShifts = false; state.newspaperShowing = false;
     state.loopholeFound = false; state.loopholeReasonPending = false;
-    state.loopholesEverUsed = 0; state.loopholesFound = []; state._loopholeDismissal = false;
+    state.loopholesEverUsed = 0; state.loopholesFound = []; state._loopholeDismissal = false; state._irregularityHoverCuePlayed = false;
     state.redShift = 0.0; state.stampDelay = 0;
     _enterHolding = false; _enterHoldStart = 0; // Bug 11: reset Enter hold state
     // Stop any lingering stamp hold tone
@@ -4544,7 +4673,7 @@ animate();
 
     // Toggle with T key
     document.addEventListener('keydown', e => {
-        if (e.key === 't' || e.key === 'T') {
+        if ((e.key === 't' || e.key === 'T') && e.ctrlKey && e.shiftKey) {
             panel.classList.toggle('visible');
         }
     });
@@ -4782,7 +4911,7 @@ animate();
         state.currentShift = 2;
         state.currentCase = 6;
         state.breakoutPath = true;
-        state.loopholesEverUsed = 8;
+        state.loopholesEverUsed = 9;
         endGame(false);
     });
 
