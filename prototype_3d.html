@@ -292,12 +292,14 @@
         }
         .lp-reason:hover { background: rgba(0,100,0,0.08); border-color: rgba(0,100,0,0.2); }
 
-        /* Clickable irregularity -NO visual indicator, looks identical to normal text */
+        /* Clickable irregularity -barely perceptible visual hint, rewards attentive players */
         .cf-irregularity {
-            cursor: text; /* don't even hint with pointer cursor */
+            cursor: text; /* don't hint with pointer cursor */
+            color: #2a1a1a; /* barely different from #1a1a1a base -just enough to feel "off" */
         }
         .cf-irregularity:hover {
-            cursor: pointer; /* only reveal on hover */
+            cursor: pointer; /* reveal on hover */
+            color: #4a2a2a; /* slightly warmer on hover -something is here */
         }
         .cf-irregularity.found {
             color: #555;
@@ -1081,28 +1083,23 @@ function generateNewspaper(shiftJustCompleted) {
     const condemned = (id) => { const c = ch(id); return c && c.evil; };
 
     if (shiftJustCompleted === 0) {
-        // === AFTER SHIFT 1 -consequences of your first 5 cases ===
+        // === AFTER SHIFT 1 -consequences of your first 5 cases (cap: 3 stories + footer) ===
 
-        // Selby -the first case, the first choice
-        if (saved('7493-B')) {
-            headlines.push({ head: "VENDOR LICENSE DISPUTE RESOLVED - NO ACTION TAKEN", sub: "Arthur Selby returns to corner outside former Facility 6. Daughter seen at the stand after school." });
-        } else if (condemned('7493-B')) {
-            headlines.push({ head: "VENDOR DETAINED FOR OUTSTANDING TAX DEBT", sub: "Arthur P. Selby taken into processing. Property seized. One dependent placed with relatives." });
-        }
-
-        // Lead story: the biggest consequence
+        // Lead story: the Kader child -biggest emotional weight
         if (saved('7495-C')) {
             headlines.push({ head: "DISPLACED CHILD PLACED WITH FAMILY", sub: "Boy, 8, registered under family residency in District 9. Enrolled in school this morning." });
         } else if (condemned('7495-C')) {
             headlines.push({ head: "CHILD REMOVED FROM HOME, FAMILY DETAINED", sub: "BORD agents seized property and detained adults. Child transferred to state intake." });
         }
 
-        if (saved('7494-A')) {
-            headlines.push({ head: "DISTRICT 9 TEACHER CLEARED OF ALL CHARGES", sub: "History materials returned. Students resume classes after one-week suspension." });
-        } else if (condemned('7494-A')) {
-            headlines.push({ head: "TEACHER RELOCATED TO ZONE 12", sub: "All personal materials confiscated. Two-year supervision period begins." });
+        // Selby -the first case, the first choice
+        if (saved('7493-B')) {
+            headlines.push({ head: "VENDOR LICENSE DISPUTE RESOLVED", sub: "Arthur Selby returns to corner outside former Facility 6. Daughter seen at the stand." });
+        } else if (condemned('7493-B')) {
+            headlines.push({ head: "VENDOR DETAINED FOR OUTSTANDING TAX DEBT", sub: "Arthur P. Selby taken into processing. Property seized." });
         }
 
+        // Nasir -Facility 6 connection
         if (saved('7497-E')) {
             headlines.push({ head: "PHYSICIAN CLEARED UNDER MEDICAL DUTY CLAUSE", sub: "Dr. Nasir continues practice. Patient identity remains classified." });
         } else if (condemned('7497-E')) {
@@ -1110,41 +1107,34 @@ function generateNewspaper(shiftJustCompleted) {
         }
 
         // Tally footer
-        headlines.push({ head: 'BORD REPORTS FULL COMPLIANCE ACROSS ALL DIVISIONS', sub: `Night Processing ran without incident. All cases handled within acceptable parameters.${state.totalSaved >= 3 ? ' Several cases flagged for secondary review.' : ' BORD thanks its dedicated staff.'}${state.loopholesEverUsed > 0 ? ' (Filing irregularities under internal review.)' : ''}` });
+        headlines.push({ head: 'BORD REPORTS FULL COMPLIANCE ACROSS ALL DIVISIONS', sub: `Night Processing ran without incident.${state.totalSaved >= 3 ? ' Several cases flagged for secondary review.' : ' BORD thanks its dedicated staff.'}${state.loopholesEverUsed > 0 ? ' (Filing irregularities under internal review.)' : ''}` });
 
     } else if (shiftJustCompleted === 1) {
-        // === AFTER SHIFT 2 -the story is building ===
+        // === AFTER SHIFT 2 -the story is building (cap: 3 stories + footer) ===
 
-        // Lead story: WITNESSES (the biggest decision)
+        // Lead story: WITNESSES (the biggest decision in the game)
         if (saved('7517-X')) {
-            headlines.push({ head: "CASE 7741 OFFICIALLY OPENED - FOURTEEN WITNESSES UNDER PROTECTION", sub: "Outside review board accepts testimony. Full investigation into Facility 6 operations authorized. This is the first case opened against BORD from inside." });
+            headlines.push({ head: "CASE 7741 OFFICIALLY OPENED - FOURTEEN WITNESSES UNDER PROTECTION", sub: "Outside review board accepts testimony. Full investigation into Facility 6 authorized." });
         } else if (condemned('7517-X')) {
-            headlines.push({ head: "WITNESS GROUP RELOCATED - DESTINATION CLASSIFIED", sub: "Fourteen individuals moved under Protocol 9 security. No testimony entered into record. Case 7741 remains closed." });
+            headlines.push({ head: "WITNESS GROUP RELOCATED - DESTINATION CLASSIFIED", sub: "Fourteen individuals moved under Protocol 9. No testimony entered. Case 7741 remains closed." });
         }
 
+        // Lena -the underground paper, the question
         if (saved('7513-B')) {
-            headlines.push({ head: "UNDERGROUND PAPER GROWS - 'WHERE ARE THE TRUCKS GOING?' NOW IN SIX DISTRICTS", sub: "Sixteen-year-old editor continues distribution. BORD unable to locate printing source." });
+            headlines.push({ head: "'WHERE ARE THE TRUCKS GOING?' NOW IN SIX DISTRICTS", sub: "Sixteen-year-old editor continues distribution. BORD unable to locate printing source." });
         } else if (condemned('7513-B')) {
             headlines.push({ head: "MINOR DETAINED UNDER YOUTH PROCESSING ORDER", sub: "Lena Selby, 16, transferred to Re-Education intake. Newspaper circulation halted." });
         }
 
+        // Osei -Facility 6 records clerk
         if (saved('7515-D')) {
-            headlines.push({ head: "FORMER FACILITY 6 CLERK AVOIDS REASSIGNMENT", sub: "Amara Osei remains free after unsigned transfer order ruled invalid. She knows what she filed." });
+            headlines.push({ head: "FORMER FACILITY 6 CLERK AVOIDS REASSIGNMENT", sub: "Amara Osei remains free after unsigned transfer order ruled invalid." });
         } else if (condemned('7515-D')) {
             headlines.push({ head: "RECORDS CLERK DETAINED FOR REFUSING TRANSFER", sub: "Amara Osei taken into custody. All Facility 6 personnel files sealed." });
         }
 
-        // The Voss reveal -about you
-        if (saved('7514-C')) {
-            headlines.push({ head: "PROCESSING TERMINAL ERRORS BLAMED ON SOFTWARE", sub: "Night Processing systems flagged for maintenance. No disciplinary action taken." });
-        } else if (condemned('7514-C')) {
-            headlines.push({ head: "NIGHT SHIFT CLERK REFERRED TO INTERNAL REVIEW", sub: "Performance patterns flagged. Full cooperation expected." });
-        }
-
         // Tally footer
-        const totalSaved = state.totalSaved;
-        const totalCondemned = state.totalCondemned;
-        headlines.push({ head: 'FACILITY 6 SITE CLEARED FOR REDEVELOPMENT - MEMORIAL PROPOSALS DENIED', sub: `BORD confirms all Facility 6 matters have been resolved. Families have been notified. No further inquiries will be accepted.${state.loopholesEverUsed >= 3 ? ' Personnel review pending.' : ''}` });
+        headlines.push({ head: 'FACILITY 6 SITE CLEARED FOR REDEVELOPMENT - MEMORIAL PROPOSALS DENIED', sub: `BORD confirms all Facility 6 matters have been resolved. No further inquiries will be accepted.${state.loopholesEverUsed >= 3 ? ' Personnel review pending.' : ''}` });
     }
     return headlines;
 }
@@ -4226,6 +4216,8 @@ document.getElementById('start-btn').addEventListener('click', () => {
                 "Process the cases. Follow the directive on your left. Consult the BORD Manual.",
                 "BORD is watching. Begin."
             ];
+            // Second playthrough: add a line that confirms the loop
+            if (_hasPlayedBefore) introLines.splice(5, 0, "You have sat at this desk before.");
             const statusEl = document.getElementById('office-status');
 
             let lineIdx = 0;
@@ -4296,15 +4288,35 @@ document.getElementById('start-btn').addEventListener('click', () => {
     }, 100);
 });
 
-// Stamp Archive: scroll through every condemned name before stats appear
+// Stamp Archive: scroll through every condemned name + consequence before stats appear
 // Returns a promise that resolves after the archive completes (or immediately if no condemned)
+const STAMP_CONSEQUENCES = {
+    '7493-B': 'DETAINED. Property seized.',
+    '7494-A': 'RELOCATED. Materials confiscated.',
+    '7495-C': 'FAMILY DETAINED. Child taken.',
+    '7496-D': 'DETAINED. Evidence destroyed.',
+    '7497-E': 'LICENSE REVOKED. Patient transferred.',
+    '7512-A': 'DETAINED. Access revoked.',
+    '7513-B': 'DETAINED. Age 16.',
+    '7514-C': 'FLAGGED. Internal review.',
+    '7515-D': 'DETAINED. Files sealed.',
+    '7516-E': 'RELOCATED. Proceedings suspended.',
+    '7517-X': 'SILENCED. No testimony entered.',
+    '7530-A': 'DETAINED. License suspended.',
+    '7531-B': 'PROCESSED. Certificates stand.',
+    '7532-C': 'PROCESSED. Your file closed.',
+    '7533-D': 'PROCESSED. No action taken.',
+    '7534-E': 'PROCESSED. Staff reassigned.',
+    '7535-F': 'RETURNED. No data.',
+    '7741-FINAL': 'SILENCED. Case 7741 closed.',
+};
 function showStampArchive(statsEl) {
     const condemned = state.allChoices
         .filter(ch => ch.evil && ch.caseId)
         .map(ch => {
             const allCasesFlat = [...allShifts[0], ...allShifts[1], ...allShifts[2]];
             const c = allCasesFlat.find(ca => ca.id === ch.caseId);
-            return c ? c.name : null;
+            return c ? { name: c.name, consequence: STAMP_CONSEQUENCES[ch.caseId] || 'PROCESSED.' } : null;
         }).filter(Boolean);
     if (condemned.length === 0) return Promise.resolve();
     return new Promise(resolve => {
@@ -4312,16 +4324,20 @@ function showStampArchive(statsEl) {
         statsEl.style.opacity = '1';
         const nameEl = document.createElement('div');
         nameEl.style.cssText = 'font-size:13px; color:rgba(139,0,0,0.6); letter-spacing:0.08em; transition:opacity 0.3s ease;';
+        const conseqEl = document.createElement('div');
+        conseqEl.style.cssText = 'font-size:10px; color:rgba(139,0,0,0.35); letter-spacing:0.12em; margin-top:4px; transition:opacity 0.3s ease;';
         const labelEl = document.createElement('div');
         labelEl.style.cssText = 'font-size:9px; color:#666; letter-spacing:0.15em; margin-bottom:8px; text-transform:uppercase;';
         labelEl.textContent = 'Stamp Archive';
         statsEl.appendChild(labelEl);
         statsEl.appendChild(nameEl);
+        statsEl.appendChild(conseqEl);
         let idx = 0;
         const showNext = () => {
             if (idx >= condemned.length) {
                 // Fade out archive, then resolve
                 nameEl.style.opacity = '0';
+                conseqEl.style.opacity = '0';
                 labelEl.style.opacity = '0';
                 setTimeout(() => {
                     statsEl.innerHTML = '';
@@ -4331,11 +4347,14 @@ function showStampArchive(statsEl) {
                 return;
             }
             nameEl.style.opacity = '0';
+            conseqEl.style.opacity = '0';
             setTimeout(() => {
-                nameEl.textContent = condemned[idx];
+                nameEl.textContent = condemned[idx].name;
+                conseqEl.textContent = condemned[idx].consequence;
                 nameEl.style.opacity = '1';
+                conseqEl.style.opacity = '1';
                 idx++;
-                setTimeout(showNext, 800);
+                setTimeout(showNext, 1200);
             }, 300);
         };
         showNext();
@@ -4743,6 +4762,9 @@ function endGame(caught) {
             ];
             if (ts >= 5) statLines.push('They remember what you did.');
             else if (ts >= 1) statLines.push('Someone remembers.');
+            // Replay nudge: hint at loopholes/manual for next attempt
+            if (state.loopholesEverUsed === 0) statLines.push('Some cases had irregular paperwork.');
+            else if (state.loopholesEverUsed < 5) statLines.push(`${9 - state.loopholesEverUsed} irregularities remain in the files.`);
             setTimeout(() => {
                 showStampArchive(statsEl).then(() => {
                     statsEl.innerHTML = statLines.map((l, i) =>
@@ -4763,7 +4785,7 @@ function endGame(caught) {
             document.getElementById('end-title').className = titleClass;
             document.getElementById('end-msg').textContent = msg;
             document.getElementById('end-stats').innerHTML =
-                `Cases Processed: ${totalCases}<br>Shifts Completed: 3<br>Citizens Saved: ${ts}<br>Citizens Condemned: ${tc}<br>Loopholes Found: ${state.loopholesEverUsed}`;
+                `Cases Processed: ${totalCases}<br>Shifts Completed: 3<br>Citizens Saved: ${ts}<br>Citizens Condemned: ${tc}<br>Loopholes Found: ${state.loopholesEverUsed}<br><span style="color:#555;font-size:11px;">Not a single deviation. Not a single thought.</span>`;
             endEl.style.display = 'flex';
             setTimeout(() => endEl.style.opacity = '1', 50);
         }, 800);
@@ -4798,6 +4820,9 @@ function endGame(caught) {
                 `Citizens Condemned: ${tc}`,
                 `Loopholes Found: ${state.loopholesEverUsed}`
             ];
+            // Replay nudge
+            if (state.loopholesEverUsed === 0) statLines.push('Some cases had irregular paperwork.');
+            else if (state.loopholesEverUsed < 5) statLines.push(`${9 - state.loopholesEverUsed} irregularities remain in the files.`);
             endEl.style.display = 'flex';
             setTimeout(() => endEl.style.opacity = '1', 50);
             // Stamp Archive (shows the few names you condemned), then stats
@@ -4912,6 +4937,9 @@ function endGame(caught) {
             ];
             if (ts >= 5) statLines.push('They remember what you did.');
             else if (ts >= 1) statLines.push('Someone remembers.');
+            // Replay nudge
+            if (state.loopholesEverUsed === 0) statLines.push('Some cases had irregular paperwork.');
+            else if (state.loopholesEverUsed < 5) statLines.push(`${9 - state.loopholesEverUsed} irregularities remain in the files.`);
             // Wait 2s for end screen to settle, then show archive
             setTimeout(() => {
                 showStampArchive(statsEl).then(() => {
