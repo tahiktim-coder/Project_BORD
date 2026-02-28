@@ -2132,6 +2132,25 @@ closeUpWatcher.position.set(0, 0, -2.5);
 closeUpWatcher.rotation.y = Math.PI;
 scene.add(closeUpWatcher);
 
+// Shift-start figure -eyeless black silhouette, a whistleblower warning you
+// No eyes (not a watcher), no hat (not BORD). Just a void shape at your desk.
+const shiftFigure = new THREE.Group();
+shiftFigure.visible = false;
+const sfBodyMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+const sfBody = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.2, 0.3), sfBodyMat);
+sfBody.position.set(0, 1.0, 0);
+shiftFigure.add(sfBody);
+const sfHead = new THREE.Mesh(new THREE.SphereGeometry(0.14, 10, 8), sfBodyMat);
+sfHead.position.set(0, 1.72, -0.04);
+shiftFigure.add(sfHead);
+// Shoulders -wider than body, sells the "leaning over your desk" silhouette
+const sfShoulders = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.15, 0.25), sfBodyMat);
+sfShoulders.position.set(0, 1.55, 0);
+shiftFigure.add(sfShoulders);
+shiftFigure.position.set(0, 0, -1.0);
+shiftFigure.rotation.y = Math.PI;
+scene.add(shiftFigure);
+
 // (debug exports removed for production)
 
 // ============================================================
@@ -2862,10 +2881,11 @@ window.gameChoice = function(delta, evil) {
         return; // handled by forced lookUp path
     }
 
-    // Silence at key emotional moments
+    // Silence at key emotional moments -grows longer through the game
     if (absIdx === 2 || absIdx === 7 || absIdx === 13) {
-        // Kader Family (abs 2) or Your Own File (abs 13) -hold silence
-        audioSilence(absIdx === 13 ? 2000 : 800);
+        // Mercy silence scales: 800ms early → 2000ms+ late (longer held breath)
+        const mercySilence = 800 + absIdx * 80;
+        audioSilence(mercySilence);
     }
 
     // Variable transition timing -heavier cases get more empty-desk time
@@ -2944,6 +2964,132 @@ function showNewspaper(shiftJustCompleted) {
     }, 50);
 }
 
+// Shift-start figure: check if the player condemned a main storyline case last shift
+// Main storyline = cases connected to Facility 6, the cover-up, and the player's past
+function shouldShowShiftFigure() {
+    const shift = state.currentShift; // already incremented to new shift
+    if (shift === 1) {
+        // Entering Shift 2: check Shift 1 main cases
+        const mainIds = ['7493-B', '7495-C', '7496-D', '7497-E'];
+        return state.allChoices.some(c => mainIds.includes(c.caseId) && c.evil);
+    } else if (shift === 2) {
+        // Entering Shift 3: check Shift 2 main cases
+        const mainIds = ['7513-B', '7514-C', '7515-D', '7517-X'];
+        return state.allChoices.some(c => mainIds.includes(c.caseId) && c.evil);
+    }
+    return false;
+}
+
+// Muffled audio: route master gain through aggressive lowpass filter
+// Creates underwater/memory effect -all typing, hum, drone become distant
+function startMuffledAudio() {
+    if (!audioCtx || audioCtx.state !== 'running' || !window._audioMasterGain) return null;
+    const mg = window._audioMasterGain;
+    const muffle = audioCtx.createBiquadFilter();
+    muffle.type = 'lowpass';
+    muffle.frequency.value = 300; // aggressive cutoff
+    muffle.Q.value = 1.0;
+    mg.disconnect();
+    mg.connect(muffle);
+    muffle.connect(audioCtx.destination);
+    return muffle;
+}
+
+function stopMuffledAudio(muffleNode) {
+    if (!muffleNode || !audioCtx || !window._audioMasterGain) return;
+    const mg = window._audioMasterGain;
+    mg.disconnect();
+    mg.connect(audioCtx.destination);
+    try { muffleNode.disconnect(); } catch(e) {}
+}
+
+// Shift-start figure sequence: silhouette appears, audio muffles, whisper text, then clears
+function playShiftFigureSequence(onComplete) {
+    const statusEl = document.getElementById('office-status');
+    setTimeout(() => {
+        // Muffle all audio
+        const muffleNode = startMuffledAudio();
+        // Show the eyeless figure at the desk
+        shiftFigure.visible = true;
+        // Dim lamp -figure is blocking the ceiling light
+        const origLamp = typeof lampLight !== 'undefined' ? lampLight.intensity : 1;
+        if (typeof lampLight !== 'undefined') lampLight.intensity = origLamp * 0.3;
+
+        // Whisper text at 1s into the sequence
+        setTimeout(() => {
+            const line = state.currentShift === 1
+                ? "Don't look up. They noticed."
+                : "It's in the walls now. Whatever you did \u2014 they wrote it down.";
+            statusEl.textContent = line;
+            statusEl.className = 'office-status visible';
+            statusEl.style.color = '#444'; // dimmer = whispered
+        }, 1000);
+
+        // Clear at 3.5s -figure gone, audio restored
+        setTimeout(() => {
+            statusEl.classList.remove('visible');
+            statusEl.style.color = '';
+            shiftFigure.visible = false;
+            if (typeof lampLight !== 'undefined') lampLight.intensity = origLamp;
+            stopMuffledAudio(muffleNode);
+        }, 3500);
+
+        // Callback at 4.5s -1s of silence before normal shift text
+        setTimeout(() => { onComplete(); }, 4500);
+    }, 1500);
+}
+
+// Normal shift opening text (extracted from dismissNewspaper for shift-figure integration)
+function runShiftOpeningText(isShift2, isShift3, statusEl) {
+    if (isShift2) {
+        setTimeout(() => {
+            statusEl.textContent = "You came back.";
+            statusEl.className = 'office-status visible';
+        }, 3000);
+        setTimeout(() => { statusEl.classList.remove('visible'); }, 6000);
+        setTimeout(() => {
+            state.transitioning = false;
+            renderCase(getCurrentShiftCases()[0]);
+        }, 8000);
+    } else if (isShift3) {
+        const witnessChoice = state.allChoices.find(c => c.caseId === '7517-X');
+        const caseOpened = witnessChoice && !witnessChoice.evil;
+        if (caseOpened) {
+            setTimeout(() => {
+                statusEl.textContent = "Case 7741 is on record. They cannot undo it.";
+                statusEl.className = 'office-status visible';
+                statusEl.style.color = '#555';
+            }, 2500);
+            setTimeout(() => {
+                statusEl.classList.remove('visible');
+                statusEl.style.color = '';
+            }, 5500);
+            setTimeout(() => {
+                statusEl.textContent = "Last shift.";
+                statusEl.className = 'office-status visible';
+            }, 6500);
+        } else {
+            setTimeout(() => {
+                statusEl.textContent = "Continue.";
+                statusEl.className = 'office-status visible';
+            }, 4000);
+        }
+        setTimeout(() => {
+            statusEl.classList.remove('visible');
+            state.transitioning = false;
+            renderCase(getCurrentShiftCases()[0]);
+        }, 8000);
+    } else {
+        statusEl.textContent = "New shift. New cases. Continue.";
+        statusEl.className = 'office-status visible';
+        setTimeout(() => {
+            statusEl.classList.remove('visible');
+            state.transitioning = false;
+            renderCase(getCurrentShiftCases()[0]);
+        }, 3000);
+    }
+}
+
 function dismissNewspaper() {
     if (!state.newspaperShowing) return;
     state.newspaperShowing = false;
@@ -2973,7 +3119,7 @@ function dismissNewspaper() {
             const now = audioCtx.currentTime;
             const osc = audioCtx.createOscillator(); osc.type = 'sine'; osc.frequency.value = 45;
             const g = audioCtx.createGain();
-            g.gain.setValueAtTime(0.06, now); // was 0.1
+            g.gain.setValueAtTime(0.06, now);
             g.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
             osc.connect(g); g.connect(mg); osc.start(now); osc.stop(now + 0.6);
         }
@@ -2991,64 +3137,13 @@ function dismissNewspaper() {
             setTimeout(() => { lampLight.intensity = orig; }, 600);
         }
 
-        // Each shift opening is a different emotional beat:
-        // Shift 2: "You came back." -8 seconds. You chose to return. That's the horror.
-        // Shift 3: 7 seconds of silence, then "Begin." -you are alone now.
-        if (isShift2) {
-            // 3 seconds of empty desk silence first
-            setTimeout(() => {
-                statusEl.textContent = "You came back.";
-                statusEl.className = 'office-status visible';
-            }, 3000);
-            // After 3 more seconds, fade it
-            setTimeout(() => {
-                statusEl.classList.remove('visible');
-            }, 6000);
-            // At 8s, deliver first case
-            setTimeout(() => {
-                state.transitioning = false;
-                renderCase(getCurrentShiftCases()[0]);
-            }, 8000);
-        } else if (isShift3) {
-            // Shift 3: long empty desk silence. The directive is blank. You are alone.
-            // If the player opened Case 7741 (let witnesses speak), acknowledge it
-            const witnessChoice = state.allChoices.find(c => c.caseId === '7517-X');
-            const caseOpened = witnessChoice && !witnessChoice.evil;
-            if (caseOpened) {
-                // The player unlocked the endgame -the Bureau knows, and so do you
-                setTimeout(() => {
-                    statusEl.textContent = "Case 7741 is on record. They cannot undo it.";
-                    statusEl.className = 'office-status visible';
-                    statusEl.style.color = '#555';
-                }, 2500);
-                setTimeout(() => {
-                    statusEl.classList.remove('visible');
-                    statusEl.style.color = '';
-                }, 5500);
-                setTimeout(() => {
-                    statusEl.textContent = "Last shift.";
-                    statusEl.className = 'office-status visible';
-                }, 6500);
-            } else {
-                setTimeout(() => {
-                    statusEl.textContent = "Continue.";
-                    statusEl.className = 'office-status visible';
-                }, 4000);
-            }
-            setTimeout(() => {
-                statusEl.classList.remove('visible');
-                state.transitioning = false;
-                renderCase(getCurrentShiftCases()[0]);
-            }, 8000);
+        // If the player condemned a main storyline case, the whistleblower figure appears first
+        if (shouldShowShiftFigure()) {
+            playShiftFigureSequence(() => {
+                runShiftOpeningText(isShift2, isShift3, statusEl);
+            });
         } else {
-            // Fallback (shouldn't happen -game starts at Shift 1)
-            statusEl.textContent = "New shift. New cases. Continue.";
-            statusEl.className = 'office-status visible';
-            setTimeout(() => {
-                statusEl.classList.remove('visible');
-                state.transitioning = false;
-                renderCase(getCurrentShiftCases()[0]);
-            }, 3000);
+            runShiftOpeningText(isShift2, isShift3, statusEl);
         }
     }, 800);
 }
@@ -3057,12 +3152,15 @@ function dismissNewspaper() {
 function resetShiftAtmosphere() {
     // Reset typing to normal cadence
     if (window._typingDelayMultiplier) window._typingDelayMultiplier = 1.0;
-    // Reset drone to near-silent
+    // Reset drone to near-silent and restore filter cutoff
     if (window._audioDroneGain && audioCtx) {
         const now = audioCtx.currentTime;
         window._audioDroneGain.gain.cancelScheduledValues(now);
         window._audioDroneGain.gain.setValueAtTime(window._audioDroneGain.gain.value, now);
         window._audioDroneGain.gain.linearRampToValueAtTime(0.01, now + 1.0);
+    }
+    if (window._audioDroneFilter) {
+        window._audioDroneFilter.frequency.value = 120; // restore from Shift 3 darkening
     }
     // Restore all lights
     officeLights.forEach(rowData => {
@@ -3110,6 +3208,7 @@ function resetShiftAtmosphere() {
     approachFigure.position.z = -20; // reset approach distance
     state.approachZ = -20;
     closeUpWatcher.visible = false;
+    shiftFigure.visible = false; // clear shift-start figure if somehow still visible
     state.approachActive = false;
     state.approachLocked = false;
     // Shift 3: back 7 rows start dim
@@ -3323,10 +3422,10 @@ window._executeStamp = function(stampX, stampY) {
         setTimeout(() => { window._typingDelayMultiplier = savedMul; }, 500);
     }
 
-    // Shift 3: silence after stamp (reverb cuts dead)
+    // Shift 3: silence after stamp (reverb cuts dead) -grows with case progression
     const absIdx = getAbsoluteCaseIndex();
     if (state.currentShift === 2) {
-        audioSilence(800);
+        audioSilence(800 + (absIdx - 11) * 60); // 800ms→1160ms across Shift 3's 7 cases
     }
 
     // Show PROCESSED mark where they clicked (or center if Enter was used)
@@ -5230,6 +5329,7 @@ function initAudio() {
 
     // Store references for dynamic control
     window._audioDroneGain = droneGain;
+    window._audioDroneFilter = droneFilter; // for Shift 3 darkening
     window._audioHumGain = humGain;
     window._audioMasterGain = masterGain;
     window._typingDelayMultiplier = 1.0; // B3: typing cadence -scales with suspicion
@@ -5432,6 +5532,12 @@ function updateAudio() {
     const droneTarget = suspicionDrone + progressionDrone;
     const currentDrone = window._audioDroneGain.gain.value;
     window._audioDroneGain.gain.value = currentDrone + (droneTarget - currentDrone) * 0.01;
+
+    // Shift 3: lower drone filter cutoff for oppressive, muffled tone
+    if (state.currentShift === 2 && window._audioDroneFilter) {
+        const cur = window._audioDroneFilter.frequency.value;
+        window._audioDroneFilter.frequency.value = cur + (80 - cur) * 0.005;
+    }
 
     // B3: Typing cadence -office typing thins out as suspicion rises
     // susp 0→1x, 30→2x, 60→4x, 80+→10x delay between keystrokes
@@ -5677,6 +5783,8 @@ animate();
         approachFigure.position.z = -20;
         state.approachActive = false;
         state.approachZ = -20;
+        // Reset shift-start figure
+        shiftFigure.visible = false;
         // Reset B7 lateral look
         state.lateralLookAvailable = false;
         state.lateralLookUsed = false;
