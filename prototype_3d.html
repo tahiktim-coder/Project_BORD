@@ -4285,8 +4285,8 @@ document.getElementById('start-btn').addEventListener('click', () => {
                 _introAdvanceTimer = setTimeout(advanceIntro, 6000);
             }
 
-            // Click or any key advances intro
-            function _introKeyHandler(e) { if (state.introPlaying) { e.preventDefault(); advanceIntro(); } }
+            // Click or any key advances intro -ignore held keys (e.repeat)
+            function _introKeyHandler(e) { if (state.introPlaying && !e.repeat) { e.preventDefault(); advanceIntro(); } }
             function _introClickHandler() { if (state.introPlaying) advanceIntro(); }
             document.addEventListener('keydown', _introKeyHandler);
             document.addEventListener('click', _introClickHandler);
