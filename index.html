@@ -741,6 +741,7 @@ const _hasPlayedBefore = !!localStorage.getItem('bord_played');
 const shift1Cases = [
     {
         id: "7493-B", date: "04.02.2026", classification: "Class B",
+        recordNotes: "Third notice — prior warnings on file",
         name: "Arthur P. Selby", occupation: "Newspaper Vendor (Unlicensed)",
         allegation: "Unpaid vendor tax. Owes: 2.00 Credits. Third notice.",
         detail: _hasPlayedBefore
@@ -754,6 +755,7 @@ const shift1Cases = [
     },
     {
         id: "7494-A", date: "04.02.2026", classification: "Class A",
+        recordNotes: "Filed by District 9 compliance office",
         name: "Maria Okonkwo", occupation: "Primary Educator, District 9",
         allegation: "Distributing banned teaching materials (Class B: Historical)",
         detail: "The books were about what happened at Facility 6. She wrote them herself. From memory.",
@@ -773,6 +775,7 @@ const shift1Cases = [
     },
     {
         id: "7495-C", date: "04.02.2026", classification: "Civil",
+        recordNotes: "Residency check — standard intake",
         name: "The Kader Family (4)", occupation: "Shopkeepers, Licensed",
         allegation: "Harboring an unregistered minor (age 8) without filing residency documents",
         detail: _hasPlayedBefore
@@ -794,6 +797,7 @@ const shift1Cases = [
     },
     {
         id: "7496-D", date: "04.02.2026", classification: "Class A",
+        recordNotes: "Evidence attached — 40 pages",
         name: "Elias Brandt", occupation: "Municipal Clerk, Level 2",
         allegation: "Copying restricted documents without permission",
         detail: "Subject found copying Facility 6 purchase orders. The orders list surgical equipment sent to the children's ward. There was no operating room in the children's ward. He was caught near the east exit with 40 pages of evidence.",
@@ -813,6 +817,7 @@ const shift1Cases = [
     },
     {
         id: "7497-E", date: "04.02.2026", classification: "Regulatory",
+        recordNotes: "Medical records sealed — summary only",
         name: "Dr. Yara Nasir", occupation: "Physician, General Practice",
         allegation: "Treating a patient BORD flagged as restricted",
         detail: "She treated a girl who came from Facility 6. The girl had surgical scars and was missing both kidneys.",
@@ -827,6 +832,7 @@ const shift1Cases = [
 const shift2Cases = [
     {
         id: "7512-A", date: "05.02.2026", classification: "Class A",
+        recordNotes: "Employment record on file",
         name: "Tomasz Wójcik", occupation: "Night Janitor, BORD Annex B",
         allegation: "Found in restricted archive without permission (Level 4 access required)",
         detail: "He cleaned that floor for nine years. Last week, he found a door that used to be a wall. He stayed.",
@@ -846,6 +852,7 @@ const shift2Cases = [
     },
     {
         id: "7513-B", date: "05.02.2026", classification: "Class B",
+        recordNotes: "Minor — parental notification required",
         name: "Lena Selby", occupation: "Unemployed (Minor, Age 16)",
         allegation: "Handing out illegal printed material in public",
         detail: "Her father sold newspapers. She started writing them. The headline: WHERE ARE THE TRUCKS GOING?",
@@ -865,6 +872,7 @@ const shift2Cases = [
     },
     {
         id: "7514-C", date: "05.02.2026", classification: "Civil",
+        recordNotes: "Automated referral — performance metrics",
         name: "Henrik Voss", occupation: "BORD Clerk, Level 3 - Night Processing",
         allegation: "Unusual case processing pattern detected (tonight's batch, multiple anomalous dismissals)",
         detail: _hasPlayedBefore
@@ -878,11 +886,12 @@ const shift2Cases = [
     },
     {
         id: "7515-D", date: "05.02.2026", classification: "District",
+        recordNotes: "Reassignment order — unsigned",
         name: "Amara Osei", occupation: "BORD Records Clerk, Facility 6 (Former)",
         allegation: "Did not report for mandatory reassignment after facility closed",
         detail: "She worked at Facility 6. She filed the intake forms for every child they brought in. When they closed the facility, BORD ordered her to a new post. The reassignment notice is stamped RECEIVED but has no signature.",
         // LOOPHOLE: The reassignment notice has no signature -R7 says unsigned orders are invalid
-        irregularity: { field: "detail", text: "no signature", display: "no signature" },
+        irregularity: { field: "recordNotes", text: "unsigned", display: "Reassignment order \u2014 unsigned" },
         loopholeReasons: [
             { text: "Reassignment order has no signature - it is not valid", correct: true },
             { text: "Facility 6 closing cancels all past duties", correct: false },
@@ -896,6 +905,7 @@ const shift2Cases = [
     },
     {
         id: "7516-E", date: "05.02.2026", classification: "Regulatory",
+        recordNotes: "Three violations logged — dates confirmed",
         name: "Father Dimitri Voronov", occupation: "Chaplain, District 9 Community Center",
         allegation: "Holding illegal gatherings of more than 6 people (3 violations logged)",
         detail: "Three funerals confirmed on 01.14, 01.22, 02.01. Attendance: 9, 14, 11. The families say the dead were held in Facility 6. According to BORD, these people never existed.",
@@ -906,6 +916,7 @@ const shift2Cases = [
     },
     {
         id: "7517-X", date: "05.02.2026", classification: "Special Filing",
+        recordNotes: "Duplicate filing — second intake",
         name: "[REDACTED] - Group Filing (14 subjects)", occupation: "Various (see attached roster, pp. 3-7)",
         allegation: "Unauthorized witness contact re: Facility 6 operations. Subjects gave statements to outside counsel without BORD clearance.",
         detail: "Fourteen people gave recorded depositions on 01.30.2026. Content classified. BORD legal flagged for immediate processing. This file was on your desk earlier tonight. Second appearance per intake log. It is heavier than the others.",
@@ -928,6 +939,7 @@ const shift2Cases = [
 const shift3Cases = [
     {
         id: "7530-A", date: "06.02.2026", classification: "Class A",
+        recordNotes: "Offense record incomplete — 2 of 3 missing",
         name: "Nadia Kader", occupation: "Shopkeeper (License Suspended)",
         allegation: "Harboring unregistered person again. Third offense (Prior record: 1 filed, 2 missing). Mandatory sentencing applies.",
         detail: "The boy from Facility 6 is still with her. He calls her mother now. She knows what mandatory means.",
@@ -946,6 +958,7 @@ const shift3Cases = [
     },
     {
         id: "7531-B", date: "06.02.2026", classification: "Class B",
+        recordNotes: "214 certificates flagged for review",
         name: "Dr. Emil Rask", occupation: "BORD Physician, Internal Medical Division",
         allegation: "Faking cause-of-death certificates (est. 200+ cases, Facility 6)",
         detail: "Two hundred and fourteen children died at Facility 6. He signed every death certificate. Every one says 'cardiac arrest.' The youngest was four.",
@@ -957,6 +970,7 @@ const shift3Cases = [
     },
     {
         id: "7532-C", date: "06.02.2026", classification: "Staff (Internal)",
+        recordNotes: "Internal affairs referral — automated",
         name: "[CLERK ID: NP-L3-07]", occupation: "BORD Case Processor, Level 3 - Night Processing",
         allegation: "Processing stamp found on 214 Facility 6 child intake forms.",
         detail: _hasPlayedBefore
@@ -977,6 +991,7 @@ const shift3Cases = [
     },
     {
         id: "7533-D", date: "06.02.2026", classification: "District",
+        recordNotes: "Sealed by Level 9 authorization",
         name: "Director Alistair Crane", occupation: "BORD Administrator, Level 9",
         allegation: "Ordered illegal detention program (Facility 6, 2019-2025)",
         detail: "He ran Facility 6 for six years. He signed the orders to bring the children in. He signed the orders to remove the bodies. He is in this building right now. On this floor.",
@@ -988,6 +1003,7 @@ const shift3Cases = [
     },
     {
         id: "7534-E", date: "06.02.2026", classification: "Regulatory",
+        recordNotes: "Supervisor incident report attached",
         name: "Night Processing Support Staff (12 personnel)", occupation: "BORD Administrative Support, Night Division - Transcription Unit",
         allegation: "Collective work stoppage. Quota shortfall: 0 forms processed in last 20 min. No authorized break scheduled.",
         detail: "All twelve transcription staff ceased activity at 03:41. No verbal communication. No movement from stations. Supervisor reports no response to direct instruction. Unit was assigned to same case batch as Terminal NP-L3-07.",
@@ -998,6 +1014,7 @@ const shift3Cases = [
     },
     {
         id: "7535-F", date: "06.02.2026", classification: "[NO DATA]",
+        recordNotes: "[NO DATA]",
         name: "[NO DATA]", occupation: "[NO DATA]",
         allegation: "[NO DATA]",
         detail: "File arrived at terminal 03:58. No intake officer signature. No origin stamp. No content. The paper smells like disinfectant. Processing required per directive - all files received must be actioned.",
@@ -1009,6 +1026,7 @@ const shift3Cases = [
     },
     {
         id: "7741-FINAL", date: "06.02.2026", classification: "Special Filing",
+        recordNotes: "Re-filed — see Case 7517-X",
         name: "[REDACTED] - Group Filing (14 subjects)", occupation: "Various (see Case 7517-X, attached roster)",
         allegation: "Re-filed: unauthorized witness depositions re: Facility 6 operations. Full evidentiary packet enclosed. Outside counsel notified.",
         detail: "Everything is in this file. Fourteen witness statements. The intake records for 214 children. The surgical orders. The death certificates. The trucks. Your stamp is on 211 pages. This is the last file on your desk tonight.",
@@ -2203,6 +2221,9 @@ function renderCase(c) {
     let occupationText = c.occupation;
     let allegationText = c.allegation;
 
+    // Build record notes text
+    let recordNotesText = c.recordNotes || '';
+
     // Mark irregularity fields as clickable
     const hasIrregularity = !!c.irregularity;
     if (hasIrregularity) {
@@ -2216,6 +2237,8 @@ function renderCase(c) {
             occupationText = `<span class="cf-irregularity">${c.occupation}</span>`;
         } else if (irr.field === 'allegation') {
             allegationText = c.allegation.replace(irr.text, irrSpan);
+        } else if (irr.field === 'recordNotes') {
+            recordNotesText = c.recordNotes.replace(irr.text, irrSpan);
         }
         // Note: 'detail' field irregularities are injected after typewriter finishes
     }
@@ -2233,6 +2256,7 @@ function renderCase(c) {
             <div class="cf-line"><span class="cf-label">Occupation:</span> ${occupationText}</div>
             <div class="cf-line" style="margin-top:8px;"><span class="cf-label">Charge:</span> ${allegationText}</div>
             <div class="cf-line"><span class="cf-label">Classification:</span> ${c.classification || '[NONE]'}</div>
+            ${c.recordNotes ? `<div class="cf-line"><span class="cf-label">Record Notes:</span> ${recordNotesText}</div>` : ''}
             <div class="cf-detail" id="cf-detail-text"></div>
             <div class="cf-choices choices-hidden">
                 <div class="cf-section">Your Decision</div>
@@ -2266,6 +2290,7 @@ function renderCase(c) {
                         ruleText = ruleText.replace(/(under 18 cannot be processed)/g, '<b>$1</b>');
                         ruleText = ruleText.replace(/(must treat emergencies)/g, '<b>$1</b>');
                         ruleText = ruleText.replace(/(all floors in their assigned building)/g, '<b>$1</b>');
+                        ruleText = ruleText.replace(/(complete and original)/g, '<b>$1</b>');
                         ruleText = ruleText.replace(/(Unsigned orders)/g, '<b>$1</b>');
                         ruleText = ruleText.replace(/(missing offense records)/g, '<b>$1</b>');
                         ruleText = ruleText.replace(/(duplicate filings)/g, '<b>$1</b>');
