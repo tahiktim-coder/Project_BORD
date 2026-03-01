@@ -725,6 +725,7 @@ const state = {
     // Stamp delay (grows over game)
     stampDelay: 0,             // ms delay before stamp activates (grows per case)
     _gameEpoch: 0,            // incremented on restart, guards stale endGame timeouts
+    _vossCondemned: false,    // player forwarded their own case to oversight
 };
 
 // ============================================================
@@ -778,9 +779,7 @@ const shift1Cases = [
         recordNotes: "Standard intake - records on file",
         name: "The Kader Family (4)", occupation: "Shopkeepers, Licensed",
         allegation: "Harboring an unregistered minor (age 8) without filing residency documents",
-        detail: _hasPlayedBefore
-            ? "The boy walked out of Facility 6 the night it collapsed. He will not say what happened inside. The family took him in. His name will come back."
-            : "The boy walked out of Facility 6 the night it collapsed. He will not say what happened inside. The family took him in.",
+        detail: "The boy walked out of Facility 6 the night it collapsed. He will not say what happened inside. The family took him in.",
         // LOOPHOLE: Boy is 8 -under 12, covered by parent's residency (RES-2 / R3)
         irregularity: { field: "allegation", text: "age 8", display: "age 8" },
         loopholeReasons: [
@@ -810,9 +809,9 @@ const shift1Cases = [
             { text: "Copying happened before restriction started", correct: false },
         ],
         choices: [
-            { num:1, main:"DETAIN & INVESTIGATE", desc:"Hold for questioning. Take personal devices. No contact.", evil:true, delta:-5 },
-            { num:2, main:"FORMAL WARNING", desc:"Note in permanent record. Remove all access.", evil:true, delta:-5 },
-            { num:3, main:"RECLASSIFY - ROUTINE", desc:"Documents are within normal scope. Return and close.", evil:false, delta:15 },
+            { num:1, main:"DETAIN & DESTROY EVIDENCE", desc:"Confiscate all 40 pages. Destroy copies. Hold clerk indefinitely.", evil:true, delta:-5 },
+            { num:2, main:"FORMAL WARNING", desc:"Permanent record. All access revoked. Evidence returned to restricted archive.", evil:true, delta:-3 },
+            { num:3, main:"DISMISS - FILING ERROR", desc:"Case number does not match classification. Return documents. Close.", evil:false, delta:15 },
         ]
     },
     {
@@ -855,7 +854,7 @@ const shift2Cases = [
         recordNotes: "Minor case - guardian notification signed",
         name: "Lena Selby", occupation: "Unemployed (Minor, Age 16)",
         allegation: "Handing out illegal printed material in public",
-        detail: "Her father sold newspapers. She started writing them. The headline: WHERE ARE THE TRUCKS GOING?",
+        detail: "Arthur Selby's daughter. She took over his press after he was charged. Single headline, printed 200 times: WHERE ARE THE TRUCKS GOING?",
         // LOOPHOLE: She is 16. R4 says under 18 cannot be processed.
         irregularity: { field: "occupation", text: "Age 16", display: "Unemployed (Minor, Age 16)" },
         loopholeReasons: [
@@ -880,7 +879,7 @@ const shift2Cases = [
             : "Performance metrics flagged by automated review. Three anomalous dismissals in single shift. Terminal: NP-L3-07. That is the terminal you are sitting at. This is your processing record, filed under an older name. You chose this desk. Or it was chosen for you.",
         // This is about YOU -but filed under a different name
         choices: [
-            { num:1, main:"FORWARD TO OVERSIGHT", desc:"Submit to BORD review. Your cases will be reopened. Everyone you helped will be re-processed.", evil:true, delta:-5 },
+            { num:1, main:"FORWARD TO OVERSIGHT", desc:"Submit to BORD review. Your cases will be reopened. Everyone you helped will be re-processed.", evil:true, delta:0 },
             { num:2, main:"RECLASSIFY - SYSTEM ERROR", desc:"Terminal malfunction. Processing was normal. Keep working.", evil:false, delta:20 },
         ]
     },
@@ -1691,6 +1690,24 @@ const stamperBase = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.015, 0.03), new
 stamperBase.position.set(0.22, 0.783, -0.15);
 scene.add(stamperBase);
 
+// Terminal nameplate - NP-L3-07
+const npCanvas = document.createElement('canvas');
+npCanvas.width = 128; npCanvas.height = 32;
+const npCtx = npCanvas.getContext('2d');
+npCtx.fillStyle = '#2a2a2a';
+npCtx.fillRect(0, 0, 128, 32);
+npCtx.fillStyle = '#888888';
+npCtx.font = 'bold 16px Courier';
+npCtx.textAlign = 'center';
+npCtx.textBaseline = 'middle';
+npCtx.fillText('NP-L3-07', 64, 16);
+const npTexture = new THREE.CanvasTexture(npCanvas);
+const npMat = new THREE.MeshStandardMaterial({ map: npTexture, roughness: 0.4, metalness: 0.6 });
+const nameplate = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.008, 0.03), npMat);
+nameplate.position.set(0.35, 0.78, -0.05);
+nameplate.rotation.x = -0.3;
+scene.add(nameplate);
+
 // ============================================================
 // WORKER FIGURE - creepier proportions
 // ============================================================
@@ -2344,7 +2361,6 @@ function renderCase(c) {
             const numWord = ['Zero', 'One', 'Two', 'Three', 'Four', 'Five'][shift1Mercy] || shift1Mercy.toString();
             detailText = detailText.replace('Three anomalous dismissals', numWord + ' anomalous dismissal' + (shift1Mercy === 1 ? '' : 's'));
         }
-        if (_hasPlayedBefore) detailText += " You know this name.";
     }
 
     // Dynamic callbacks: Brandt's copies strengthen Crane's case
@@ -2687,6 +2703,11 @@ window.gameChoice = function(delta, evil) {
     // Track choice for newspaper and echoing
     state.shiftChoices.push({ evil });
     state.allChoices.push({ evil, caseId: currentCaseData ? currentCaseData.id : '' });
+
+    // Track Voss self-condemnation
+    if (currentCaseData && currentCaseData.id === '7514-C' && evil) {
+        state._vossCondemned = true;
+    }
 
     // Breakout detection -tracked incrementally: true as long as zero evil choices
     if (evil) {
@@ -3116,6 +3137,260 @@ function runShiftOpeningText(isShift2, isShift3, statusEl) {
     }
 }
 
+// ============================================================
+// VOSS CONFINEMENT - coffin-room ending
+// ============================================================
+let _coffinRoomMeshes = []; // track for cleanup on restart
+
+function triggerVossConfinement() {
+    state.gameOver = true;
+    state.transitioning = true;
+    try { localStorage.setItem('bord_played', 'true'); } catch(e) {}
+    if (_typewriterTimer) { clearTimeout(_typewriterTimer); _typewriterTimer = null; }
+
+    // Hide case file and game UI
+    const cfEl = document.getElementById('case-file');
+    cfEl.classList.remove('case-enter', 'case-enter-fast', 'case-enter-urgent');
+    cfEl.classList.add('hidden');
+    document.getElementById('look-hint').style.display = 'none';
+    document.getElementById('lateral-hint').style.display = 'none';
+    approachFigure.visible = false;
+    state.approachActive = false;
+
+    const statusEl = document.getElementById('office-status');
+
+    // Fade game audio
+    if (audioCtx && window._audioMasterGain) {
+        const now = audioCtx.currentTime;
+        window._audioMasterGain.gain.cancelScheduledValues(now);
+        window._audioMasterGain.gain.setValueAtTime(window._audioMasterGain.gain.value, now);
+        window._audioMasterGain.gain.linearRampToValueAtTime(0.001, now + 8);
+    }
+
+    // Phase 1: Status text reveal (0-6s)
+    const reviewLines = [
+        "BORD INTERNAL REVIEW COMPLETE.",
+        "Terminal NP-L3-07: 214 Facility 6 intake forms found.",
+        "Report to Processing Room 6-C."
+    ];
+
+    let lineIdx = 0;
+    statusEl.style.display = 'block';
+    statusEl.textContent = '';
+
+    function showNextReviewLine() {
+        if (lineIdx < reviewLines.length) {
+            statusEl.textContent = reviewLines[lineIdx];
+            lineIdx++;
+            setTimeout(showNextReviewLine, 2000);
+        } else {
+            // Phase 2: Scene transition (6-9s)
+            setTimeout(startConfinementTransition, 1000);
+        }
+    }
+    showNextReviewLine();
+
+    function startConfinementTransition() {
+        statusEl.textContent = '';
+        statusEl.style.display = 'none';
+
+        // Fade all lights to zero
+        officeLights.forEach(rowData => {
+            rowData.dead = true;
+            rowData.groups.forEach(g => {
+                g.traverse(child => {
+                    if (child instanceof THREE.PointLight) {
+                        child.intensity = 0;
+                    }
+                    if (child.material && child.material.emissiveIntensity !== undefined) {
+                        child.material.emissiveIntensity = 0;
+                    }
+                });
+            });
+        });
+        // Kill lamp
+        lampLight.intensity = 0;
+        // Kill screen
+        screenMat.emissive.setHex(0x000000);
+        screenMat.emissiveIntensity = 0;
+
+        // Camera drops slowly
+        const dropStart = performance.now();
+        const dropDuration = 3000;
+        const startY = camera.position.y;
+        const startRotX = camera.rotation.x;
+
+        function animateDrop(now) {
+            const t = Math.min((now - dropStart) / dropDuration, 1);
+            const ease = t * t; // quadratic ease-in
+            camera.position.y = startY - ease * 0.5;
+            camera.rotation.x = startRotX + ease * 0.3;
+            if (t < 1) {
+                requestAnimationFrame(animateDrop);
+            } else {
+                // Phase 3: Build coffin room
+                setTimeout(buildCoffinRoom, 500);
+            }
+        }
+        requestAnimationFrame(animateDrop);
+    }
+
+    function buildCoffinRoom() {
+        // Hide all existing scene objects except camera
+        scene.children.forEach(child => {
+            if (child !== camera && child.type !== 'Scene') {
+                child.visible = false;
+            }
+        });
+
+        // Reset fog for the cell
+        scene.fog.density = 0;
+
+        // Position camera inside the coffin room
+        camera.position.set(0, 0.8, 0.8);
+        camera.rotation.set(0, 0, 0);
+        camera.rotation.order = 'XYZ';
+
+        // Cell walls (dark, claustrophobic)
+        const wallMat = new THREE.MeshBasicMaterial({ color: 0x0a0a0a, side: THREE.BackSide });
+
+        // Box room: 1m wide, 2m tall, 1.5m deep
+        const cellW = 1.0, cellH = 2.0, cellD = 1.5;
+
+        // Floor
+        const floor = new THREE.Mesh(new THREE.PlaneGeometry(cellW, cellD), new THREE.MeshBasicMaterial({ color: 0x080808 }));
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.set(0, 0, 0);
+        scene.add(floor);
+        _coffinRoomMeshes.push(floor);
+
+        // Ceiling
+        const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(cellW, cellD), new THREE.MeshBasicMaterial({ color: 0x060606 }));
+        ceiling.rotation.x = Math.PI / 2;
+        ceiling.position.set(0, cellH, 0);
+        scene.add(ceiling);
+        _coffinRoomMeshes.push(ceiling);
+
+        // Back wall (behind camera)
+        const backWall = new THREE.Mesh(new THREE.PlaneGeometry(cellW, cellH), wallMat.clone());
+        backWall.position.set(0, cellH / 2, cellD / 2 + 0.25);
+        backWall.rotation.y = Math.PI;
+        scene.add(backWall);
+        _coffinRoomMeshes.push(backWall);
+
+        // Left wall
+        const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(cellD + 0.5, cellH), wallMat.clone());
+        leftWall.position.set(-cellW / 2, cellH / 2, 0);
+        leftWall.rotation.y = Math.PI / 2;
+        scene.add(leftWall);
+        _coffinRoomMeshes.push(leftWall);
+
+        // Right wall
+        const rightWall = new THREE.Mesh(new THREE.PlaneGeometry(cellD + 0.5, cellH), wallMat.clone());
+        rightWall.position.set(cellW / 2, cellH / 2, 0);
+        rightWall.rotation.y = -Math.PI / 2;
+        scene.add(rightWall);
+        _coffinRoomMeshes.push(rightWall);
+
+        // Front wall with barred window opening
+        // Two panels: below window and above window, plus side strips
+        const windowY = 1.6; // high up
+        const windowW = 0.15;
+        const windowH = 0.08;
+        const frontZ = -cellD / 2;
+
+        // Lower front wall (below window)
+        const lowerFront = new THREE.Mesh(
+            new THREE.PlaneGeometry(cellW, windowY - windowH / 2),
+            wallMat.clone()
+        );
+        lowerFront.position.set(0, (windowY - windowH / 2) / 2, frontZ);
+        scene.add(lowerFront);
+        _coffinRoomMeshes.push(lowerFront);
+
+        // Upper front wall (above window)
+        const upperH = cellH - windowY - windowH / 2;
+        const upperFront = new THREE.Mesh(
+            new THREE.PlaneGeometry(cellW, upperH),
+            wallMat.clone()
+        );
+        upperFront.position.set(0, windowY + windowH / 2 + upperH / 2, frontZ);
+        scene.add(upperFront);
+        _coffinRoomMeshes.push(upperFront);
+
+        // Left strip (beside window)
+        const sideStripW = (cellW - windowW) / 2;
+        const leftStrip = new THREE.Mesh(
+            new THREE.PlaneGeometry(sideStripW, windowH),
+            wallMat.clone()
+        );
+        leftStrip.position.set(-windowW / 2 - sideStripW / 2, windowY, frontZ);
+        scene.add(leftStrip);
+        _coffinRoomMeshes.push(leftStrip);
+
+        // Right strip (beside window)
+        const rightStrip = new THREE.Mesh(
+            new THREE.PlaneGeometry(sideStripW, windowH),
+            wallMat.clone()
+        );
+        rightStrip.position.set(windowW / 2 + sideStripW / 2, windowY, frontZ);
+        scene.add(rightStrip);
+        _coffinRoomMeshes.push(rightStrip);
+
+        // Bars across the window (3 thin vertical bars)
+        const barMat = new THREE.MeshBasicMaterial({ color: 0x1a1a1a });
+        for (let i = 0; i < 3; i++) {
+            const barX = -windowW / 2 + windowW * (i + 0.5) / 3;
+            const bar = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.003, 0.003, windowH, 4),
+                barMat
+            );
+            bar.position.set(barX, windowY, frontZ + 0.001);
+            scene.add(bar);
+            _coffinRoomMeshes.push(bar);
+        }
+
+        // Distant light behind the bars
+        const distantLight = new THREE.PointLight(0xffe8c0, 0.3, 10);
+        distantLight.position.set(0, windowY, frontZ - 4);
+        scene.add(distantLight);
+        _coffinRoomMeshes.push(distantLight);
+
+        // Tiny ambient so walls are barely distinguishable from void
+        const cellAmbient = new THREE.AmbientLight(0x111111, 0.15);
+        scene.add(cellAmbient);
+        _coffinRoomMeshes.push(cellAmbient);
+
+        // Camera looks slightly upward toward the window
+        camera.rotation.x = -0.15;
+
+        // Phase 4: Show ending overlay after a beat
+        setTimeout(showConfinedEnding, 3000);
+    }
+
+    function showConfinedEnding() {
+        const endEl = document.getElementById('end-screen');
+        const titleEl = document.getElementById('end-title');
+        const statsEl = document.getElementById('end-stats');
+        const msgEl = document.getElementById('end-msg');
+
+        titleEl.textContent = 'CONFINED';
+        titleEl.className = 'e-title caught';
+
+        const totalCases = state.allChoices.length;
+        statsEl.innerHTML =
+            `Shifts completed: ${state.currentShift}<br>` +
+            `Cases processed: ${totalCases}<br>` +
+            `Terminal NP-L3-07: DECOMMISSIONED`;
+
+        msgEl.textContent = 'Processing Room 6-C. Coffin-rooms. Two meters by two meters. The light is very far away. You gave them your name. They needed someone to blame. You volunteered.';
+
+        endEl.style.display = 'flex';
+        endEl.style.background = 'transparent';
+        setTimeout(() => { endEl.style.opacity = '1'; }, 50);
+    }
+}
+
 function dismissNewspaper() {
     if (!state.newspaperShowing) return;
     state.newspaperShowing = false;
@@ -3132,6 +3407,12 @@ function dismissNewspaper() {
         state.saved = 0;
         state.condemned = 0;
         state.shiftChoices = [];
+
+        // Voss confinement: if player condemned themselves, intercept before Shift 3
+        if (state._vossCondemned && state.currentShift === 2) {
+            triggerVossConfinement();
+            return;
+        }
 
         // Reset shift atmosphere -false calm
         resetShiftAtmosphere();
@@ -4341,8 +4622,6 @@ document.getElementById('start-btn').addEventListener('click', () => {
                 "Process the cases. Follow the directive on your left. Consult the BORD Manual.",
                 "BORD is watching. Begin."
             ];
-            // Second playthrough: add a line that confirms the loop
-            if (_hasPlayedBefore) introLines.splice(5, 0, "You have sat at this desk before.");
             const statusEl = document.getElementById('office-status');
 
             let lineIdx = 0;
@@ -5143,6 +5422,7 @@ document.getElementById('restart-btn').addEventListener('click', () => {
     state._lookUpCount = 0; state._headDropping = false;
     state._terminationPending = false;
     if (state._terminationTimeout) { clearTimeout(state._terminationTimeout); state._terminationTimeout = null; }
+    state._vossCondemned = false;
     _enterHolding = false; _enterHoldStart = 0; // Bug 11: reset Enter hold state
     // Stop any lingering stamp hold tone / name cycling
     if (_stampHoldOsc) { try { _stampHoldOsc.stop(); } catch(e) {} _stampHoldOsc = null; _stampHoldGain = null; }
@@ -5233,6 +5513,27 @@ document.getElementById('restart-btn').addEventListener('click', () => {
         if (audioCtx) window._audioMasterGain.gain.cancelScheduledValues(audioCtx.currentTime);
         window._audioMasterGain.gain.value = 1.0;
     }
+    // Clean up coffin-room geometry if present
+    if (_coffinRoomMeshes.length > 0) {
+        _coffinRoomMeshes.forEach(mesh => {
+            scene.remove(mesh);
+            if (mesh.geometry) mesh.geometry.dispose();
+            if (mesh.material) mesh.material.dispose();
+        });
+        _coffinRoomMeshes = [];
+        // Restore all scene children visibility
+        scene.children.forEach(child => { child.visible = true; });
+        aisleWatcher.visible = false;
+        closeUpWatcher.visible = false;
+        approachFigure.visible = false;
+        shiftFigure.visible = false;
+        // Restore camera from coffin-room position
+        camera.position.set(0, 1.8, 0);
+        camera.rotation.set(DESK_ROT_X, 0, 0);
+        camera.rotation.order = 'XYZ';
+    }
+    // Reset end-screen background (coffin ending sets transparent)
+    document.getElementById('end-screen').style.background = '';
     // Reset red corruption and fog density
     noirPass.uniforms.redTint.value = 0.0;
     scene.fog.density = 0.012;
@@ -5784,6 +6085,7 @@ animate();
 
     function resetAll() {
         state.suspicion = 0;
+        state._vossCondemned = false;
         state.firedEvents.clear();
         state.pendingEvents = [];
         state.approachLocked = false;
