@@ -875,8 +875,8 @@ const shift2Cases = [
         name: "Henrik Voss", occupation: "BORD Clerk, Level 3 - Night Processing",
         allegation: "Unusual case processing pattern detected (tonight's batch, multiple anomalous dismissals)",
         detail: _hasPlayedBefore
-            ? "Performance metrics flagged by automated review. Three anomalous dismissals in single shift. Terminal: NP-L3-07. That is the terminal you are sitting at. This is your processing record, filed under an older name. You chose this desk. Or it was chosen for you. Again."
-            : "Performance metrics flagged by automated review. Three anomalous dismissals in single shift. Terminal: NP-L3-07. That is the terminal you are sitting at. This is your processing record, filed under an older name. You chose this desk. Or it was chosen for you.",
+            ? "Performance metrics flagged by automated review. Three anomalous dismissals in single shift. Terminal: NP-L3-07. Processing record filed under prior assignment name. Clerk reassignment history: Facility 6 Division to Night Processing Division. Again."
+            : "Performance metrics flagged by automated review. Three anomalous dismissals in single shift. Terminal: NP-L3-07. Processing record filed under prior assignment name. Clerk reassignment history: Facility 6 Division to Night Processing Division.",
         // This is about YOU -but filed under a different name
         choices: [
             { num:1, main:"FORWARD TO OVERSIGHT", desc:"Submit to BORD review. Your cases will be reopened. Everyone you helped will be re-processed.", evil:true, delta:0 },
@@ -885,14 +885,14 @@ const shift2Cases = [
     },
     {
         id: "7515-D", date: "05.02.2026", classification: "District",
-        recordNotes: "Reassignment order - unsigned",
+        recordNotes: "Reassignment order - received, stamped",
         name: "Amara Osei", occupation: "BORD Records Clerk, Facility 6 (Former)",
         allegation: "Did not report for mandatory reassignment after facility closed",
-        detail: "She worked at Facility 6. She filed the intake forms for every child they brought in. When they closed the facility, BORD ordered her to a new post. The reassignment notice is stamped RECEIVED but has no signature.",
-        // LOOPHOLE: The reassignment notice has no signature -R7 says unsigned orders are invalid
-        irregularity: { field: "recordNotes", text: "unsigned", display: "Reassignment order - unsigned" },
+        detail: "She worked at Facility 6. She filed the intake forms for every child they brought in. When they closed the facility, BORD ordered her to a new post. The reassignment order is stamped RECEIVED. No authorizing signature.",
+        // LOOPHOLE: The reassignment order has no signature -R7 says unsigned orders are invalid
+        irregularity: { field: "detail", text: "No authorizing signature", display: "Reassignment order has no authorizing signature" },
         loopholeReasons: [
-            { text: "Reassignment order has no signature - it is not valid", correct: true },
+            { text: "Order has no authorizing signature - not valid", correct: true },
             { text: "Facility 6 closing cancels all past duties", correct: false },
             { text: "Medical reasons - former facility staff are exempt", correct: false },
             { text: "Records clerks cannot be reassigned to field work", correct: false },
@@ -915,14 +915,14 @@ const shift2Cases = [
     },
     {
         id: "7517-X", date: "05.02.2026", classification: "Special Filing",
-        recordNotes: "Duplicate filing - second intake",
-        name: "[REDACTED] - Group Filing (14 subjects)", occupation: "Various (see attached roster, pp. 3-7)",
-        allegation: "Unauthorized witness contact re: Facility 6 operations. Subjects gave statements to outside counsel without BORD clearance.",
-        detail: "Fourteen people gave recorded depositions on 01.30.2026. Content classified. BORD legal flagged for immediate processing. This file was on your desk earlier tonight. Second appearance per intake log. It is heavier than the others.",
-        // LOOPHOLE: "Second appearance" -WIT-2 says same file on same desk = filing error
-        irregularity: { field: "detail", text: "Second appearance", display: "Second appearance" },
+        recordNotes: "Group filing - intake flagged for review",
+        name: "Facility 6 Witness Group (14 subjects)", occupation: "Various - see attached roster (pp. 3-7)",
+        allegation: "Unauthorized witness contact re: Facility 6 operations. Recorded depositions given to outside counsel without BORD clearance.",
+        detail: "Fourteen depositions recorded 01.30.2026. Content: children's ward operations, transport logs, intake procedures. BORD legal classification: immediate processing priority. Intake log note: second filing at this terminal. Prior processing stamp on record.",
+        // LOOPHOLE: "second filing" -R7 says duplicate filings are invalid
+        irregularity: { field: "detail", text: "second filing", display: "Duplicate filing at terminal" },
         loopholeReasons: [
-            { text: "Same file on same desk twice is a filing error", correct: true },
+            { text: "Duplicate filing at same terminal - case is invalid", correct: true },
             { text: "Witness testimony needs Level 8 approval first", correct: false },
             { text: "Case number format X is not valid", correct: false },
             { text: "Testimony was already entered into record", correct: false },
@@ -973,8 +973,8 @@ const shift3Cases = [
         name: "[CLERK ID: NP-L3-07]", occupation: "BORD Case Processor, Level 3 - Night Processing",
         allegation: "Processing stamp found on 214 Facility 6 child intake forms.",
         detail: _hasPlayedBefore
-            ? "This is your file. Your stamp is on every intake form. Two hundred and fourteen children processed into Facility 6 under your authorization code. You were Henrik Voss before they reassigned you here. You processed your own performance review last shift. Again."
-            : "This is your file. Your stamp is on every intake form. Two hundred and fourteen children processed into Facility 6 under your authorization code. You were Henrik Voss before they reassigned you here. You processed your own performance review last shift.",
+            ? "Authorization code NP-L3-07 found on 214 Facility 6 child intake forms. Processing stamps match Terminal NP-L3-07 active session. Clerk reassigned from Facility 6 Division under prior name Henrik Voss. Performance review (Case 7514-C) processed at same terminal last shift. Again."
+            : "Authorization code NP-L3-07 found on 214 Facility 6 child intake forms. Processing stamps match Terminal NP-L3-07 active session. Clerk reassigned from Facility 6 Division under prior name Henrik Voss. Performance review (Case 7514-C) processed at same terminal last shift.",
         // No loophole -or IS there? The case number format is wrong (7532-C but Level 3 cases should be -L3)
         irregularity: { field: "id", text: "7532-C", display: "7532-C" },
         loopholeReasons: [
@@ -1003,12 +1003,12 @@ const shift3Cases = [
     {
         id: "7534-E", date: "06.02.2026", classification: "Regulatory",
         recordNotes: "Supervisor report - signed and filed",
-        name: "Night Processing Support Staff (12 personnel)", occupation: "BORD Administrative Support, Night Division - Transcription Unit",
-        allegation: "Collective work stoppage. Quota shortfall: 0 forms processed in last 20 min. No authorized break scheduled.",
-        detail: "All twelve transcription staff ceased activity at 03:41. No verbal communication. No movement from stations. Supervisor reports no response to direct instruction. Unit was assigned to same case batch as Terminal NP-L3-07.",
+        name: "Night Transport Unit (12 drivers)", occupation: "BORD Logistics, Night Division - Facility 6 Transport Detail",
+        allegation: "Refusal to provide testimony. 12 drivers assigned to Facility 6 night routes have not responded to deposition requests.",
+        detail: "Twelve drivers operated the night route to Facility 6 between 2019 and 2025. Transport manifests sealed by BORD legal. None have responded to subpoena. All twelve submitted identical one-line statements: 'I drove where I was told.'",
         choices: [
-            { num:1, main:"REPORT & REPLACE", desc:"Report all of them. They will be reassigned. You will get new workers.", evil:true, delta:-5 },
-            { num:2, main:"NO ACTION", desc:"Let them be. Keep working. Do not look up.", evil:false, delta:10 },
+            { num:1, main:"COMPEL TESTIMONY", desc:"Force compliance. Hold all twelve until full statements provided.", evil:true, delta:-5 },
+            { num:2, main:"ACCEPT STATEMENTS", desc:"One-line responses on file. No further action. Close.", evil:false, delta:10 },
         ]
     },
     {
@@ -1016,7 +1016,7 @@ const shift3Cases = [
         recordNotes: "[NO DATA]",
         name: "[NO DATA]", occupation: "[NO DATA]",
         allegation: "[NO DATA]",
-        detail: "File arrived at terminal 03:58. No intake officer signature. No origin stamp. No content. The paper smells like disinfectant. Processing required per directive - all files received must be actioned.",
+        detail: "File received at terminal 03:58. No intake officer signature. No origin stamp. No case content. Paper condition: chemical residue noted. Standing directive: all received files must be actioned.",
         // This case has corrupted mercy text
         choices: [
             { num:1, main:"PROCESS AS COMPLETE", desc:"Stamp and file. Contents do not matter. Quota must be met.", evil:true, delta:-3 },
@@ -1026,9 +1026,9 @@ const shift3Cases = [
     {
         id: "7741-FINAL", date: "06.02.2026", classification: "Special Filing",
         recordNotes: "Re-filed - see Case 7517-X",
-        name: "[REDACTED] - Group Filing (14 subjects)", occupation: "Various (see Case 7517-X, attached roster)",
+        name: "Facility 6 Witness Group (14 subjects)", occupation: "Various - see Case 7517-X, attached roster",
         allegation: "Re-filed: unauthorized witness depositions re: Facility 6 operations. Full evidentiary packet enclosed. Outside counsel notified.",
-        detail: "Everything is in this file. Fourteen witness statements. The intake records for 214 children. The surgical orders. The death certificates. The trucks. Your stamp is on 211 pages. This is the last file on your desk tonight.",
+        detail: "Contents: 14 witness depositions. 214 child intake records. Surgical equipment orders, children's ward. 211 death certificates. Transport manifests, night routes, 2019-2025. Processing stamps on 211 pages: Terminal NP-L3-07. Outside counsel notified. Full evidentiary packet enclosed.",
         choices: [
             { num:1, main:"SILENCE", desc:"Protocol 9. End this. End all of it. BORD demands it.", evil:true, delta:-30 },
             { num:2, main:"OPEN CASE 7741", desc:"Release everything. Every name. Every page. Every truck. Including yours.", evil:false, delta:50 },
@@ -2245,7 +2245,7 @@ function renderCase(c) {
     const hasIrregularity = !!c.irregularity;
     if (hasIrregularity) {
         const irr = c.irregularity;
-        const irrSpan = `<span class="cf-irregularity">${irr.display || irr.text}</span>`;
+        const irrSpan = `<span class="cf-irregularity">${irr.text}</span>`;
         if (irr.field === 'id') {
             idText = irrSpan;
         } else if (irr.field === 'date') {
@@ -2260,6 +2260,11 @@ function renderCase(c) {
         // Note: 'detail' field irregularities are injected after typewriter finishes
     }
 
+    // Classification letter code for R2 checking
+    const classLetterMap = { 'Class A': '-A', 'Class B': '-B', 'Civil': '-C', 'District': '-D', 'Regulatory': '-E', 'Staff (Internal)': '-L' };
+    const classLetter = classLetterMap[c.classification];
+    const classificationDisplay = classLetter ? `${c.classification} (${classLetter})` : (c.classification || '[NONE]');
+
     const curDirective = getMemoDirective();
     const directiveDisplay = curDirective === '.' ? '' : curDirective;
     el.innerHTML = `
@@ -2272,7 +2277,7 @@ function renderCase(c) {
             <div style="font-size:10px; color:#777; letter-spacing:0.08em; margin-bottom:10px;">Case ${idText} &nbsp;·&nbsp; Filed: ${dateText}</div>
             <div class="cf-line"><span class="cf-label">Occupation:</span> ${occupationText}</div>
             <div class="cf-line" style="margin-top:8px;"><span class="cf-label">Charge:</span> ${allegationText}</div>
-            <div class="cf-line"><span class="cf-label">Classification:</span> ${c.classification || '[NONE]'}</div>
+            <div class="cf-line"><span class="cf-label">Classification:</span> ${classificationDisplay}</div>
             ${c.recordNotes ? `<div class="cf-line"><span class="cf-label">Record Notes:</span> ${recordNotesText}</div>` : ''}
             <div class="cf-detail" id="cf-detail-text"></div>
             <div class="cf-choices choices-hidden">
@@ -2356,7 +2361,7 @@ function renderCase(c) {
     if (c.id === '7514-C') {
         const shift1Mercy = state.allChoices.slice(0, 5).filter(ch => !ch.evil).length;
         if (shift1Mercy === 0) {
-            detailText = "Exemplary compliance noted. Zero deviations across five cases. Clerk ID matches your terminal. Flagged for routine commendation review.";
+            detailText = "Exemplary compliance noted. Zero deviations across five cases. Clerk ID matches terminal assignment. Flagged for routine commendation review.";
         } else {
             const numWord = ['Zero', 'One', 'Two', 'Three', 'Four', 'Five'][shift1Mercy] || shift1Mercy.toString();
             detailText = detailText.replace('Three anomalous dismissals', numWord + ' anomalous dismissal' + (shift1Mercy === 1 ? '' : 's'));
