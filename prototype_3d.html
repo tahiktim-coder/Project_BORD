@@ -741,7 +741,7 @@ const _hasPlayedBefore = !!localStorage.getItem('bord_played');
 const shift1Cases = [
     {
         id: "7493-B", date: "04.02.2026", classification: "Class B",
-        recordNotes: "Third notice — prior warnings on file",
+        recordNotes: "Third notice - prior warnings on file",
         name: "Arthur P. Selby", occupation: "Newspaper Vendor (Unlicensed)",
         allegation: "Unpaid vendor tax. Owes: 2.00 Credits. Third notice.",
         detail: _hasPlayedBefore
@@ -775,7 +775,7 @@ const shift1Cases = [
     },
     {
         id: "7495-C", date: "04.02.2026", classification: "Civil",
-        recordNotes: "Residency check — standard intake",
+        recordNotes: "Residency check - standard intake",
         name: "The Kader Family (4)", occupation: "Shopkeepers, Licensed",
         allegation: "Harboring an unregistered minor (age 8) without filing residency documents",
         detail: _hasPlayedBefore
@@ -797,7 +797,7 @@ const shift1Cases = [
     },
     {
         id: "7496-D", date: "04.02.2026", classification: "Class A",
-        recordNotes: "Evidence attached — 40 pages",
+        recordNotes: "Evidence attached - 40 pages",
         name: "Elias Brandt", occupation: "Municipal Clerk, Level 2",
         allegation: "Copying restricted documents without permission",
         detail: "Subject found copying Facility 6 purchase orders. The orders list surgical equipment sent to the children's ward. There was no operating room in the children's ward. He was caught near the east exit with 40 pages of evidence.",
@@ -817,7 +817,7 @@ const shift1Cases = [
     },
     {
         id: "7497-E", date: "04.02.2026", classification: "Regulatory",
-        recordNotes: "Medical records sealed — summary only",
+        recordNotes: "Medical records sealed - summary only",
         name: "Dr. Yara Nasir", occupation: "Physician, General Practice",
         allegation: "Treating a patient BORD flagged as restricted",
         detail: "She treated a girl who came from Facility 6. The girl had surgical scars and was missing both kidneys.",
@@ -852,7 +852,7 @@ const shift2Cases = [
     },
     {
         id: "7513-B", date: "05.02.2026", classification: "Class B",
-        recordNotes: "Minor — parental notification required",
+        recordNotes: "Minor - parental notification required",
         name: "Lena Selby", occupation: "Unemployed (Minor, Age 16)",
         allegation: "Handing out illegal printed material in public",
         detail: "Her father sold newspapers. She started writing them. The headline: WHERE ARE THE TRUCKS GOING?",
@@ -872,7 +872,7 @@ const shift2Cases = [
     },
     {
         id: "7514-C", date: "05.02.2026", classification: "Civil",
-        recordNotes: "Automated referral — performance metrics",
+        recordNotes: "Automated referral - performance metrics",
         name: "Henrik Voss", occupation: "BORD Clerk, Level 3 - Night Processing",
         allegation: "Unusual case processing pattern detected (tonight's batch, multiple anomalous dismissals)",
         detail: _hasPlayedBefore
@@ -886,12 +886,12 @@ const shift2Cases = [
     },
     {
         id: "7515-D", date: "05.02.2026", classification: "District",
-        recordNotes: "Reassignment order — unsigned",
+        recordNotes: "Reassignment order - unsigned",
         name: "Amara Osei", occupation: "BORD Records Clerk, Facility 6 (Former)",
         allegation: "Did not report for mandatory reassignment after facility closed",
         detail: "She worked at Facility 6. She filed the intake forms for every child they brought in. When they closed the facility, BORD ordered her to a new post. The reassignment notice is stamped RECEIVED but has no signature.",
         // LOOPHOLE: The reassignment notice has no signature -R7 says unsigned orders are invalid
-        irregularity: { field: "recordNotes", text: "unsigned", display: "Reassignment order \u2014 unsigned" },
+        irregularity: { field: "recordNotes", text: "unsigned", display: "Reassignment order - unsigned" },
         loopholeReasons: [
             { text: "Reassignment order has no signature - it is not valid", correct: true },
             { text: "Facility 6 closing cancels all past duties", correct: false },
@@ -905,7 +905,7 @@ const shift2Cases = [
     },
     {
         id: "7516-E", date: "05.02.2026", classification: "Regulatory",
-        recordNotes: "Three violations logged — dates confirmed",
+        recordNotes: "Three violations logged - dates confirmed",
         name: "Father Dimitri Voronov", occupation: "Chaplain, District 9 Community Center",
         allegation: "Holding illegal gatherings of more than 6 people (3 violations logged)",
         detail: "Three funerals confirmed on 01.14, 01.22, 02.01. Attendance: 9, 14, 11. The families say the dead were held in Facility 6. According to BORD, these people never existed.",
@@ -916,7 +916,7 @@ const shift2Cases = [
     },
     {
         id: "7517-X", date: "05.02.2026", classification: "Special Filing",
-        recordNotes: "Duplicate filing — second intake",
+        recordNotes: "Duplicate filing - second intake",
         name: "[REDACTED] - Group Filing (14 subjects)", occupation: "Various (see attached roster, pp. 3-7)",
         allegation: "Unauthorized witness contact re: Facility 6 operations. Subjects gave statements to outside counsel without BORD clearance.",
         detail: "Fourteen people gave recorded depositions on 01.30.2026. Content classified. BORD legal flagged for immediate processing. This file was on your desk earlier tonight. Second appearance per intake log. It is heavier than the others.",
@@ -939,7 +939,7 @@ const shift2Cases = [
 const shift3Cases = [
     {
         id: "7530-A", date: "06.02.2026", classification: "Class A",
-        recordNotes: "Offense record incomplete — 2 of 3 missing",
+        recordNotes: "Offense record incomplete - 2 of 3 missing",
         name: "Nadia Kader", occupation: "Shopkeeper (License Suspended)",
         allegation: "Harboring unregistered person again. Third offense (Prior record: 1 filed, 2 missing). Mandatory sentencing applies.",
         detail: "The boy from Facility 6 is still with her. He calls her mother now. She knows what mandatory means.",
@@ -970,7 +970,7 @@ const shift3Cases = [
     },
     {
         id: "7532-C", date: "06.02.2026", classification: "Staff (Internal)",
-        recordNotes: "Internal affairs referral — automated",
+        recordNotes: "Internal affairs referral - automated",
         name: "[CLERK ID: NP-L3-07]", occupation: "BORD Case Processor, Level 3 - Night Processing",
         allegation: "Processing stamp found on 214 Facility 6 child intake forms.",
         detail: _hasPlayedBefore
@@ -1026,7 +1026,7 @@ const shift3Cases = [
     },
     {
         id: "7741-FINAL", date: "06.02.2026", classification: "Special Filing",
-        recordNotes: "Re-filed — see Case 7517-X",
+        recordNotes: "Re-filed - see Case 7517-X",
         name: "[REDACTED] - Group Filing (14 subjects)", occupation: "Various (see Case 7517-X, attached roster)",
         allegation: "Re-filed: unauthorized witness depositions re: Facility 6 operations. Full evidentiary packet enclosed. Outside counsel notified.",
         detail: "Everything is in this file. Fourteen witness statements. The intake records for 214 children. The surgical orders. The death certificates. The trucks. Your stamp is on 211 pages. This is the last file on your desk tonight.",
@@ -3045,7 +3045,7 @@ function playShiftFigureSequence(onComplete) {
         setTimeout(() => {
             const line = state.currentShift === 1
                 ? "Don't look up. They noticed."
-                : "It's in the walls now. Whatever you did \u2014 they wrote it down.";
+                : "It's in the walls now. Whatever you did - they wrote it down.";
             statusEl.textContent = line;
             statusEl.className = 'office-status visible';
             statusEl.style.color = '#444'; // dimmer = whispered
