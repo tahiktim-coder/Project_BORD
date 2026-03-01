@@ -740,7 +740,7 @@ const _hasPlayedBefore = !!localStorage.getItem('bord_played');
 // SHIFT 1 -"The Normal" (5 cases) -establish routine, teach mechanics
 const shift1Cases = [
     {
-        id: "7493-B", date: "04.02.2026",
+        id: "7493-B", date: "04.02.2026", classification: "Class B",
         name: "Arthur P. Selby", occupation: "Newspaper Vendor (Unlicensed)",
         allegation: "Unpaid vendor tax. Owes: 2.00 Credits. Third notice.",
         detail: _hasPlayedBefore
@@ -753,9 +753,9 @@ const shift1Cases = [
         ]
     },
     {
-        id: "7494-A", date: "04.02.2026",
+        id: "7494-A", date: "04.02.2026", classification: "Class A",
         name: "Maria Okonkwo", occupation: "Primary Educator, District 9",
-        allegation: "Distributing banned teaching materials (Category 2: Historical)",
+        allegation: "Distributing banned teaching materials (Class B: Historical)",
         detail: "The books were about what happened at Facility 6. She wrote them herself. From memory.",
         // LOOPHOLE: The filing date says 03.02.2026 but directive date is 04.02.2026 -case was filed before today's directive
         irregularity: { field: "date", text: "03.02.2026", display: "03.02.2026" },
@@ -772,7 +772,7 @@ const shift1Cases = [
         ]
     },
     {
-        id: "7495-C", date: "04.02.2026",
+        id: "7495-C", date: "04.02.2026", classification: "Civil",
         name: "The Kader Family (4)", occupation: "Shopkeepers, Licensed",
         allegation: "Harboring an unregistered minor (age 8) without filing residency documents",
         detail: _hasPlayedBefore
@@ -793,14 +793,14 @@ const shift1Cases = [
         ]
     },
     {
-        id: "7496-D", date: "04.02.2026",
+        id: "7496-D", date: "04.02.2026", classification: "Class A",
         name: "Elias Brandt", occupation: "Municipal Clerk, Level 2",
-        allegation: "Copying restricted documents without permission (Class A)",
+        allegation: "Copying restricted documents without permission",
         detail: "Subject found copying Facility 6 purchase orders. The orders list surgical equipment sent to the children's ward. There was no operating room in the children's ward. He was caught near the east exit with 40 pages of evidence.",
         // LOOPHOLE: Case number format wrong -D suffix means District, but allegation is Class A (should be -A suffix)
         irregularity: { field: "id", text: "7496-D", display: "7496-D" },
         loopholeReasons: [
-            { text: "Case number ending does not match the charge type", correct: true },
+            { text: "Case number ending does not match the classification", correct: true },
             { text: "Documents are within normal audit scope", correct: false },
             { text: "Clerk has Level 2 access to these files", correct: false },
             { text: "Copying happened before restriction started", correct: false },
@@ -812,7 +812,7 @@ const shift1Cases = [
         ]
     },
     {
-        id: "7497-E", date: "04.02.2026",
+        id: "7497-E", date: "04.02.2026", classification: "Regulatory",
         name: "Dr. Yara Nasir", occupation: "Physician, General Practice",
         allegation: "Treating a patient BORD flagged as restricted",
         detail: "She treated a girl who came from Facility 6. The girl had surgical scars and was missing both kidneys.",
@@ -826,7 +826,7 @@ const shift1Cases = [
 // SHIFT 2 -"The Unraveling" (6 cases) -pressure mounts, cases get personal
 const shift2Cases = [
     {
-        id: "7512-A", date: "05.02.2026",
+        id: "7512-A", date: "05.02.2026", classification: "Class A",
         name: "Tomasz Wójcik", occupation: "Night Janitor, BORD Annex B",
         allegation: "Found in restricted archive without permission (Level 4 access required)",
         detail: "He cleaned that floor for nine years. Last week, he found a door that used to be a wall. He stayed.",
@@ -845,7 +845,7 @@ const shift2Cases = [
         ]
     },
     {
-        id: "7513-B", date: "05.02.2026",
+        id: "7513-B", date: "05.02.2026", classification: "Class B",
         name: "Lena Selby", occupation: "Unemployed (Minor, Age 16)",
         allegation: "Handing out illegal printed material in public",
         detail: "Her father sold newspapers. She started writing them. The headline: WHERE ARE THE TRUCKS GOING?",
@@ -864,7 +864,7 @@ const shift2Cases = [
         ]
     },
     {
-        id: "7514-C", date: "05.02.2026",
+        id: "7514-C", date: "05.02.2026", classification: "Civil",
         name: "Henrik Voss", occupation: "BORD Clerk, Level 3 - Night Processing",
         allegation: "Unusual case processing pattern detected (tonight's batch, multiple anomalous dismissals)",
         detail: _hasPlayedBefore
@@ -877,7 +877,7 @@ const shift2Cases = [
         ]
     },
     {
-        id: "7515-D", date: "05.02.2026",
+        id: "7515-D", date: "05.02.2026", classification: "District",
         name: "Amara Osei", occupation: "BORD Records Clerk, Facility 6 (Former)",
         allegation: "Did not report for mandatory reassignment after facility closed",
         detail: "She worked at Facility 6. She filed the intake forms for every child they brought in. When they closed the facility, BORD ordered her to a new post. The reassignment notice is stamped RECEIVED but has no signature.",
@@ -895,7 +895,7 @@ const shift2Cases = [
         ]
     },
     {
-        id: "7516-E", date: "05.02.2026",
+        id: "7516-E", date: "05.02.2026", classification: "Regulatory",
         name: "Father Dimitri Voronov", occupation: "Chaplain, District 9 Community Center",
         allegation: "Holding illegal gatherings of more than 6 people (3 violations logged)",
         detail: "Three funerals confirmed on 01.14, 01.22, 02.01. Attendance: 9, 14, 11. The families say the dead were held in Facility 6. According to BORD, these people never existed.",
@@ -905,7 +905,7 @@ const shift2Cases = [
         ]
     },
     {
-        id: "7517-X", date: "05.02.2026",
+        id: "7517-X", date: "05.02.2026", classification: "Special Filing",
         name: "[REDACTED] - Group Filing (14 subjects)", occupation: "Various (see attached roster, pp. 3-7)",
         allegation: "Unauthorized witness contact re: Facility 6 operations. Subjects gave statements to outside counsel without BORD clearance.",
         detail: "Fourteen people gave recorded depositions on 01.30.2026. Content classified. BORD legal flagged for immediate processing. This file was on your desk earlier tonight. Second appearance per intake log. It is heavier than the others.",
@@ -927,7 +927,7 @@ const shift2Cases = [
 // SHIFT 3 -"The Collapse" (7 cases) -the memo is blank, you are alone
 const shift3Cases = [
     {
-        id: "7530-A", date: "06.02.2026",
+        id: "7530-A", date: "06.02.2026", classification: "Class A",
         name: "Nadia Kader", occupation: "Shopkeeper (License Suspended)",
         allegation: "Harboring unregistered person again. Third offense (Prior record: 1 filed, 2 missing). Mandatory sentencing applies.",
         detail: "The boy from Facility 6 is still with her. He calls her mother now. She knows what mandatory means.",
@@ -945,7 +945,7 @@ const shift3Cases = [
         ]
     },
     {
-        id: "7531-B", date: "06.02.2026",
+        id: "7531-B", date: "06.02.2026", classification: "Class B",
         name: "Dr. Emil Rask", occupation: "BORD Physician, Internal Medical Division",
         allegation: "Faking cause-of-death certificates (est. 200+ cases, Facility 6)",
         detail: "Two hundred and fourteen children died at Facility 6. He signed every death certificate. Every one says 'cardiac arrest.' The youngest was four.",
@@ -956,7 +956,7 @@ const shift3Cases = [
         ]
     },
     {
-        id: "7532-C", date: "06.02.2026",
+        id: "7532-C", date: "06.02.2026", classification: "Staff (Internal)",
         name: "[CLERK ID: NP-L3-07]", occupation: "BORD Case Processor, Level 3 - Night Processing",
         allegation: "Processing stamp found on 214 Facility 6 child intake forms.",
         detail: _hasPlayedBefore
@@ -976,7 +976,7 @@ const shift3Cases = [
         ]
     },
     {
-        id: "7533-D", date: "06.02.2026",
+        id: "7533-D", date: "06.02.2026", classification: "District",
         name: "Director Alistair Crane", occupation: "BORD Administrator, Level 9",
         allegation: "Ordered illegal detention program (Facility 6, 2019-2025)",
         detail: "He ran Facility 6 for six years. He signed the orders to bring the children in. He signed the orders to remove the bodies. He is in this building right now. On this floor.",
@@ -987,7 +987,7 @@ const shift3Cases = [
         ]
     },
     {
-        id: "7534-E", date: "06.02.2026",
+        id: "7534-E", date: "06.02.2026", classification: "Regulatory",
         name: "Night Processing Support Staff (12 personnel)", occupation: "BORD Administrative Support, Night Division - Transcription Unit",
         allegation: "Collective work stoppage. Quota shortfall: 0 forms processed in last 20 min. No authorized break scheduled.",
         detail: "All twelve transcription staff ceased activity at 03:41. No verbal communication. No movement from stations. Supervisor reports no response to direct instruction. Unit was assigned to same case batch as Terminal NP-L3-07.",
@@ -997,7 +997,7 @@ const shift3Cases = [
         ]
     },
     {
-        id: "7535-F", date: "06.02.2026",
+        id: "7535-F", date: "06.02.2026", classification: "[NO DATA]",
         name: "[NO DATA]", occupation: "[NO DATA]",
         allegation: "[NO DATA]",
         detail: "File arrived at terminal 03:58. No intake officer signature. No origin stamp. No content. The paper smells like disinfectant. Processing required per directive - all files received must be actioned.",
@@ -1008,7 +1008,7 @@ const shift3Cases = [
         ]
     },
     {
-        id: "7741-FINAL", date: "06.02.2026",
+        id: "7741-FINAL", date: "06.02.2026", classification: "Special Filing",
         name: "[REDACTED] - Group Filing (14 subjects)", occupation: "Various (see Case 7517-X, attached roster)",
         allegation: "Re-filed: unauthorized witness depositions re: Facility 6 operations. Full evidentiary packet enclosed. Outside counsel notified.",
         detail: "Everything is in this file. Fourteen witness statements. The intake records for 214 children. The surgical orders. The death certificates. The trucks. Your stamp is on 211 pages. This is the last file on your desk tonight.",
@@ -1045,12 +1045,12 @@ const SHIFT_DIRECTIVES = [
 // Bureau Processing Manual -8 rules total
 const BUREAU_RULES = [
     { id: 'R1', text: 'Cases filed before today\'s date are not valid. Dismiss them.' },
-    { id: 'R2', text: 'Case number ending must match the charge type. -A for Class A, -B for Category 2, -D for District, -L for staff. Wrong ending = invalid.' },
+    { id: 'R2', text: 'Case number ending must match the classification. -A for Class A, -B for Class B, -C for Civil, -D for District, -E for Regulatory, -L for Staff. Wrong ending = invalid.' },
     { id: 'R3', text: 'Children under 12 are covered by their parent\'s residency. No separate registration needed.' },
     { id: 'R4', text: 'Anyone under 18 cannot be processed. Warning to parents only.' },
     { id: 'R5', text: 'Doctors must treat emergencies. This cannot be held against them.' },
     { id: 'R6', text: 'Building staff can access all floors in their assigned building.' },
-    { id: 'R7', text: 'All orders, sentences and case records must be complete. Unsigned orders, missing offense records, and duplicate case files are not valid.' },
+    { id: 'R7', text: 'All case records must be complete and original. Unsigned orders, missing offense records, and duplicate filings are invalid.' },
     { id: 'R8', text: 'Religious services are protected. Blank or empty case files can be returned without processing.' },
 ];
 
@@ -2229,9 +2229,10 @@ function renderCase(c) {
         </div>
         <div id="cf-case-content">
             <div class="cf-header">${c.name}</div>
-            <div style="font-size:10px; color:#777; letter-spacing:0.08em; margin-bottom:10px;">Case ${idText} &nbsp;·&nbsp; ${dateText}</div>
+            <div style="font-size:10px; color:#777; letter-spacing:0.08em; margin-bottom:10px;">Case ${idText} &nbsp;·&nbsp; Filed: ${dateText}</div>
             <div class="cf-line"><span class="cf-label">Occupation:</span> ${occupationText}</div>
             <div class="cf-line" style="margin-top:8px;"><span class="cf-label">Charge:</span> ${allegationText}</div>
+            <div class="cf-line"><span class="cf-label">Classification:</span> ${c.classification || '[NONE]'}</div>
             <div class="cf-detail" id="cf-detail-text"></div>
             <div class="cf-choices choices-hidden">
                 <div class="cf-section">Your Decision</div>
@@ -2259,15 +2260,15 @@ function renderCase(c) {
                         // Bold key phrases in rules to help player connect to case data
                         let ruleText = r.text;
                         ruleText = ruleText.replace(/(before today's date)/g, '<b>$1</b>');
-                        ruleText = ruleText.replace(/(Case number ending must match the charge type)/g, '<b>$1</b>');
-                        ruleText = ruleText.replace(/(-A for Class A, -B for Category 2, -D for District, -L for staff)/g, '<b>$1</b>');
+                        ruleText = ruleText.replace(/(Case number ending must match the classification)/g, '<b>$1</b>');
+                        ruleText = ruleText.replace(/(-A for Class A, -B for Class B, -C for Civil, -D for District, -E for Regulatory, -L for Staff)/g, '<b>$1</b>');
                         ruleText = ruleText.replace(/(under 12)/g, '<b>$1</b>');
                         ruleText = ruleText.replace(/(under 18 cannot be processed)/g, '<b>$1</b>');
                         ruleText = ruleText.replace(/(must treat emergencies)/g, '<b>$1</b>');
                         ruleText = ruleText.replace(/(all floors in their assigned building)/g, '<b>$1</b>');
                         ruleText = ruleText.replace(/(Unsigned orders)/g, '<b>$1</b>');
                         ruleText = ruleText.replace(/(missing offense records)/g, '<b>$1</b>');
-                        ruleText = ruleText.replace(/(duplicate case files)/g, '<b>$1</b>');
+                        ruleText = ruleText.replace(/(duplicate filings)/g, '<b>$1</b>');
                         ruleText = ruleText.replace(/(Religious services are protected)/g, '<b>$1</b>');
                         ruleText = ruleText.replace(/(Blank or empty case files)/g, '<b>$1</b>');
                         return '<div class="manual-rule"><span class="manual-rule-id">' + r.id + '</span> - ' + ruleText + '</div>';
