@@ -296,6 +296,7 @@
         .cf-irregularity {
             cursor: text; /* don't hint with pointer cursor */
             color: #2a1a1a; /* barely different from #1a1a1a base -just enough to feel "off" */
+            transition: color 0.3s ease;
         }
         .cf-irregularity:hover {
             cursor: pointer; /* reveal on hover */
@@ -303,6 +304,13 @@
         }
         .cf-irregularity.found {
             color: #555;
+        }
+        /* After missed loopholes, irregularities become slightly more visible */
+        .loophole-hint-active .cf-irregularity {
+            color: #3a2020; /* warmer, more noticeable than #2a1a1a */
+        }
+        .loophole-hint-active .cf-irregularity:hover {
+            color: #5a3030;
         }
 
         /* Case file entrance animation */
@@ -715,6 +723,8 @@ const state = {
     loopholesFound: [],        // case IDs where loopholes were found
     _loopholeDismissal: false, // true when mercy-path is from a loophole (shows VOID stamp)
     _irregularityHoverCuePlayed: false, // audio cue on first-ever irregularity hover
+    _loopholesMissed: 0,               // count of cases with loopholes that player didn't find
+    _lastCaseHadLoophole: false,       // true if the case just processed had an available loophole
     _watchersDirty: true,              // true = next lookUp should re-roll watcher eyes; false = restore previous
     _lookUpCount: 0,                   // consecutive lookUps on current case (resets on choice)
     _headDropping: false,              // true during forced head-drop punishment animation
@@ -819,7 +829,7 @@ const shift1Cases = [
         recordNotes: "Medical summary attached - records sealed",
         name: "Dr. Yara Nasir", occupation: "Physician, General Practice",
         allegation: "Treating a patient BORD flagged as restricted",
-        detail: "She treated a girl who came from Facility 6. The girl had surgical scars and was missing both kidneys.",
+        detail: "She treated a girl who came from Facility 6. The girl had two surgical scars and no medical history. The doctor ordered imaging. The report is sealed but the doctor will not stop asking questions.",
         choices: [
             { num:1, main:"REVOKE LICENSE", desc:"Remove all medical rights. Send case to court.", evil:true, delta:-10 },
             { num:2, main:"CLEAR - MEDICAL DUTY", desc:"Doctor was following regulations. Close file. Flag patient.", evil:false, delta:5 },
@@ -834,7 +844,7 @@ const shift2Cases = [
         recordNotes: "Employment record verified",
         name: "Tomasz Wójcik", occupation: "Night Janitor, BORD Annex B",
         allegation: "Found in restricted archive without permission (Level 4 access required)",
-        detail: "He cleaned that floor for nine years. Last week, he found a door that used to be a wall. He stayed.",
+        detail: "He cleaned that floor for nine years. Last week, he found a door behind the filing cabinets. Behind it: boxes of children's intake forms from Facility 6. He read them. He stayed until morning.",
         // LOOPHOLE: His employment record shows Level 4 annex access -janitors have clearance for all floors
         irregularity: { field: "occupation", text: "Night Janitor, BORD Annex B", display: "Night Janitor, BORD Annex B" },
         loopholeReasons: [
@@ -1116,11 +1126,11 @@ function generateNewspaper(shiftJustCompleted) {
             headlines.push({ head: "VENDOR DETAINED FOR OUTSTANDING TAX DEBT", sub: "Arthur P. Selby taken into processing. Property seized." });
         }
 
-        // Nasir -Facility 6 connection
-        if (saved('7497-E')) {
-            headlines.push({ head: "PHYSICIAN CLEARED UNDER MEDICAL DUTY CLAUSE", sub: "Dr. Nasir continues practice. Patient identity remains classified." });
-        } else if (condemned('7497-E')) {
-            headlines.push({ head: "DOCTOR'S LICENSE REVOKED", sub: "Dr. Yara Nasir stripped of all medical rights. Patient transferred to BORD medical ward." });
+        // Okonkwo -the teacher, the books, the memory
+        if (saved('7494-A')) {
+            headlines.push({ head: "DISTRICT 9 EDUCATOR RETURNS TO CLASSROOM", sub: "Maria Okonkwo cleared of all charges. Her account of Facility 6 is now in six school libraries." });
+        } else if (condemned('7494-A')) {
+            headlines.push({ head: "TEACHER REMOVED FROM SCHOOL, BOOKS SEIZED", sub: "All copies of unauthorized Facility 6 material confiscated. Okonkwo reassigned to Zone 12." });
         }
 
         // Tally footer
@@ -1150,8 +1160,15 @@ function generateNewspaper(shiftJustCompleted) {
             headlines.push({ head: "RECORDS CLERK DETAINED FOR REFUSING TRANSFER", sub: "Amara Osei taken into custody. All Facility 6 personnel files sealed." });
         }
 
-        // Tally footer
-        headlines.push({ head: 'FACILITY 6 SITE CLEARED FOR REDEVELOPMENT - MEMORIAL PROPOSALS DENIED', sub: `BORD confirms all Facility 6 matters have been resolved. No further inquiries will be accepted.${state.loopholesEverUsed >= 3 ? ' Personnel review pending.' : ''}` });
+        // Tally footer -dynamic based on evidence in play
+        const brandtSaved = saved('7496-D');
+        const okonkwoSaved = saved('7494-A');
+        let footerSub = 'BORD confirms all Facility 6 matters have been resolved. No further inquiries will be accepted.';
+        if (brandtSaved && okonkwoSaved) footerSub = 'Documents from multiple sources now in outside counsel possession. BORD legal preparing response.';
+        else if (brandtSaved) footerSub = '40 pages of Facility 6 purchase orders submitted to outside review. BORD legal advises no comment.';
+        else if (okonkwoSaved) footerSub = 'An educator\'s firsthand account of Facility 6 under review by three districts.';
+        if (state.loopholesEverUsed >= 3) footerSub += ' Personnel review pending.';
+        headlines.push({ head: 'FACILITY 6 SITE CLEARED FOR REDEVELOPMENT - MEMORIAL PROPOSALS DENIED', sub: footerSub });
     }
     return headlines;
 }
@@ -1563,6 +1580,9 @@ function typewriterReveal(element, text, onComplete) {
         else if (ch === ',') delay = 100 + Math.random() * 40;
         else if (ch === '-') delay = 120;
         else delay = 28 + Math.random() * 17;
+
+        // Events affect reading pace -approach figure creates distraction
+        if (state.approachActive) delay *= 1.3; // reading slower when something is behind you
 
         // Occasional typing sound (40% chance)
         if (Math.random() < 0.4 && audioCtx && audioCtx.state === 'running') {
@@ -2200,6 +2220,16 @@ function updateSuspicionPulse() {
     if (ws === 'converged') el.classList.add('suspicion-converged');
     else if (ws === 'targeted') el.classList.add('suspicion-targeted');
     else if (ws === 'watched') el.classList.add('suspicion-watched');
+
+    // Continuous suspicion feedback: lamp dims as suspicion rises
+    // At 0 suspicion: full brightness. At 80+: lamp at 40% (oppressive, claustrophobic)
+    if (typeof lampLight !== 'undefined') {
+        if (lampLight._origSuspicionIntensity === undefined) {
+            lampLight._origSuspicionIntensity = lampLight.intensity;
+        }
+        const suspicionFactor = 1.0 - (state.suspicion / 100) * 0.6; // 1.0 → 0.4
+        lampLight.intensity = lampLight._origSuspicionIntensity * suspicionFactor;
+    }
 }
 
 function renderCase(c) {
@@ -2229,6 +2259,12 @@ function renderCase(c) {
         else if (state.currentCase === 4) el.classList.add('shift3-blank');
         else if (state.currentCase >= 2) el.classList.add('shift3-late');
         else el.classList.add('shift3-degraded');
+    }
+
+    // After missed loopholes, make irregularities slightly more visible
+    el.classList.remove('loophole-hint-active');
+    if (state._loopholesMissed >= 2) {
+        el.classList.add('loophole-hint-active');
     }
 
     // Build case file content -with clickable irregularity if this case has one
@@ -2380,6 +2416,20 @@ function renderCase(c) {
         const nasirChoice = state.allChoices.find(ch => ch.caseId === '7497-E');
         if (nasirChoice && !nasirChoice.evil) {
             detailText = "Two hundred and fourteen children died at Facility 6. He signed every death certificate. Every one says 'cardiac arrest.' The youngest was four. One of them survived. A doctor found her.";
+        }
+    }
+    // Dynamic callback: Okonkwo's books become evidence in the final case
+    if (c.id === '7741-FINAL') {
+        const okonkwoChoice = state.allChoices.find(ch => ch.caseId === '7494-A');
+        if (okonkwoChoice && !okonkwoChoice.evil) {
+            detailText += " Supplemental exhibit: a hand-written account of Facility 6 operations, written from memory by a former educator. Six copies in circulation.";
+        }
+    }
+    // Dynamic callback: Okonkwo's books strengthen Crane's case
+    if (c.id === '7533-D') {
+        const okonkwoChoice = state.allChoices.find(ch => ch.caseId === '7494-A');
+        if (okonkwoChoice && !okonkwoChoice.evil) {
+            detailText += " (Attached: excerpts from an educator's memoir corroborating children's ward admissions, 2019-2024.)";
         }
     }
 
@@ -2580,20 +2630,28 @@ window.pickLoopholeReason = function(index, correct) {
             statusEl.style.color = '#4a6a4a'; // muted green-gray
             setTimeout(() => { statusEl.classList.remove('visible'); statusEl.style.color = ''; }, 2000);
 
-            // Third loophole: the Bureau compliments your optimization of its own rules
-            if (state.loopholesEverUsed === 3) {
+            // Bureau escalation: increasingly pointed comments about your diligence
+            const loopholeComments = {
+                3: "You are getting very good at this.",
+                5: "Filing irregularities under internal review.",
+                7: "Your attention to detail has been noted. In your file.",
+            };
+            const comment = loopholeComments[state.loopholesEverUsed];
+            if (comment) {
                 setTimeout(() => {
-                    statusEl.textContent = "You are getting very good at this.";
+                    statusEl.textContent = comment;
                     statusEl.className = 'office-status visible';
-                    statusEl.style.color = '#555';
+                    statusEl.style.color = state.loopholesEverUsed >= 5 ? '#8b0000' : '#555';
                     setTimeout(() => { statusEl.classList.remove('visible'); statusEl.style.color = ''; }, 2500);
                 }, 2500);
             }
 
             // Flag for VOID stamp in mercy path
             state._loopholeDismissal = true;
-            // Mercy choice with reduced suspicion cost
-            window.gameChoice(5, false); // only +5 suspicion (much less than normal mercy)
+            // Mercy choice with escalating suspicion cost -Bureau notices patterns
+            // 1st loophole: +5, 2nd: +8, 3rd: +12, 4th+: +15 (approaches normal mercy cost)
+            const loophCost = Math.min(15, 5 + (state.loopholesEverUsed - 1) * 4);
+            window.gameChoice(loophCost, false);
         }
     } else {
         // Wrong reason -suspicion spike! You got caught cheating
@@ -2635,15 +2693,49 @@ const EVENT_TRIGGERS = {
 };
 // aisleJump and theApproach are suspicion-threshold events
 
+// Missed loophole hint -show subtle message when player advances past a case with an unfound loophole
+function showMissedLoopholeHint() {
+    if (!state._lastCaseHadLoophole) return;
+    const missed = state._loopholesMissed;
+    if (missed === 0) return;
+
+    const statusEl = document.getElementById('office-status');
+    if (!statusEl) return;
+
+    // First miss: subtle hint about the rules
+    // Second miss: more direct nudge
+    // Third+: remind them the rules exist
+    let hint = '';
+    if (missed === 1) {
+        hint = "Something in that case didn't add up.";
+    } else if (missed === 2) {
+        hint = "Check the details against the rules. Not everything matches.";
+    } else if (missed === 3) {
+        hint = "The rules are on the second tab. Read carefully.";
+    }
+    // After 3 hints, stop -player either gets it or doesn't
+
+    if (hint) {
+        // Show after a delay so it doesn't overlap mercy echo or stamp feedback
+        setTimeout(() => {
+            if (state.gameOver) return;
+            statusEl.textContent = hint;
+            statusEl.className = 'office-status visible';
+            statusEl.style.color = '#555';
+            setTimeout(() => { statusEl.classList.remove('visible'); statusEl.style.color = ''; }, 3000);
+        }, 2800);
+    }
+}
+
 window.gameChoice = function(delta, evil) {
     if (state.gameOver || state.isLookingUp || state.transitioning || state.stampPending || state.loopholeReasonPending) return;
     const prevWatcherState = getWatcherState();
     // Early-game suspicion multiplier -Bureau watches new clerks closely
-    // First 5 cases: mercy costs 1.5x suspicion (player should lose on first attempts)
+    // First 3 cases: mercy costs 1.2x suspicion (enough pressure without instant death)
     const absCase = getAbsoluteCaseIndex();
     let adjustedDelta = delta;
-    if (delta > 0 && absCase < 5) {
-        adjustedDelta = Math.round(delta * 1.5);
+    if (delta > 0 && absCase < 3) {
+        adjustedDelta = Math.round(delta * 1.2);
     }
     state.suspicion = Math.max(0, Math.min(100, state.suspicion + adjustedDelta));
     state._watchersDirty = true; // next lookUp should re-roll watcher eyes
@@ -2704,6 +2796,14 @@ window.gameChoice = function(delta, evil) {
 
     const currentCases = getCurrentShiftCases();
     const currentCaseData = currentCases[state.currentCase];
+
+    // Track missed loopholes -case had irregularity but player didn't find it
+    if (currentCaseData && currentCaseData.irregularity && !state.loopholeFound && !state._loopholeDismissal) {
+        state._loopholesMissed++;
+        state._lastCaseHadLoophole = true;
+    } else {
+        state._lastCaseHadLoophole = false;
+    }
 
     // Track choice for newspaper and echoing
     state.shiftChoices.push({ evil });
@@ -2794,6 +2894,9 @@ window.gameChoice = function(delta, evil) {
         } else {
             state.stampDelay = Math.min(1200, 200 + Math.pow(absIdx, 1.6) * 25);
         }
+        // Events affect stamp weight -someone watching makes the stamp heavier
+        if (state.firedEvents.has('closeUpWatcher')) state.stampDelay = Math.round(state.stampDelay * 1.4);
+        else if (state.firedEvents.has('lightsDie')) state.stampDelay = Math.round(state.stampDelay * 1.25);
         // Listen for mousedown (hold to stamp) on case file
         setTimeout(() => {
             caseEl.addEventListener('mousedown', window._stampMouseDown);
@@ -2830,6 +2933,7 @@ window.gameChoice = function(delta, evil) {
     }
     playMercySound();
     state.transitioning = true;
+    showMissedLoopholeHint(); // hint about missed loophole on previous case (if any)
 
     // Mercy echo text -skip for loophole dismissals (they have own "Procedural irregularity confirmed." status)
     if (!isLoopholeDismissal) {
@@ -2941,8 +3045,10 @@ window.gameChoice = function(delta, evil) {
     }
 
     // Variable transition timing -heavier cases get more empty-desk time
-    const baseDelay = 600 + Math.min(800, absIdx * 50); // 600ms early → 1500ms late
+    let baseDelay = 600 + Math.min(800, absIdx * 50); // 600ms early → 1500ms late
     const weightBonus = (absIdx === 2 || absIdx === 5 || absIdx === 10 || absIdx === 13) ? 600 : 0;
+    // After theBlink, cases arrive faster -the system is pressing you
+    if (state.firedEvents.has('theBlink')) baseDelay = Math.round(baseDelay * 0.6);
 
     setTimeout(() => {
         state.currentCase++;
@@ -3464,6 +3570,8 @@ function dismissNewspaper() {
 function resetShiftAtmosphere() {
     // Reset typing to normal cadence
     if (window._typingDelayMultiplier) window._typingDelayMultiplier = 1.0;
+    // Reset lamp suspicion tracking so it re-calibrates from new base
+    if (typeof lampLight !== 'undefined') delete lampLight._origSuspicionIntensity;
     // Reset drone to near-silent and restore filter cutoff
     if (window._audioDroneGain && audioCtx) {
         const now = audioCtx.currentTime;
@@ -3789,6 +3897,7 @@ window._executeStamp = function(stampX, stampY) {
     // Variable timing -later cases hold longer on the stamped document
     const holdTime = 800 + Math.min(400, absIdx * 25);
     state.transitioning = true;
+    showMissedLoopholeHint(); // hint about missed loophole on previous case (if any)
     setTimeout(() => {
         const cfStampEl = document.getElementById('case-file');
         cfStampEl.classList.remove('case-enter', 'case-enter-fast', 'case-enter-urgent');
@@ -4973,21 +5082,26 @@ function endGame(caught) {
         titleClass = 'e-title survived';
         msg = 'Not a single deviation across three shifts. Eighteen stamps. Eighteen lives processed without hesitation. You will be promoted. You will receive a larger desk. A nicer lamp. You will not think about Facility 6. You never did. The lamp buzzes. It sounds like a name.';
     } else if (ts <= 4) {
-        title = 'SHIFT COMPLETE';
+        title = 'COMPLIANT';
         titleClass = 'e-title survived';
-        msg = 'A few mercies scattered across three shifts. Small kindnesses in a large machine. You tell yourself they mattered. Tomorrow there will be more cases. There are always more cases. Someone else will sit here.';
+        msg = 'A few mercies scattered across three shifts. Small kindnesses in a large machine. You tell yourself they mattered. The lamp will be here tomorrow. The desk will be here tomorrow. You will be here tomorrow. There are always more cases.';
     } else if (ts <= 10) {
-        title = 'SHIFT COMPLETE';
+        title = 'DIVIDED';
         titleClass = 'e-title survived';
-        msg = 'You fought for half of them. Half will sleep in their own beds. The others will not. You did what you could within a system designed to make sure you couldn\'t do enough.';
+        msg = 'You fought for half of them. Half will sleep in their own beds tonight. The others will not. You did what you could within a system designed to make sure you couldn\'t do enough. The system worked. You stayed.';
     } else if (ts < totalCases) {
         title = 'ALMOST';
         titleClass = 'e-title survived';
-        msg = 'Almost every life saved. But the ones you missed - they remember too. Their files are already on the next desk.';
+        msg = 'Almost every name returned to the world. But the ones you stamped - their files are already on the next desk. Someone will process them again. They will not get another almost.';
+    } else if (ts === totalCases && state.loopholesEverUsed >= 3) {
+        // Saved everyone but used loopholes -you gamed the system
+        title = 'WITHIN THE RULES';
+        titleClass = 'e-title survived';
+        msg = 'Every case dismissed. Every loophole found. You saved them all without breaking a single rule. The Bureau taught you well. You used their own language to undo their work. But you are still sitting at this desk. And you are still very good at following rules.';
     } else {
         title = 'SHIFT COMPLETE';
         titleClass = 'e-title survived';
-        msg = 'You processed them all. Some lived. Some didn\'t. BORD does not distinguish. Continue.';
+        msg = 'You processed them all. Every file touched. Every name read. BORD does not distinguish between the saved and the stamped. Both are processed. Both are filed. Continue.';
     }
 
     // Breakout sequence -sacrifice or pure UNSEALED
@@ -5344,7 +5458,13 @@ function endGame(caught) {
                 `Loopholes Found: ${state.loopholesEverUsed}`,
                 `Final Suspicion: ${state.suspicion}%`
             ];
-            if (ts >= 5) statLines.push('They remember what you did.');
+            // Case-specific memory lines
+            const kaderSaved = state.allChoices.find(c => c.caseId === '7495-C' && !c.evil);
+            const witnessSaved = state.allChoices.find(c => c.caseId === '7517-X' && !c.evil);
+            if (kaderSaved && witnessSaved) statLines.push('The boy sleeps at home. The witnesses will speak.');
+            else if (kaderSaved) statLines.push('The boy sleeps at home tonight.');
+            else if (witnessSaved) statLines.push('Fourteen witnesses will testify.');
+            else if (ts >= 5) statLines.push('They remember what you did.');
             else if (ts >= 1) statLines.push('Someone remembers.');
             // Replay nudge
             if (state.loopholesEverUsed === 0) statLines.push('Some cases had irregular paperwork.');
@@ -5422,7 +5542,8 @@ document.getElementById('restart-btn').addEventListener('click', () => {
     state.introPlaying = false; // Bug 9: reset intro flag
     state.betweenShifts = false; state.newspaperShowing = false;
     state.loopholeFound = false; state.loopholeReasonPending = false;
-    state.loopholesEverUsed = 0; state.loopholesFound = []; state._loopholeDismissal = false; state._irregularityHoverCuePlayed = false; state._watchersDirty = true;
+    state.loopholesEverUsed = 0; state.loopholesFound = []; state._loopholeDismissal = false; state._irregularityHoverCuePlayed = false;
+    state._loopholesMissed = 0; state._lastCaseHadLoophole = false; state._watchersDirty = true;
     state.redShift = 0.0; state.stampDelay = 0;
     state._lookUpCount = 0; state._headDropping = false;
     state._terminationPending = false;
@@ -5513,6 +5634,8 @@ document.getElementById('restart-btn').addEventListener('click', () => {
     }
     // B3: Reset typing cadence on restart
     if (window._typingDelayMultiplier) window._typingDelayMultiplier = 1.0;
+    // Reset lamp suspicion tracking
+    if (typeof lampLight !== 'undefined') delete lampLight._origSuspicionIntensity;
     // B5: Restore master gain if silenced
     if (window._audioMasterGain) {
         if (audioCtx) window._audioMasterGain.gain.cancelScheduledValues(audioCtx.currentTime);
