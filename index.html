@@ -736,6 +736,7 @@ const state = {
     stampDelay: 0,             // ms delay before stamp activates (grows per case)
     _gameEpoch: 0,            // incremented on restart, guards stale endGame timeouts
     _vossCondemned: false,    // player forwarded their own case to oversight
+    _knockEnding: false,      // true during the knock-at-the-door ending sequence
 };
 
 // ============================================================
@@ -1710,22 +1711,22 @@ const stamperBase = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.015, 0.03), new
 stamperBase.position.set(0.22, 0.783, -0.15);
 scene.add(stamperBase);
 
-// Terminal nameplate - NP-L3-07
+// Terminal nameplate - NP-L3-07 (subtle desk detail, becomes narrative anchor at case 7514-C)
 const npCanvas = document.createElement('canvas');
 npCanvas.width = 128; npCanvas.height = 32;
 const npCtx = npCanvas.getContext('2d');
 npCtx.fillStyle = '#2a2a2a';
 npCtx.fillRect(0, 0, 128, 32);
-npCtx.fillStyle = '#888888';
+npCtx.fillStyle = '#aaaaaa';
 npCtx.font = 'bold 16px Courier';
 npCtx.textAlign = 'center';
 npCtx.textBaseline = 'middle';
 npCtx.fillText('NP-L3-07', 64, 16);
 const npTexture = new THREE.CanvasTexture(npCanvas);
-const npMat = new THREE.MeshStandardMaterial({ map: npTexture, roughness: 0.4, metalness: 0.6 });
-const nameplate = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.008, 0.03), npMat);
+const npMat = new THREE.MeshStandardMaterial({ map: npTexture, roughness: 0.4, metalness: 0.6, emissive: 0x333333, emissiveIntensity: 0.8 });
+const nameplate = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.012, 0.04), npMat);
 nameplate.position.set(0.35, 0.78, -0.05);
-nameplate.rotation.x = -0.3;
+nameplate.rotation.x = -0.15;
 scene.add(nameplate);
 
 // ============================================================
@@ -3253,6 +3254,119 @@ function runShiftOpeningText(isShift2, isShift3, statusEl) {
 // ============================================================
 let _coffinRoomMeshes = []; // track for cleanup on restart
 
+// COLLECTED ending -knock at the door after silencing 14 witnesses
+function triggerKnockEnding() {
+    state._knockEnding = true;
+    state.gameOver = true;
+    state.transitioning = true;
+    try { localStorage.setItem('bord_played', 'true'); } catch(e) {}
+    if (_typewriterTimer) { clearTimeout(_typewriterTimer); _typewriterTimer = null; }
+
+    // Hide case file and game UI
+    const cfEl = document.getElementById('case-file');
+    cfEl.classList.remove('case-enter', 'case-enter-fast', 'case-enter-urgent');
+    cfEl.classList.add('hidden');
+    document.getElementById('look-hint').style.display = 'none';
+    if (document.getElementById('lateral-hint')) document.getElementById('lateral-hint').style.display = 'none';
+    approachFigure.visible = false;
+    state.approachActive = false;
+
+    // Phase 1: Complete silence. Empty desk. 2 seconds.
+    if (window._typingDelayMultiplier) window._typingDelayMultiplier = 999;
+    audioSilence(2000, () => {
+        if (!state._knockEnding) return;
+        // Phase 2: Three knocks from behind
+        playDoorKnock(() => {
+            if (!state._knockEnding) return;
+            // Phase 3: Dead silence. 3 seconds.
+            audioSilence(3000, () => {
+                if (!state._knockEnding) return;
+                // Phase 4: Door latch
+                playDoorLatch();
+
+                // Phase 5: Involuntary camera lift (1.5s after latch)
+                setTimeout(() => {
+                    if (!state._knockEnding) return;
+                    const liftStart = performance.now();
+                    const liftDuration = 2000;
+                    const startRot = camera.rotation.x;
+                    const endRot = -0.6; // partial lift from desk (-0.85) - you're trying not to look
+                    function animateLift(now) {
+                        if (!state._knockEnding) return;
+                        const t = Math.min((now - liftStart) / liftDuration, 1);
+                        const ease = t * t * (3 - 2 * t); // smoothstep
+                        camera.rotation.x = startRot + (endRot - startRot) * ease;
+                        if (t < 1) requestAnimationFrame(animateLift);
+                    }
+                    requestAnimationFrame(animateLift);
+                }, 1500);
+
+                // Phase 6: Footsteps (2.5s after latch)
+                setTimeout(() => {
+                    if (!state._knockEnding) return;
+                    playHeavyFootsteps(3, () => {
+                        if (!state._knockEnding) return;
+                        // Phase 7: Final silence. 2 seconds.
+                        setTimeout(() => {
+                            if (!state._knockEnding) return;
+                            // Phase 8: Lamp flickers and dies
+                            if (typeof lampLight !== 'undefined') {
+                                const orig = lampLight.intensity;
+                                lampLight.intensity = orig * 0.3;
+                                setTimeout(() => { lampLight.intensity = orig * 0.7; }, 100);
+                                setTimeout(() => { lampLight.intensity = orig * 0.1; }, 250);
+                                setTimeout(() => {
+                                    lampLight.intensity = 0;
+                                    // Electrical pop on lamp death
+                                    if (audioCtx && audioCtx.state === 'running') {
+                                        const now = audioCtx.currentTime;
+                                        const popSize = Math.floor(audioCtx.sampleRate * 0.02);
+                                        const popBuf = audioCtx.createBuffer(1, popSize, audioCtx.sampleRate);
+                                        const pd = popBuf.getChannelData(0);
+                                        for (let i = 0; i < popSize; i++) pd[i] = (Math.random() * 2 - 1) * Math.exp(-i / (popSize * 0.1));
+                                        const popSrc = audioCtx.createBufferSource(); popSrc.buffer = popBuf;
+                                        const popG = audioCtx.createGain(); popG.gain.value = 0.04;
+                                        const popF = audioCtx.createBiquadFilter(); popF.type = 'bandpass'; popF.frequency.value = 2000; popF.Q.value = 2;
+                                        popSrc.connect(popF); popF.connect(popG);
+                                        popG.connect(window._audioMasterGain || audioCtx.destination);
+                                        popSrc.start(now); popSrc.stop(now + 0.03);
+                                    }
+                                    // Phase 9: Fade all audio
+                                    if (audioCtx && window._audioMasterGain) {
+                                        const now = audioCtx.currentTime;
+                                        window._audioMasterGain.gain.cancelScheduledValues(now);
+                                        window._audioMasterGain.gain.setValueAtTime(window._audioMasterGain.gain.value, now);
+                                        window._audioMasterGain.gain.linearRampToValueAtTime(0.001, now + 4);
+                                    }
+                                    // Phase 10: End screen after 2s darkness
+                                    setTimeout(() => { showKnockEndScreen(); }, 2000);
+                                }, 400);
+                            } else {
+                                setTimeout(() => { showKnockEndScreen(); }, 2000);
+                            }
+                        }, 2000);
+                    });
+                }, 2500);
+            });
+        });
+    });
+}
+
+function showKnockEndScreen() {
+    const endEl = document.getElementById('end-screen');
+    document.getElementById('end-title').textContent = 'COLLECTED';
+    document.getElementById('end-title').className = 'e-title caught';
+    document.getElementById('end-stats').innerHTML =
+        `Shift ${state.currentShift + 1} completed<br>` +
+        `Cases processed: ${state.allChoices.length}<br>` +
+        `Citizens saved: ${state.totalSaved}<br>` +
+        `Citizens condemned: ${state.totalCondemned}<br>` +
+        `Witnesses silenced: 14`;
+    document.getElementById('end-msg').textContent = 'You erased fourteen names. Someone wrote them down again. They came for the page. They came for the pen. They came for the hand that held it.';
+    endEl.style.display = 'flex';
+    setTimeout(() => { endEl.style.opacity = '1'; }, 50);
+}
+
 function triggerVossConfinement() {
     state.gameOver = true;
     state.transitioning = true;
@@ -3911,6 +4025,12 @@ window._executeStamp = function(stampX, stampY) {
             if (state.currentCase >= currentCases.length) {
                 // End of shift
                 if (state.currentShift < allShifts.length - 1) {
+                    // Knock ending: silencing 14 witnesses triggers collection before newspaper
+                    const witnessChoice = state.allChoices.find(c => c.caseId === '7517-X');
+                    if (witnessChoice && witnessChoice.evil && state.currentShift === 1) {
+                        triggerKnockEnding();
+                        return;
+                    }
                     showNewspaper(state.currentShift);
                 } else {
                     endGame(false);
@@ -5549,6 +5669,7 @@ document.getElementById('restart-btn').addEventListener('click', () => {
     state._terminationPending = false;
     if (state._terminationTimeout) { clearTimeout(state._terminationTimeout); state._terminationTimeout = null; }
     state._vossCondemned = false;
+    state._knockEnding = false;
     _enterHolding = false; _enterHoldStart = 0; // Bug 11: reset Enter hold state
     // Stop any lingering stamp hold tone / name cycling
     if (_stampHoldOsc) { try { _stampHoldOsc.stop(); } catch(e) {} _stampHoldOsc = null; _stampHoldGain = null; }
@@ -6083,6 +6204,100 @@ function audioSilence(durationMs, callback) {
     }, 200 + durationMs);
 }
 
+// COLLECTED ending audio -three distinct sounds for the knock sequence
+function playDoorKnock(callback) {
+    if (!audioCtx || audioCtx.state !== 'running') { if (callback) callback(); return; }
+    const mg = window._audioMasterGain || audioCtx.destination;
+    const knockTimes = [0, 0.5, 1.1]; // irregular spacing feels human
+
+    knockTimes.forEach((time, i) => {
+        const now = audioCtx.currentTime + time;
+        // Low impact thud (deeper than stamp, 45Hz dropping)
+        const thud = audioCtx.createOscillator();
+        thud.type = 'sine';
+        thud.frequency.value = 45 - i * 3;
+        const thudG = audioCtx.createGain();
+        thudG.gain.setValueAtTime(0.15 + i * 0.05, now);
+        thudG.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+        thud.connect(thudG); thudG.connect(mg);
+        thud.start(now); thud.stop(now + 0.15);
+        // Wood crack noise
+        const crackSize = Math.floor(audioCtx.sampleRate * 0.04);
+        const crackBuf = audioCtx.createBuffer(1, crackSize, audioCtx.sampleRate);
+        const cd = crackBuf.getChannelData(0);
+        for (let j = 0; j < crackSize; j++) cd[j] = (Math.random() * 2 - 1) * Math.exp(-j / (crackSize * 0.15));
+        const crackSrc = audioCtx.createBufferSource(); crackSrc.buffer = crackBuf;
+        const crackF = audioCtx.createBiquadFilter(); crackF.type = 'bandpass'; crackF.frequency.value = 400; crackF.Q.value = 2;
+        const crackG = audioCtx.createGain(); crackG.gain.setValueAtTime(0.08 + i * 0.03, now);
+        crackG.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+        crackSrc.connect(crackF); crackF.connect(crackG); crackG.connect(mg);
+        crackSrc.start(now); crackSrc.stop(now + 0.08);
+        // Resonant tail (door vibration)
+        const tailSize = Math.floor(audioCtx.sampleRate * 0.25);
+        const tailBuf = audioCtx.createBuffer(1, tailSize, audioCtx.sampleRate);
+        const td = tailBuf.getChannelData(0);
+        for (let j = 0; j < tailSize; j++) td[j] = (Math.random() * 2 - 1) * Math.exp(-(j / audioCtx.sampleRate) * 8) * 0.3;
+        const tailSrc = audioCtx.createBufferSource(); tailSrc.buffer = tailBuf;
+        const tailF = audioCtx.createBiquadFilter(); tailF.type = 'lowpass'; tailF.frequency.value = 250; tailF.Q.value = 3;
+        const tailG = audioCtx.createGain(); tailG.gain.value = 0.04 + i * 0.02;
+        tailSrc.connect(tailF); tailF.connect(tailG); tailG.connect(mg);
+        tailSrc.start(now + 0.02); tailSrc.stop(now + 0.3);
+    });
+    if (callback) setTimeout(callback, (knockTimes[2] + 0.4) * 1000);
+}
+
+function playDoorLatch() {
+    if (!audioCtx || audioCtx.state !== 'running') return;
+    const mg = window._audioMasterGain || audioCtx.destination;
+    const now = audioCtx.currentTime;
+    // Metallic click
+    const click = audioCtx.createOscillator();
+    click.type = 'sine'; click.frequency.value = 1800;
+    const cg = audioCtx.createGain();
+    cg.gain.setValueAtTime(0.06, now);
+    cg.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+    click.connect(cg); cg.connect(mg);
+    click.start(now); click.stop(now + 0.05);
+    // Scrape (filtered noise, descending)
+    const scrapeSize = Math.floor(audioCtx.sampleRate * 0.3);
+    const scrapeBuf = audioCtx.createBuffer(1, scrapeSize, audioCtx.sampleRate);
+    const sd = scrapeBuf.getChannelData(0);
+    for (let i = 0; i < scrapeSize; i++) sd[i] = (Math.random() * 2 - 1) * Math.exp(-i / (scrapeSize * 0.3));
+    const scrapeSrc = audioCtx.createBufferSource(); scrapeSrc.buffer = scrapeBuf;
+    const scrapeF = audioCtx.createBiquadFilter();
+    scrapeF.type = 'bandpass'; scrapeF.frequency.value = 600; scrapeF.Q.value = 4;
+    const scrapeG = audioCtx.createGain(); scrapeG.gain.value = 0.03;
+    scrapeSrc.connect(scrapeF); scrapeF.connect(scrapeG); scrapeG.connect(mg);
+    scrapeSrc.start(now + 0.05); scrapeSrc.stop(now + 0.35);
+}
+
+function playHeavyFootsteps(count, callback) {
+    if (!audioCtx || audioCtx.state !== 'running') { if (callback) callback(); return; }
+    const mg = window._audioMasterGain || audioCtx.destination;
+    for (let i = 0; i < count; i++) {
+        const time = audioCtx.currentTime + i * 0.8;
+        // Impact thud
+        const thud = audioCtx.createOscillator();
+        thud.type = 'sine'; thud.frequency.value = 60;
+        const tg = audioCtx.createGain();
+        tg.gain.setValueAtTime(0.04 + i * 0.03, time);
+        tg.gain.exponentialRampToValueAtTime(0.001, time + 0.15);
+        thud.connect(tg); tg.connect(mg);
+        thud.start(time); thud.stop(time + 0.2);
+        // Shoe scrape
+        const scrapeSize = Math.floor(audioCtx.sampleRate * 0.08);
+        const scrapeBuf = audioCtx.createBuffer(1, scrapeSize, audioCtx.sampleRate);
+        const sd = scrapeBuf.getChannelData(0);
+        for (let j = 0; j < scrapeSize; j++) sd[j] = (Math.random() * 2 - 1) * Math.exp(-j / (scrapeSize * 0.2));
+        const ss = audioCtx.createBufferSource(); ss.buffer = scrapeBuf;
+        const sf = audioCtx.createBiquadFilter(); sf.type = 'highpass'; sf.frequency.value = 1500;
+        const sg = audioCtx.createGain(); sg.gain.value = 0.02 + i * 0.01;
+        ss.connect(sf); sf.connect(sg); sg.connect(mg);
+        ss.start(time + 0.05); ss.stop(time + 0.15);
+    }
+    if (callback) setTimeout(callback, count * 800 + 200);
+}
+
 // ============================================================
 // ANIMATION LOOP
 // ============================================================
@@ -6101,6 +6316,8 @@ function animate() {
 
     // Smooth camera look - slow dread when looking up, faster when looking down
     // targetLook: 1 = looking up, 0 = desk, 0.6 = partial (head drop punishment), -0.5 = floor (termination)
+    // During knock ending, camera is controlled by triggerKnockEnding() directly
+    if (!state._knockEnding) {
     let targetX;
     if (state.targetLook === 1) targetX = UP_ROT_X;
     else if (state.targetLook === -0.5) targetX = -2.2; // head drops to floor - far below desk
@@ -6124,6 +6341,7 @@ function animate() {
         state._hesitationTimer = 0;
     }
     camera.rotation.x += (targetX - camera.rotation.x) * lookSpeed * dt;
+    }
 
     // Suspicion percentage -used by breathing, flicker, fog, etc.
     const suspPct = state.suspicion / 100;
@@ -6214,6 +6432,7 @@ animate();
     function resetAll() {
         state.suspicion = 0;
         state._vossCondemned = false;
+        state._knockEnding = false;
         state.firedEvents.clear();
         state.pendingEvents = [];
         state.approachLocked = false;
