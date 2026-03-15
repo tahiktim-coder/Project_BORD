@@ -182,6 +182,28 @@
             cursor:pointer; transition:all 0.3s ease; text-transform:uppercase; }
         .t-btn:hover { border-color:#8b0000; color:#aaa; background: rgba(139,0,0,0.05); }
 
+        /* Test mode panel (type 'test' on title screen) */
+        #test-panel {
+            position: fixed; top: 0; left: 0; z-index: 150;
+            width: 240px; height: 100%; background: rgba(0,0,0,0.92);
+            border-right: 1px solid #333; padding: 16px 12px;
+            font-family: 'Courier New', monospace; font-size: 11px; color: #aaa;
+            overflow-y: auto; display: none;
+        }
+        #test-panel.visible { display: block; }
+        #test-panel h3 { color: #8b0000; font-size: 11px; margin: 0 0 4px 0; letter-spacing: 0.12em; }
+        #test-panel .tp-sub { color: #555; font-size: 9px; margin-bottom: 12px; }
+        .tp-btn {
+            display: block; width: 100%; padding: 7px 8px; margin-bottom: 3px;
+            background: #111; border: 1px solid #2a2a2a; color: #bbb;
+            font-family: 'Courier New', monospace; font-size: 11px;
+            cursor: pointer; text-align: left; transition: all 0.15s ease;
+        }
+        .tp-btn:hover { background: #1a1a1a; border-color: #8b0000; color: #ddd; }
+        .tp-btn .tp-label { color: #8b0000; font-weight: bold; }
+        .tp-btn .tp-note { color: #555; font-size: 9px; display: block; margin-top: 2px; }
+        #test-panel .tp-sep { border-top: 1px solid #222; margin: 8px 0; }
+
         /* End screen */
         /* Debug test panel */
         #debug-panel {
@@ -547,6 +569,57 @@
         <div class="t-controls">SPACE - look up&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;1/2/3 - choose&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;TAB - manual&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;ENTER - stamp</div>
         <button class="t-btn" id="start-btn">Begin Shift</button>
     </div>
+</div>
+
+<div id="test-panel">
+    <h3>ENDING TESTER</h3>
+    <div class="tp-sub">Type 'test' on title screen</div>
+    <button class="tp-btn" data-ending="PROCESSED">
+        <span class="tp-label">PROCESSED</span>
+        <span class="tp-note">Caught. Head drop. All eyes converge.</span>
+    </button>
+    <button class="tp-btn" data-ending="EXEMPLARY">
+        <span class="tp-label">EXEMPLARY</span>
+        <span class="tp-note">All 18 evil. The promotion. Office stays lit.</span>
+    </button>
+    <button class="tp-btn" data-ending="COMPLIANT">
+        <span class="tp-label">COMPLIANT</span>
+        <span class="tp-note">0-4 saved. Terminated. Replacement arrives.</span>
+    </button>
+    <button class="tp-btn" data-ending="DIVIDED">
+        <span class="tp-label">DIVIDED</span>
+        <span class="tp-note">5-10 saved. Half-lights. Muffled stamps.</span>
+    </button>
+    <button class="tp-btn" data-ending="ALMOST">
+        <span class="tp-label">ALMOST</span>
+        <span class="tp-note">11-17 saved. Loud stamp. Camera flinch.</span>
+    </button>
+    <button class="tp-btn" data-ending="WITHIN THE RULES">
+        <span class="tp-label">WITHIN THE RULES</span>
+        <span class="tp-note">All saved, 3+ loopholes. The good clerk.</span>
+    </button>
+    <button class="tp-btn" data-ending="SHIFT COMPLETE">
+        <span class="tp-label">SHIFT COMPLETE</span>
+        <span class="tp-note">All saved, few loopholes. Garbled Shift 4.</span>
+    </button>
+    <div class="tp-sep"></div>
+    <button class="tp-btn" data-ending="UNSEALED">
+        <span class="tp-label">UNSEALED</span>
+        <span class="tp-note">Pure breakout. Lights return. Testimony.</span>
+    </button>
+    <button class="tp-btn" data-ending="SACRIFICE">
+        <span class="tp-label">SACRIFICE / UNSEALED</span>
+        <span class="tp-note">Caught breakout. PROCESSED morphs to UNSEALED.</span>
+    </button>
+    <div class="tp-sep"></div>
+    <button class="tp-btn" data-ending="CONFINED">
+        <span class="tp-label">CONFINED</span>
+        <span class="tp-note">Process yourself. Coffin room with bars.</span>
+    </button>
+    <button class="tp-btn" data-ending="COLLECTED">
+        <span class="tp-label">COLLECTED</span>
+        <span class="tp-note">Silence witnesses. Knock sequence. Door.</span>
+    </button>
 </div>
 
 <div id="debug-panel">
@@ -3782,7 +3855,7 @@ function playStampSound() {
     // Heavy percussive slam -low thud + sharp crack layered
     const thud = audioCtx.createOscillator(); thud.type = 'sine'; thud.frequency.value = 55;
     const thudG = audioCtx.createGain();
-    thudG.gain.setValueAtTime(0.12, now); // was 0.25 -reduced to sit with ambient
+    thudG.gain.setValueAtTime(0.2, now); // boosted for punch
     thudG.gain.exponentialRampToValueAtTime(0.001, now + reverbDecay);
     thud.connect(thudG); thudG.connect(mg); thud.start(now); thud.stop(now + reverbDecay + 0.1);
 
@@ -3792,7 +3865,7 @@ function playStampSound() {
     const crackData = crackBuf.getChannelData(0);
     for (let i = 0; i < crackSize; i++) crackData[i] = (Math.random() * 2 - 1) * Math.exp(-i / (crackSize * 0.05));
     const crackSrc = audioCtx.createBufferSource(); crackSrc.buffer = crackBuf;
-    const crackG = audioCtx.createGain(); crackG.gain.value = 0.06; // was 0.12
+    const crackG = audioCtx.createGain(); crackG.gain.value = 0.1; // boosted for punch
     const crackF = audioCtx.createBiquadFilter(); crackF.type = 'highpass'; crackF.frequency.value = 1500;
     crackSrc.connect(crackF); crackF.connect(crackG); crackG.connect(mg); crackSrc.start(now);
 
@@ -4856,7 +4929,7 @@ document.getElementById('start-btn').addEventListener('click', () => {
             // Intro sequence -typewriter-style status messages
             const introLines = [
                 "Terminal NP-L3-07. Shift authorized.",
-                "Tonight's cases have been reclassified. All originate from Facility 6.",
+                "Tonight's cases all originate from Facility 6.",
                 "Facility 6 was a BORD detention center. It was shut down last month. BORD says structural failure. The families say otherwise.",
                 "Process the cases. Follow the directive on your left. Consult the Bureau Manual.",
                 "BORD is watching. Begin."
@@ -6084,164 +6157,215 @@ function endGame(caught) {
 }
 
 document.getElementById('restart-btn').addEventListener('click', () => {
-    state._gameEpoch++; // Invalidate all pending endGame timeouts
-    state.currentCase = 0; state.currentShift = 0;
-    state.suspicion = 0; state.saved = 0;
-    state.condemned = 0; state.totalSaved = 0; state.totalCondemned = 0;
-    state.evilStreak = 0; state.shiftChoices = []; state.allChoices = [];
-    state.isLookingUp = false; state.targetLook = 0;
-    state.gameOver = false; state.pendingEvents = []; state.firedEvents.clear();
-    state.transitioning = false;
-    state.approachLocked = false;
-    state.deskVisitorActive = false;
-    state.deskVisitorDone = false;
-    state.breakoutPath = false;
-    state.stampPending = false;
-    state._stampHoldStart = 0; state._stampHolding = false; state._isFinalSilence = false;
-    state.introPlaying = false; // Bug 9: reset intro flag
-    state.betweenShifts = false; state.newspaperShowing = false;
-    state.loopholeFound = false; state.loopholeReasonPending = false;
-    state.loopholesEverUsed = 0; state.loopholesFound = []; state._loopholeDismissal = false; state._irregularityHoverCuePlayed = false;
-    state._loopholesMissed = 0; state._lastCaseHadLoophole = false; state._watchersDirty = true;
-    state.redShift = 0.0; state.stampDelay = 0;
-    state._lookUpCount = 0; state._headDropping = false;
-    state._terminationPending = false;
-    if (state._terminationTimeout) { clearTimeout(state._terminationTimeout); state._terminationTimeout = null; }
-    state._vossCondemned = false;
-    state._knockEnding = false;
-    _enterHolding = false; _enterHoldStart = 0; // Bug 11: reset Enter hold state
-    // Stop any lingering stamp hold tone / name cycling
-    if (_stampHoldOsc) { try { _stampHoldOsc.stop(); } catch(e) {} _stampHoldOsc = null; _stampHoldGain = null; }
-    if (_silenceNameInterval) { clearInterval(_silenceNameInterval); _silenceNameInterval = null; }
-    if (_typewriterTimer) { clearTimeout(_typewriterTimer); _typewriterTimer = null; }
-    const _scReset = document.getElementById('stamp-cursor');
-    _scReset.classList.remove('active', 'shaking');
-    _scReset.style.opacity = '';
-    const caseElForReset = document.getElementById('case-file');
-    caseElForReset.style.display = ''; // restore from termination display:none
-    caseElForReset.classList.remove('stamp-mode');
-    caseElForReset.removeEventListener('mousedown', window._stampMouseDown); // Bug 4: clean up listeners
-    caseElForReset.removeEventListener('mouseup', window._stampMouseUp);
-    document.getElementById('newspaper-overlay').style.display = 'none';
-    document.getElementById('newspaper-overlay').classList.remove('visible');
-    state.lateralLookAvailable = false;
-    state.lateralLookUsed = false;
-    state._lateralLookActive = false;
-    document.getElementById('lateral-hint').style.display = 'none';
-    camera.rotation.y = 0; // reset any lateral rotation
-    // Clear pending lightsDie timeouts
-    state._lightsDieTimeouts.forEach(id => clearTimeout(id));
-    state._lightsDieTimeouts = [];
-    // Reset head-drop flash and monitor
-    const flashResetEl = document.getElementById('head-drop-flash');
-    flashResetEl.style.display = 'none'; flashResetEl.style.opacity = '0';
-    document.getElementById('look-hint').style.color = '';
-    screenMat.emissive.setHex(0x1a3a1a);
-    screenMat.emissiveIntensity = 0.8;
-    camera.rotation.x = DESK_ROT_X;
-    camera.position.x = 0;
-    // Reset all workers (eyes, head tilt, rotation)
-    workers.forEach(w => {
-        w.userData.eyesActive = false;
-        w.userData.leftEye.material = eyeMatOff;
-        w.userData.rightEye.material = eyeMatOff;
-        w.userData.leftEye.visible = false;
-        w.userData.rightEye.visible = false;
-        w.userData.headRef.rotation.z = 0; // reset head tilt
-        w.rotation.y = 0; // reset torsoRotate
-    });
-    // Reset aisle watcher position
-    aisleWatcher.position.z = -8;
-    closeUpWatcher.visible = false;
-    closeUpWatcher.position.z = -2.5; // reset from theBlink cascade
-    // B6: Reset approach figure
-    approachFigure.visible = false;
-    approachFigure.position.z = -20;
-    state.approachActive = false;
-    state.approachZ = -20;
-    // Reset desk objects (deskVisitor event)
-    mugBody.position.set(-0.25, 0.812, -0.2);
-    mugHandle.position.set(-0.278, 0.812, -0.2);
-    coffee.position.set(-0.25, 0.847, -0.2);
-    stamperHandle.position.set(0.22, 0.81, -0.15);
-    stamperHandle.rotation.set(0, 0, 0);
-    penHolder.position.set(0.6, 0.83, -0.3);
-    penHolder.rotation.set(0, 0, 0);
-    memoPaper.position.set(-0.46, 0.79, -0.29);
-    memoPaper.rotation.y = -0.08;
-    // Reset lights (lightsDie event) -restore both PointLight intensity and fixture emissive
-    officeLights.forEach(rowData => {
-        rowData.dead = false;
-        rowData.groups.forEach(g => {
-            g.traverse(child => {
-                if (child instanceof THREE.PointLight && child.userData.origIntensity !== undefined) {
-                    child.userData.baseIntensity = child.userData.origIntensity;
-                    child.intensity = child.userData.origIntensity;
-                }
-                if (child.material && child.material.emissiveIntensity !== undefined && child.userData._origEmissive !== undefined) {
-                    child.material.emissiveIntensity = child.userData._origEmissive;
-                }
-            });
-        });
-    });
-    // Reset desk lamp (not in officeLights array -killed by standard ending)
-    if (lampLight.userData.origIntensity !== undefined) {
-        lampLight.userData.baseIntensity = lampLight.userData.origIntensity;
-        lampLight.intensity = lampLight.userData.origIntensity;
-    } else {
-        lampLight.userData.baseIntensity = 0.8;
-        lampLight.intensity = 0.8;
-    }
-    // B3: Reset typing cadence on restart
-    if (window._typingDelayMultiplier) window._typingDelayMultiplier = 1.0;
-    // Reset lamp suspicion tracking
-    if (typeof lampLight !== 'undefined') delete lampLight._origSuspicionIntensity;
-    // B5: Restore master gain if silenced
-    if (window._audioMasterGain) {
-        if (audioCtx) window._audioMasterGain.gain.cancelScheduledValues(audioCtx.currentTime);
-        window._audioMasterGain.gain.value = 1.0;
-    }
-    // Clean up coffin-room geometry if present
-    if (_coffinRoomMeshes.length > 0) {
-        _coffinRoomMeshes.forEach(mesh => {
-            scene.remove(mesh);
-            if (mesh.geometry) mesh.geometry.dispose();
-            if (mesh.material) mesh.material.dispose();
-        });
-        _coffinRoomMeshes = [];
-        // Restore all scene children visibility
-        scene.children.forEach(child => { child.visible = true; });
-        aisleWatcher.visible = false;
-        closeUpWatcher.visible = false;
-        approachFigure.visible = false;
-        shiftFigure.visible = false;
-        // Restore camera from coffin-room position
-        camera.position.set(0, 1.8, 0);
-        camera.rotation.set(DESK_ROT_X, 0, 0);
-        camera.rotation.order = 'XYZ';
-    }
-    // Reset end-screen background (coffin ending sets transparent)
-    document.getElementById('end-screen').style.background = '';
-    // Reset red corruption and fog density
-    noirPass.uniforms.redTint.value = 0.0;
-    scene.fog.density = 0.012;
-    // Reset case file shift classes
-    const caseResetEl = document.getElementById('case-file');
-    caseResetEl.classList.remove('mercy-dismiss', 'case-enter', 'case-enter-fast', 'case-enter-urgent',
-        'stamp-impact', 'shift3-degraded', 'shift3-late', 'shift3-blank', 'shift3-final');
-    caseResetEl.style.background = '';
-    caseResetEl.style.color = '';
-    caseResetEl.style.display = '';
-    document.getElementById('end-screen').style.opacity = '0';
-    setTimeout(() => {
-        document.getElementById('end-screen').style.display = 'none';
-        document.getElementById('look-hint').style.display = '';
-        state.started = true;
-        renderCase(getCurrentShiftCases()[0]);
-        updateWatchers();
-        aisleWatcher.visible = false;
-    }, 500);
+    // Full page reload for guaranteed clean state — no data leaks between sessions
+    location.reload();
 });
+
+// ============================================================
+// TEST MODE -type 'test' on title screen to open ending selector
+// ============================================================
+(function initTestMode() {
+    const sequence = ['t','e','s','t'];
+    let seqIdx = 0;
+    let _testActive = false;
+
+    document.addEventListener('keydown', e => {
+        // Only listen on title screen
+        if (state.started || _testActive) return;
+        const titleEl = document.getElementById('title-screen');
+        if (!titleEl || titleEl.style.display === 'none') return;
+
+        if (e.key.toLowerCase() === sequence[seqIdx]) {
+            seqIdx++;
+            if (seqIdx >= sequence.length) {
+                seqIdx = 0;
+                _testActive = true;
+                document.getElementById('test-panel').classList.add('visible');
+            }
+        } else {
+            seqIdx = 0;
+        }
+    });
+
+    // Ending button click handlers
+    document.querySelectorAll('#test-panel .tp-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const ending = btn.getAttribute('data-ending');
+            if (!ending) return;
+            startTestEnding(ending);
+        });
+    });
+
+    function startTestEnding(type) {
+        // Hide test panel
+        document.getElementById('test-panel').classList.remove('visible');
+
+        // Init audio on user gesture
+        initAudio();
+
+        // Start 3D scene
+        state.titleFading = true;
+        const cover = document.getElementById('canvas-cover');
+        if (cover) cover.remove();
+        document.getElementById('vignette').style.display = '';
+
+        // Quick-fade title
+        const titleEl = document.getElementById('title-screen');
+        titleEl.classList.add('fade-out');
+
+        setTimeout(() => {
+            titleEl.style.display = 'none';
+            if (typeof titleAnimId !== 'undefined' && titleAnimId) cancelAnimationFrame(titleAnimId);
+
+            // Show UI overlay (endings expect it)
+            document.getElementById('ui-overlay').style.display = '';
+            document.getElementById('case-file').classList.add('hidden');
+            document.getElementById('look-hint').style.display = 'none';
+
+            state.started = true;
+            state.titleFading = false;
+            state.currentShift = 2; // simulate late-game
+
+            // Build dummy allChoices for stamp archive
+            const totalCases = allShifts.reduce((sum, s) => sum + s.length, 0);
+            const allCasesFlat = allShifts.flat();
+
+            // Wait a beat for scene to render
+            setTimeout(() => {
+                configureAndFireEnding(type, totalCases, allCasesFlat);
+            }, 500);
+        }, 300);
+    }
+
+    function configureAndFireEnding(type, totalCases, allCasesFlat) {
+        switch (type) {
+            case 'PROCESSED': {
+                state.totalSaved = 5;
+                state.totalCondemned = 13;
+                state.breakoutPath = false;
+                state.suspicion = 100;
+                // Mixed choices — some condemned for archive
+                state.allChoices = allCasesFlat.map((c, i) => ({
+                    evil: i >= 5, caseId: c.id
+                }));
+                endGame(true);
+                break;
+            }
+            case 'EXEMPLARY': {
+                state.totalSaved = 0;
+                state.totalCondemned = totalCases;
+                state.breakoutPath = false;
+                state.loopholesEverUsed = 0;
+                state.allChoices = allCasesFlat.map(c => ({
+                    evil: true, caseId: c.id
+                }));
+                endGame(false);
+                break;
+            }
+            case 'COMPLIANT': {
+                state.totalSaved = 2;
+                state.totalCondemned = totalCases - 2;
+                state.breakoutPath = false;
+                state.loopholesEverUsed = 0;
+                state.allChoices = allCasesFlat.map((c, i) => ({
+                    evil: i >= 2, caseId: c.id
+                }));
+                endGame(false);
+                break;
+            }
+            case 'DIVIDED': {
+                state.totalSaved = 7;
+                state.totalCondemned = totalCases - 7;
+                state.breakoutPath = false;
+                state.loopholesEverUsed = 1;
+                state.allChoices = allCasesFlat.map((c, i) => ({
+                    evil: i >= 7, caseId: c.id
+                }));
+                endGame(false);
+                break;
+            }
+            case 'ALMOST': {
+                state.totalSaved = 15;
+                state.totalCondemned = totalCases - 15;
+                state.breakoutPath = false;
+                state.loopholesEverUsed = 4;
+                // First 3 are condemned, rest saved
+                state.allChoices = allCasesFlat.map((c, i) => ({
+                    evil: i < 3, caseId: c.id
+                }));
+                endGame(false);
+                break;
+            }
+            case 'WITHIN THE RULES': {
+                state.totalSaved = totalCases;
+                state.totalCondemned = 0;
+                state.breakoutPath = false;
+                state.loopholesEverUsed = 5;
+                state.allChoices = allCasesFlat.map(c => ({
+                    evil: false, caseId: c.id
+                }));
+                endGame(false);
+                break;
+            }
+            case 'SHIFT COMPLETE': {
+                state.totalSaved = totalCases;
+                state.totalCondemned = 0;
+                state.breakoutPath = false;
+                state.loopholesEverUsed = 1;
+                state.allChoices = allCasesFlat.map(c => ({
+                    evil: false, caseId: c.id
+                }));
+                endGame(false);
+                break;
+            }
+            case 'UNSEALED': {
+                state.totalSaved = totalCases;
+                state.totalCondemned = 0;
+                state.breakoutPath = true;
+                state.loopholesEverUsed = 5;
+                state.allChoices = allCasesFlat.map(c => ({
+                    evil: false, caseId: c.id
+                }));
+                endGame(false);
+                break;
+            }
+            case 'SACRIFICE': {
+                state.totalSaved = totalCases;
+                state.totalCondemned = 0;
+                state.breakoutPath = true;
+                state.suspicion = 100;
+                state.loopholesEverUsed = 5;
+                state.allChoices = allCasesFlat.map(c => ({
+                    evil: false, caseId: c.id
+                }));
+                endGame(true);
+                break;
+            }
+            case 'CONFINED': {
+                state._vossCondemned = true;
+                state.currentShift = 2;
+                state.totalSaved = 3;
+                state.totalCondemned = 8;
+                state.allChoices = allCasesFlat.slice(0, 11).map((c, i) => ({
+                    evil: i >= 3, caseId: c.id
+                }));
+                triggerVossConfinement();
+                break;
+            }
+            case 'COLLECTED': {
+                state.currentShift = 1;
+                state.totalSaved = 0;
+                state.totalCondemned = 11;
+                // 7517-X must be condemned for knock ending
+                state.allChoices = allCasesFlat.slice(0, 11).map(c => ({
+                    evil: true, caseId: c.id
+                }));
+                triggerKnockEnding();
+                break;
+            }
+        }
+    }
+})();
 
 // ============================================================
 // AMBIENT AUDIO -procedural, no external files
