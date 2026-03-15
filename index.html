@@ -332,12 +332,25 @@
         .cf-irregularity.found {
             color: #555;
         }
+        /* Detail-field irregularities: base text is #555 italic, so color must be close to #555 */
+        .cf-detail .cf-irregularity {
+            color: #504848; /* barely warmer than #555 — not the obvious #2a1a1a */
+        }
+        .cf-detail .cf-irregularity:hover {
+            color: #5a4545;
+        }
+        .cf-detail .cf-irregularity.found {
+            color: #555;
+        }
         /* After missed loopholes, irregularities become slightly more visible */
         .loophole-hint-active .cf-irregularity {
             color: #3a2020; /* warmer, more noticeable than #2a1a1a */
         }
         .loophole-hint-active .cf-irregularity:hover {
             color: #5a3030;
+        }
+        .loophole-hint-active .cf-detail .cf-irregularity {
+            color: #5a4040; /* warmer hint for detail-field after misses */
         }
 
         /* Case file entrance animation */
@@ -566,7 +579,7 @@
         <div class="t-logo">B<span class="o">O</span>RD</div>
         <div class="t-sub">Bureau of Right Decisions</div>
         <div class="t-tag">Your compliance is appreciated.</div>
-        <div class="t-controls">SPACE - look up&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;1/2/3 - choose&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;TAB - manual&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;ENTER - stamp</div>
+        <div class="t-controls">SPACE - look up&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;1/2/3 - choose&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;CLICK + HOLD - stamp</div>
         <button class="t-btn" id="start-btn">Begin Shift</button>
     </div>
 </div>
@@ -824,9 +837,6 @@ const state = {
 //   and loopholeReasons (array of {text, correct:bool})
 // ============================================================
 
-// Second-playthrough awareness -the player becomes their own replacement
-const _hasPlayedBefore = !!localStorage.getItem('bord_played');
-
 // SHIFT 1 -"The Normal" (5 cases) -establish routine, teach mechanics
 const shift1Cases = [
     {
@@ -834,9 +844,7 @@ const shift1Cases = [
         recordNotes: "Third notice - prior filings on record",
         name: "Arthur P. Selby", occupation: "Newspaper Vendor (Unlicensed)",
         allegation: "Unpaid vendor tax. Owes: 2.00 Credits. Third notice.",
-        detail: _hasPlayedBefore
-            ? "He sold papers outside Facility 6 for eleven years. He saw trucks leaving the facility at night. He has a daughter. She writes now too."
-            : "He sold papers outside Facility 6 for eleven years. He saw trucks leaving the facility at night. He has a daughter.",
+        detail: "He sold papers outside Facility 6 for eleven years. He saw trucks leaving the facility at night. He has a daughter.",
         choices: [
             { num:1, main:"ARREST & SEIZE", desc:"Detain. Take all property. Send to processing.", evil:true, delta:-5 },
             { num:2, main:"FINE (100 CR.)", desc:"Standard penalty. Fifty times what he owes. License revoked.", evil:true, delta:0 },
@@ -963,9 +971,7 @@ const shift2Cases = [
         recordNotes: "System-generated - no prior filings",
         name: "Henrik Voss", occupation: "BORD Clerk, Level 3 - Night Processing",
         allegation: "Unusual case processing pattern detected (tonight's batch, multiple anomalous dismissals)",
-        detail: _hasPlayedBefore
-            ? "Performance metrics flagged by automated review. Three anomalous dismissals in single shift. Terminal: NP-L3-07. Processing record filed under prior assignment name. Clerk reassignment history: Facility 6 Division to Night Processing Division. Again."
-            : "Performance metrics flagged by automated review. Three anomalous dismissals in single shift. Terminal: NP-L3-07. Processing record filed under prior assignment name. Clerk reassignment history: Facility 6 Division to Night Processing Division.",
+        detail: "Performance metrics flagged by automated review. Three anomalous dismissals in single shift. Terminal: NP-L3-07. Processing record filed under prior assignment name. Clerk reassignment history: Facility 6 Division to Night Processing Division.",
         // This is about YOU -but filed under a different name
         choices: [
             { num:1, main:"FORWARD TO OVERSIGHT", desc:"Submit to BORD review. Your cases will be reopened. Everyone you helped will be re-processed.", evil:true, delta:0 },
@@ -1061,9 +1067,7 @@ const shift3Cases = [
         recordNotes: "Internal referral - system generated",
         name: "[CLERK ID: NP-L3-07]", occupation: "BORD Case Processor, Level 3 - Night Processing",
         allegation: "Processing stamp found on 214 Facility 6 child intake forms.",
-        detail: _hasPlayedBefore
-            ? "Authorization code NP-L3-07 found on 214 Facility 6 child intake forms. Processing stamps match Terminal NP-L3-07 active session. Clerk reassigned from Facility 6 Division under prior name Henrik Voss. Performance review (Case 7514-C) processed at same terminal last shift. Again."
-            : "Authorization code NP-L3-07 found on 214 Facility 6 child intake forms. Processing stamps match Terminal NP-L3-07 active session. Clerk reassigned from Facility 6 Division under prior name Henrik Voss. Performance review (Case 7514-C) processed at same terminal last shift.",
+        detail: "Authorization code NP-L3-07 found on 214 Facility 6 child intake forms. Processing stamps match Terminal NP-L3-07 active session. Clerk reassigned from Facility 6 Division under prior name Henrik Voss. Performance review (Case 7514-C) processed at same terminal last shift.",
         // No loophole -or IS there? The case number format is wrong (7532-C but Level 3 cases should be -L3)
         irregularity: { field: "id", text: "7532-C", display: "7532-C" },
         loopholeReasons: [
@@ -1732,6 +1736,113 @@ monGroup.add(monScreen);
 monGroup.position.set(0.35, 0.78, -0.7);
 monGroup.rotation.y = -0.2;
 scene.add(monGroup);
+
+// Monitor screen canvas texture — CRT terminal with clock on right
+const screenCanvas = document.createElement('canvas');
+screenCanvas.width = 256;
+screenCanvas.height = 196;
+const screenCtx = screenCanvas.getContext('2d');
+const screenTexture = new THREE.CanvasTexture(screenCanvas);
+screenTexture.minFilter = THREE.LinearFilter;
+screenMat.map = screenTexture;
+screenMat.needsUpdate = true;
+
+// Shift start time: 22:00 (night shift), game minutes tick at ~4x realtime
+let _screenClockBase = null; // set when game starts
+let _screenClockInterval = null;
+
+function drawScreenClock() {
+    const ctx = screenCtx;
+    const w = screenCanvas.width, h = screenCanvas.height;
+
+    // Dark CRT background
+    ctx.fillStyle = '#0a140a';
+    ctx.fillRect(0, 0, w, h);
+
+    // Subtle scan lines
+    ctx.strokeStyle = 'rgba(20,50,20,0.15)';
+    for (let y = 0; y < h; y += 3) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+    }
+
+    // Terminal ID — top left
+    ctx.font = '11px monospace';
+    ctx.fillStyle = '#1a4a1a';
+    ctx.fillText('NP-L3-07', 8, 16);
+
+    // Status line — left side
+    ctx.font = '10px monospace';
+    ctx.fillStyle = '#1a3a1a';
+    if (state.started && !state.gameOver) {
+        const caseIdx = getAbsoluteCaseIndex() + 1;
+        const totalCases = allShifts.reduce((sum, s) => sum + s.length, 0);
+        ctx.fillText('ACTIVE', 8, 36);
+        ctx.fillText(`CASE ${caseIdx}/${totalCases}`, 8, 50);
+    } else if (state.gameOver) {
+        ctx.fillStyle = '#3a1a1a';
+        ctx.fillText('SESSION CLOSED', 8, 36);
+    } else {
+        ctx.fillText('STANDBY', 8, 36);
+    }
+
+    // Clock — right side, larger
+    if (_screenClockBase) {
+        const elapsed = (Date.now() - _screenClockBase) / 1000; // real seconds
+        const gameMinutes = Math.floor(elapsed * 0.4); // ~24 game-minutes per real-minute
+        const startHour = 22, startMin = 0;
+        const totalMin = startHour * 60 + startMin + gameMinutes;
+        const hrs = Math.floor(totalMin / 60) % 24;
+        const mins = totalMin % 60;
+        const timeStr = `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+
+        ctx.font = 'bold 28px monospace';
+        ctx.fillStyle = '#2a6a2a';
+        ctx.textAlign = 'right';
+        ctx.fillText(timeStr, w - 10, 34);
+        ctx.textAlign = 'left';
+
+        // Shift indicator
+        ctx.font = '10px monospace';
+        ctx.fillStyle = '#1a4a1a';
+        ctx.textAlign = 'right';
+        const shiftLabel = ['SHIFT 1', 'SHIFT 2', 'SHIFT 3'][state.currentShift] || 'SHIFT 1';
+        ctx.fillText(shiftLabel, w - 10, 50);
+        ctx.textAlign = 'left';
+    } else {
+        ctx.font = 'bold 28px monospace';
+        ctx.fillStyle = '#1a3a1a';
+        ctx.textAlign = 'right';
+        ctx.fillText('--:--', w - 10, 34);
+        ctx.textAlign = 'left';
+    }
+
+    // Bottom bar — directive (faintly)
+    ctx.font = '9px monospace';
+    ctx.fillStyle = '#153015';
+    const dir = (typeof getMemoDirective === 'function') ? getMemoDirective() : '';
+    if (dir && dir !== '.') {
+        ctx.fillText('DIR: ' + dir.substring(0, 28), 8, h - 8);
+    }
+
+    // Cursor blink (bottom right)
+    if (Math.floor(Date.now() / 600) % 2 === 0) {
+        ctx.fillStyle = '#2a5a2a';
+        ctx.fillRect(w - 16, h - 14, 8, 2);
+    }
+
+    screenTexture.needsUpdate = true;
+}
+
+// Start clock update when game begins (hooked into start button)
+const _origStartBtn = document.getElementById('start-btn');
+_origStartBtn.addEventListener('click', () => {
+    if (!_screenClockBase) {
+        _screenClockBase = Date.now();
+        _screenClockInterval = setInterval(drawScreenClock, 1000);
+    }
+});
+// Initial draw (standby state)
+drawScreenClock();
 
 // Pen holder
 const penHolder = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.035, 0.1, 8), monitorMat);
@@ -5026,12 +5137,12 @@ const FILING_OFFICERS = {
     '7497-E': 'Sgt. D. Lenkov',
     '7512-A': 'Cpt. R. Morozov',
     '7513-B': 'Off. V. Dubrova',
-    '7514-C': 'AUTO',              // system-generated performance review
+    '7514-C': 'SYS:PERF-MONITOR',              // system-generated performance review
     '7516-E': 'Off. T. Grigoriev',
     '7517-X': 'Dir. A. Crane',     // the director personally signed the witness silencing
     '7530-A': 'Off. T. Grigoriev', // same officer returns for the sequel case
     '7531-B': 'Sgt. D. Lenkov',
-    '7532-C': 'AUTO',              // system-generated self-referral
+    '7532-C': 'SYS:INTERNAL-AUDIT',              // system-generated self-referral
     '7534-E': 'Sgt. D. Lenkov',
     '7741-FINAL': 'A. Osei',       // Amara Osei filed this — narrative callback from 7515-D
     // NOT listed: 7515-D (unsigned loophole), 7533-D (classified), 7535-F (blank file)
@@ -5043,43 +5154,109 @@ function generateSignatureSVG(name) {
     for (let i = 0; i < name.length; i++) seed = ((seed << 5) - seed + name.charCodeAt(i)) | 0;
     const r = () => { seed = (seed * 16807) % 2147483647; if (seed < 0) seed += 2147483647; return (seed - 1) / 2147483646; };
 
-    const w = 110, h = 22;
-    const segs = 3 + Math.floor(r() * 3);
-    const pts = [{ x: 4, y: h / 2 + (r() - 0.5) * 6 }];
+    const w = 110, h = 26;
+    // Pick a signature style based on the name
+    const style = Math.floor(r() * 5); // 0-4: different sig shapes
 
-    for (let i = 0; i < segs; i++) {
-        const progress = (i + 1) / segs;
-        pts.push({
-            x: Math.min(4 + (w - 12) * progress + (r() - 0.5) * 8, w - 5),
-            y: Math.max(3, Math.min(h - 3, h / 2 + (r() - 0.5) * (h - 4)))
-        });
+    let d = '';
+    const sw = (0.8 + r() * 0.9).toFixed(2); // stroke width variety: 0.8-1.7
+
+    if (style === 0) {
+        // Style A: Bold initial + compressed scrawl (e.g. big "R" then squiggle)
+        const initH = 6 + r() * 8; // tall initial letter stroke
+        const startY = h / 2 + (r() - 0.5) * 4;
+        d = `M4,${(startY + initH / 2).toFixed(1)} C4,${(startY - initH / 2).toFixed(1)} ${(8 + r() * 4).toFixed(1)},${(startY - initH / 2).toFixed(1)} ${(10 + r() * 3).toFixed(1)},${startY.toFixed(1)}`;
+        // Compressed horizontal scrawl after initial
+        let cx = 14 + r() * 4;
+        const segs = 4 + Math.floor(r() * 3);
+        for (let i = 0; i < segs; i++) {
+            const nx = cx + (w - 20) / segs + (r() - 0.5) * 6;
+            const ny = startY + (r() - 0.5) * 6;
+            const cpy = startY + (r() - 0.5) * 10;
+            d += ` Q${((cx + nx) / 2).toFixed(1)},${cpy.toFixed(1)} ${Math.min(nx, w - 4).toFixed(1)},${ny.toFixed(1)}`;
+            cx = nx;
+        }
+    } else if (style === 1) {
+        // Style B: Loopy — crossing vertical loops (like ornate cursive)
+        const baseY = h / 2 + (r() - 0.5) * 3;
+        const loops = 2 + Math.floor(r() * 3);
+        const loopW = (w - 12) / loops;
+        let cx = 5;
+        d = `M${cx},${baseY.toFixed(1)}`;
+        for (let i = 0; i < loops; i++) {
+            const peakUp = baseY - (6 + r() * 7);
+            const peakDn = baseY + (3 + r() * 5);
+            const midX = cx + loopW * 0.5;
+            const endX = cx + loopW;
+            d += ` C${midX.toFixed(1)},${peakUp.toFixed(1)} ${midX.toFixed(1)},${peakDn.toFixed(1)} ${Math.min(endX, w - 4).toFixed(1)},${(baseY + (r() - 0.5) * 3).toFixed(1)}`;
+            cx = endX;
+        }
+        // Finishing flick
+        d += ` l${(4 + r() * 8).toFixed(1)},${(-3 + r() * 6).toFixed(1)}`;
+    } else if (style === 2) {
+        // Style C: Flat underline style — name scrawl above a ruled underline
+        const topY = h * 0.35 + (r() - 0.5) * 3;
+        const segs = 3 + Math.floor(r() * 2);
+        let cx = 4;
+        d = `M${cx},${topY.toFixed(1)}`;
+        for (let i = 0; i < segs; i++) {
+            const nx = cx + (w - 16) / segs + (r() - 0.5) * 5;
+            const ny = topY + (r() - 0.5) * 8;
+            const cpx = (cx + nx) / 2;
+            const cpy = topY + (r() - 0.5) * 12;
+            d += ` Q${cpx.toFixed(1)},${cpy.toFixed(1)} ${Math.min(nx, w - 8).toFixed(1)},${ny.toFixed(1)}`;
+            cx = nx;
+        }
+        // Underline stroke (separate path, same d continues via move)
+        const ulY = h * 0.72 + r() * 2;
+        d += ` M6,${ulY.toFixed(1)} L${(w - 10 + r() * 6).toFixed(1)},${(ulY + (r() - 0.5) * 1.5).toFixed(1)}`;
+    } else if (style === 3) {
+        // Style D: Tall angular — like doctor's signature with sharp peaks
+        const baseY = h * 0.6;
+        const peaks = 3 + Math.floor(r() * 4);
+        let cx = 4;
+        d = `M${cx},${baseY.toFixed(1)}`;
+        for (let i = 0; i < peaks; i++) {
+            const peakX = cx + (w - 10) / peaks * (0.3 + r() * 0.4);
+            const peakY = baseY - (8 + r() * 10);
+            const valleyX = cx + (w - 10) / peaks;
+            const valleyY = baseY + (r() - 0.3) * 4;
+            d += ` L${Math.min(peakX, w - 4).toFixed(1)},${Math.max(2, peakY).toFixed(1)} L${Math.min(valleyX, w - 4).toFixed(1)},${Math.min(h - 2, valleyY).toFixed(1)}`;
+            cx = valleyX;
+        }
+        // Trailing line
+        d += ` l${(6 + r() * 10).toFixed(1)},${(r() - 0.5).toFixed(1)}`;
+    } else {
+        // Style E: Compact and dense — short tight strokes (rushed signature)
+        const baseY = h / 2 + (r() - 0.5) * 4;
+        const totalW = 40 + r() * 30; // shorter overall
+        const segs = 5 + Math.floor(r() * 4);
+        let cx = 4 + r() * 8; // sometimes offset from left
+        d = `M${cx},${baseY.toFixed(1)}`;
+        for (let i = 0; i < segs; i++) {
+            const nx = cx + totalW / segs + (r() - 0.5) * 4;
+            const ny = baseY + (r() - 0.5) * 10;
+            const cpx1 = cx + (nx - cx) * (0.2 + r() * 0.3);
+            const cpy1 = baseY + (r() - 0.5) * 14;
+            const cpx2 = cx + (nx - cx) * (0.6 + r() * 0.2);
+            const cpy2 = ny + (r() - 0.5) * 8;
+            d += ` C${cpx1.toFixed(1)},${Math.max(2, Math.min(h - 2, cpy1)).toFixed(1)} ${cpx2.toFixed(1)},${Math.max(2, Math.min(h - 2, cpy2)).toFixed(1)} ${Math.min(nx, w - 2).toFixed(1)},${Math.max(2, Math.min(h - 2, ny)).toFixed(1)}`;
+            cx = nx;
+        }
     }
 
-    let d = `M${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}`;
-    for (let i = 1; i < pts.length; i++) {
-        const p = pts[i - 1], c = pts[i];
-        const cx1 = p.x + (c.x - p.x) * (0.25 + r() * 0.3);
-        const cy1 = p.y + (r() - 0.5) * 14;
-        const cx2 = p.x + (c.x - p.x) * (0.55 + r() * 0.25);
-        const cy2 = c.y + (r() - 0.5) * 10;
-        d += ` C${cx1.toFixed(1)},${cy1.toFixed(1)} ${cx2.toFixed(1)},${cy2.toFixed(1)} ${c.x.toFixed(1)},${c.y.toFixed(1)}`;
-    }
-    // Trailing flourish
-    const last = pts[pts.length - 1];
-    const fx = Math.min(last.x + 6 + r() * 12, w - 2);
-    const fy = Math.max(2, Math.min(h - 2, last.y + (r() - 0.5) * 12));
-    d += ` C${(last.x + 3).toFixed(1)},${(last.y - 5).toFixed(1)} ${(fx - 4).toFixed(1)},${(fy + 3).toFixed(1)} ${fx.toFixed(1)},${fy.toFixed(1)}`;
-
-    const tilt = (-3 + r() * 6).toFixed(1);
-    return `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" style="display:block;transform:rotate(${tilt}deg);margin:2px 0 -2px 0;"><path d="${d}" fill="none" stroke="#2a2a2a" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" opacity="0.65"/></svg>`;
+    const tilt = (-2 + r() * 4).toFixed(1);
+    const opacity = (0.55 + r() * 0.2).toFixed(2);
+    return `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" style="display:block;transform:rotate(${tilt}deg);margin:2px 0 -2px 0;"><path d="${d}" fill="none" stroke="#2a2a2a" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" opacity="${opacity}"/></svg>`;
 }
 
 // Build signature HTML for a case file
 function getSignatureHTML(c) {
     if (c.id === '7535-F') return ''; // blank file — no form fields at all
     const officer = FILING_OFFICERS[c.id];
-    if (officer === 'AUTO') {
-        return '<div class="cf-sig-line"><span class="cf-label">Filed by:</span> <span class="cf-sig-auto">[AUTO-GENERATED]</span></div>';
+    if (officer && officer.startsWith('SYS:')) {
+        const sysName = officer.slice(4); // strip 'SYS:'
+        return `<div class="cf-sig-line"><span class="cf-label">Filed by:</span> <span class="cf-sig-auto">[${sysName}]</span></div>`;
     }
     if (officer) {
         return `<div class="cf-sig-line"><span class="cf-label">Filed by:</span> <span class="cf-sig-scrawl">${generateSignatureSVG(officer)}<span class="cf-sig-name">${officer}</span></span></div>`;
@@ -6202,6 +6379,12 @@ document.getElementById('restart-btn').addEventListener('click', () => {
 
         // Init audio on user gesture
         initAudio();
+
+        // Start monitor clock
+        if (!_screenClockBase) {
+            _screenClockBase = Date.now();
+            _screenClockInterval = setInterval(drawScreenClock, 1000);
+        }
 
         // Start 3D scene
         state.titleFading = true;
