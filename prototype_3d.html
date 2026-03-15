@@ -50,6 +50,11 @@
         .cf-line { margin-bottom: 3px; }
         .cf-label { font-weight: 700; }
         .cf-detail { color: #555; font-size: 11px; font-style: italic; margin-top: 4px; }
+        .cf-sig-line { margin-top: 8px; padding-top: 6px; border-top: 1px solid rgba(100,90,70,0.15); display: flex; align-items: flex-end; gap: 6px; }
+        .cf-sig-scrawl { display: inline-flex; flex-direction: column; align-items: flex-start; margin-left: 4px; }
+        .cf-sig-name { font-size: 7px; color: #888; letter-spacing: 0.06em; margin-top: -2px; }
+        .cf-sig-auto { font-family: monospace; font-size: 9px; color: #777; letter-spacing: 0.06em; }
+        .cf-sig-blank { font-size: 9px; color: #bbb; letter-spacing: 0.15em; margin-left: 4px; }
         .cf-choices { margin-top: 18px; }
         .cf-choice {
             display: flex; align-items: flex-start; padding: 8px 6px; cursor: pointer;
@@ -2316,6 +2321,7 @@ function renderCase(c) {
             <div class="cf-line" style="margin-top:8px;"><span class="cf-label">Charge:</span> ${allegationText}</div>
             <div class="cf-line"><span class="cf-label">Classification:</span> ${classificationDisplay}</div>
             ${c.recordNotes ? `<div class="cf-line"><span class="cf-label">Record Notes:</span> ${recordNotesText}</div>` : ''}
+            ${getSignatureHTML(c)}
             <div class="cf-detail" id="cf-detail-text"></div>
             <div class="cf-choices choices-hidden">
                 <div class="cf-section">Your Decision</div>
@@ -4937,6 +4943,80 @@ document.getElementById('start-btn').addEventListener('click', () => {
         }, 1600); // slightly longer than the 1.5s CSS transition
     }, 100);
 });
+
+// Filing officers per case — who signed the form. null = unsigned (loophole/system/blank)
+const FILING_OFFICERS = {
+    '7493-B': 'Cpt. R. Morozov',
+    '7494-A': 'Sgt. D. Lenkov',
+    '7495-C': 'Off. T. Grigoriev',
+    '7496-D': 'Cpt. R. Morozov',
+    '7497-E': 'Sgt. D. Lenkov',
+    '7512-A': 'Cpt. R. Morozov',
+    '7513-B': 'Off. V. Dubrova',
+    '7514-C': 'AUTO',              // system-generated performance review
+    '7516-E': 'Off. T. Grigoriev',
+    '7517-X': 'Dir. A. Crane',     // the director personally signed the witness silencing
+    '7530-A': 'Off. T. Grigoriev', // same officer returns for the sequel case
+    '7531-B': 'Sgt. D. Lenkov',
+    '7532-C': 'AUTO',              // system-generated self-referral
+    '7534-E': 'Sgt. D. Lenkov',
+    '7741-FINAL': 'A. Osei',       // Amara Osei filed this — narrative callback from 7515-D
+    // NOT listed: 7515-D (unsigned loophole), 7533-D (classified), 7535-F (blank file)
+};
+
+// Procedural scrawled signature SVG from officer name
+function generateSignatureSVG(name) {
+    let seed = 0;
+    for (let i = 0; i < name.length; i++) seed = ((seed << 5) - seed + name.charCodeAt(i)) | 0;
+    const r = () => { seed = (seed * 16807) % 2147483647; if (seed < 0) seed += 2147483647; return (seed - 1) / 2147483646; };
+
+    const w = 110, h = 22;
+    const segs = 3 + Math.floor(r() * 3);
+    const pts = [{ x: 4, y: h / 2 + (r() - 0.5) * 6 }];
+
+    for (let i = 0; i < segs; i++) {
+        const progress = (i + 1) / segs;
+        pts.push({
+            x: Math.min(4 + (w - 12) * progress + (r() - 0.5) * 8, w - 5),
+            y: Math.max(3, Math.min(h - 3, h / 2 + (r() - 0.5) * (h - 4)))
+        });
+    }
+
+    let d = `M${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}`;
+    for (let i = 1; i < pts.length; i++) {
+        const p = pts[i - 1], c = pts[i];
+        const cx1 = p.x + (c.x - p.x) * (0.25 + r() * 0.3);
+        const cy1 = p.y + (r() - 0.5) * 14;
+        const cx2 = p.x + (c.x - p.x) * (0.55 + r() * 0.25);
+        const cy2 = c.y + (r() - 0.5) * 10;
+        d += ` C${cx1.toFixed(1)},${cy1.toFixed(1)} ${cx2.toFixed(1)},${cy2.toFixed(1)} ${c.x.toFixed(1)},${c.y.toFixed(1)}`;
+    }
+    // Trailing flourish
+    const last = pts[pts.length - 1];
+    const fx = Math.min(last.x + 6 + r() * 12, w - 2);
+    const fy = Math.max(2, Math.min(h - 2, last.y + (r() - 0.5) * 12));
+    d += ` C${(last.x + 3).toFixed(1)},${(last.y - 5).toFixed(1)} ${(fx - 4).toFixed(1)},${(fy + 3).toFixed(1)} ${fx.toFixed(1)},${fy.toFixed(1)}`;
+
+    const tilt = (-3 + r() * 6).toFixed(1);
+    return `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" style="display:block;transform:rotate(${tilt}deg);margin:2px 0 -2px 0;"><path d="${d}" fill="none" stroke="#2a2a2a" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" opacity="0.65"/></svg>`;
+}
+
+// Build signature HTML for a case file
+function getSignatureHTML(c) {
+    if (c.id === '7535-F') return ''; // blank file — no form fields at all
+    const officer = FILING_OFFICERS[c.id];
+    if (officer === 'AUTO') {
+        return '<div class="cf-sig-line"><span class="cf-label">Filed by:</span> <span class="cf-sig-auto">[AUTO-GENERATED]</span></div>';
+    }
+    if (officer) {
+        return `<div class="cf-sig-line"><span class="cf-label">Filed by:</span> <span class="cf-sig-scrawl">${generateSignatureSVG(officer)}<span class="cf-sig-name">${officer}</span></span></div>`;
+    }
+    if (c.id === '7533-D') {
+        return '<div class="cf-sig-line"><span class="cf-label">Filed by:</span> <span class="cf-sig-auto">[CLASSIFIED]</span></div>';
+    }
+    // No officer — blank signature line (7515-D: the loophole)
+    return '<div class="cf-sig-line"><span class="cf-label">Filed by:</span> <span class="cf-sig-blank">_______________</span></div>';
+}
 
 // Stamp Archive: scroll through every condemned name + consequence before stats appear
 // Returns a promise that resolves after the archive completes (or immediately if no condemned)
