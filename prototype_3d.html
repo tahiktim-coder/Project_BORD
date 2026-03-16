@@ -20,7 +20,7 @@
         #case-file {
             position: absolute;
             top: 50%;
-            left: 50%;
+            left: 46%;
             transform: translate(-50%, -45%);
             width: 420px;
             background: rgba(210, 200, 180, 0.97);
@@ -157,26 +157,6 @@
         }
         #office-status.visible { opacity: 1; }
         #office-status.danger { color: #8b0000; }
-
-        /* Terminal HUD -monitor readout overlay (always visible during gameplay) */
-        #terminal-hud {
-            position: fixed; top: 12px; right: 14px;
-            font-family: 'Courier New', monospace;
-            pointer-events: none; text-align: right;
-            z-index: 50;
-            display: none;
-        }
-        #terminal-hud.visible { display: block; }
-        #terminal-hud .th-id {
-            font-size: 10px; color: rgba(80,170,80,0.7); letter-spacing: 0.12em;
-        }
-        #terminal-hud .th-clock {
-            font-size: 24px; color: rgba(70,160,70,0.65); letter-spacing: 0.06em;
-            line-height: 1.1;
-        }
-        #terminal-hud .th-shift {
-            font-size: 9px; color: rgba(80,160,80,0.5); letter-spacing: 0.15em;
-        }
 
         /* Directive memo overlay -left side, pinned note */
         #directive-hud {
@@ -620,12 +600,6 @@
     <div id="look-hint">[ SPACE ] look up from desk</div>
     <div id="lateral-hint" style="display:none;">[ A ] look left</div>
     <div id="office-status"></div>
-</div>
-
-<div id="terminal-hud">
-    <div class="th-id">NP-L3-07</div>
-    <div class="th-clock" id="hud-clock">--:--</div>
-    <div class="th-shift" id="hud-shift"></div>
 </div>
 
 <div id="directive-hud">
@@ -1366,7 +1340,7 @@ const suitMat = new THREE.MeshStandardMaterial({ color: 0x383838, roughness: 0.8
 const hatMat = new THREE.MeshStandardMaterial({ color: 0x252525, roughness: 0.8 });
 const skinMat = new THREE.MeshStandardMaterial({ color: 0x3a3530, roughness: 0.9 }); // dark enough to shadow under hat
 const monitorMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.3, metalness: 0.5 });
-const screenMat = new THREE.MeshStandardMaterial({ color: 0x1a2a1a, emissive: 0x1a3a1a, emissiveIntensity: 0.8, roughness: 0.5 });
+const screenMat = new THREE.MeshStandardMaterial({ color: 0x1a2a1a, emissive: 0x2a4a2a, emissiveIntensity: 1.2, roughness: 0.5 });
 const paperMat = new THREE.MeshStandardMaterial({ color: 0xd8d0c0, roughness: 0.9 });
 
 // Red eye material - sharp pinpoints, lower emissive to avoid bloom merge
@@ -1827,20 +1801,20 @@ function drawScreenClock() {
     }
 
     // Terminal ID — top left
-    ctx.font = '11px monospace';
-    ctx.fillStyle = '#1a4a1a';
+    ctx.font = '12px monospace';
+    ctx.fillStyle = '#3a8a3a';
     ctx.fillText('NP-L3-07', 8, 16);
 
     // Status line — left side
-    ctx.font = '10px monospace';
-    ctx.fillStyle = '#1a3a1a';
+    ctx.font = '11px monospace';
+    ctx.fillStyle = '#2a7a2a';
     if (state.started && !state.gameOver) {
         const caseIdx = getAbsoluteCaseIndex() + 1;
         const totalCases = allShifts.reduce((sum, s) => sum + s.length, 0);
         ctx.fillText('ACTIVE', 8, 36);
         ctx.fillText(`CASE ${caseIdx}/${totalCases}`, 8, 50);
     } else if (state.gameOver) {
-        ctx.fillStyle = '#3a1a1a';
+        ctx.fillStyle = '#6a2a2a';
         ctx.fillText('SESSION CLOSED', 8, 36);
     } else {
         ctx.fillText('STANDBY', 8, 36);
@@ -1856,57 +1830,42 @@ function drawScreenClock() {
         const mins = totalMin % 60;
         const timeStr = `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
 
-        ctx.font = 'bold 28px monospace';
-        ctx.fillStyle = '#2a6a2a';
+        ctx.font = 'bold 32px monospace';
+        ctx.fillStyle = '#40aa40';
         ctx.textAlign = 'right';
-        ctx.fillText(timeStr, w - 10, 34);
+        ctx.fillText(timeStr, w - 8, 36);
         ctx.textAlign = 'left';
 
         // Shift indicator
-        ctx.font = '10px monospace';
-        ctx.fillStyle = '#1a4a1a';
+        ctx.font = '11px monospace';
+        ctx.fillStyle = '#3a8a3a';
         ctx.textAlign = 'right';
         const shiftLabel = ['SHIFT 1', 'SHIFT 2', 'SHIFT 3'][state.currentShift] || 'SHIFT 1';
-        ctx.fillText(shiftLabel, w - 10, 50);
+        ctx.fillText(shiftLabel, w - 8, 52);
         ctx.textAlign = 'left';
     } else {
-        ctx.font = 'bold 28px monospace';
-        ctx.fillStyle = '#1a3a1a';
+        ctx.font = 'bold 32px monospace';
+        ctx.fillStyle = '#2a6a2a';
         ctx.textAlign = 'right';
-        ctx.fillText('--:--', w - 10, 34);
+        ctx.fillText('--:--', w - 8, 36);
         ctx.textAlign = 'left';
     }
 
-    // Bottom bar — directive (faintly)
-    ctx.font = '9px monospace';
-    ctx.fillStyle = '#153015';
+    // Bottom bar — directive
+    ctx.font = '10px monospace';
+    ctx.fillStyle = '#2a6a2a';
     const dir = (typeof getMemoDirective === 'function') ? getMemoDirective() : '';
     if (dir && dir !== '.') {
-        ctx.fillText('DIR: ' + dir.substring(0, 28), 8, h - 8);
+        ctx.fillText('DIR: ' + dir.substring(0, 26), 8, h - 8);
     }
 
     // Cursor blink (bottom right)
     if (Math.floor(Date.now() / 600) % 2 === 0) {
-        ctx.fillStyle = '#2a5a2a';
-        ctx.fillRect(w - 16, h - 14, 8, 2);
+        ctx.fillStyle = '#40aa40';
+        ctx.fillRect(w - 16, h - 14, 8, 3);
     }
 
     screenTexture.needsUpdate = true;
-
-    // Sync HTML HUD overlay
-    const hudClockEl = document.getElementById('hud-clock');
-    const hudShiftEl = document.getElementById('hud-shift');
-    if (hudClockEl && _screenClockBase) {
-        const elapsed = (Date.now() - _screenClockBase) / 1000;
-        const gameMinutes = Math.floor(elapsed * 0.4);
-        const totalMin = 22 * 60 + gameMinutes;
-        const hrs = Math.floor(totalMin / 60) % 24;
-        const mins = totalMin % 60;
-        hudClockEl.textContent = `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
-    }
-    if (hudShiftEl) {
-        hudShiftEl.textContent = ['SHIFT 1', 'SHIFT 2', 'SHIFT 3'][state.currentShift] || '';
-    }
 }
 
 // Start clock update when game begins (hooked into start button)
@@ -5596,8 +5555,7 @@ function endGame(caught) {
     cfEndEl.classList.remove('case-enter', 'case-enter-fast', 'case-enter-urgent');
     cfEndEl.classList.add('hidden');
     document.getElementById('look-hint').style.display = 'none';
-    // Hide HUDs during ending
-    document.getElementById('terminal-hud').classList.remove('visible');
+    // Hide directive during ending
     document.getElementById('directive-hud').classList.remove('visible');
     // Bug 10: clean up approach figure
     approachFigure.visible = false;
@@ -6486,8 +6444,6 @@ document.getElementById('restart-btn').addEventListener('click', () => {
             _screenClockBase = Date.now();
             _screenClockInterval = setInterval(drawScreenClock, 1000);
         }
-        document.getElementById('terminal-hud').classList.add('visible');
-
         // Start 3D scene
         state.titleFading = true;
         const cover = document.getElementById('canvas-cover');
@@ -7162,12 +7118,10 @@ function animate() {
         return;
     }
 
-    // HUD visibility — driven from animate loop for reliability
+    // Directive HUD visibility — driven from animate loop for reliability
     if (state.started && !state.introPlaying) {
-        const thud = document.getElementById('terminal-hud');
         const dhud = document.getElementById('directive-hud');
-        if (thud && !thud.classList.contains('visible')) thud.classList.add('visible');
-        if (dhud && !dhud.classList.contains('visible')) dhud.classList.add('visible');
+        if (dhud && !dhud.classList.contains('visible') && !state.gameOver) dhud.classList.add('visible');
     }
 
     // Smooth camera look - slow dread when looking up, faster when looking down
