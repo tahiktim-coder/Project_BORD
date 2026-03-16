@@ -1310,7 +1310,7 @@ const dividerMat = new THREE.MeshStandardMaterial({ color: 0x333330, roughness: 
 const suitMat = new THREE.MeshStandardMaterial({ color: 0x383838, roughness: 0.85 });
 const hatMat = new THREE.MeshStandardMaterial({ color: 0x252525, roughness: 0.8 });
 const skinMat = new THREE.MeshStandardMaterial({ color: 0x3a3530, roughness: 0.9 }); // dark enough to shadow under hat
-const monitorMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.3, metalness: 0.5 });
+const monitorMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, emissive: 0x222222, emissiveIntensity: 0.8, roughness: 0.3, metalness: 0.5 });
 const screenMat = new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0xffffff, emissiveIntensity: 2.0, roughness: 0.5 });
 const paperMat = new THREE.MeshStandardMaterial({ color: 0xd8d0c0, roughness: 0.9 });
 
@@ -1731,14 +1731,32 @@ const MERCY_ECHOES = [
     ["Nadia. The boy. Home.", "", "", "", "", "", ""],
 ];
 
-// Player's monitor
+// Player's monitor — chunky CRT with visible body
 const monGroup = new THREE.Group();
+// Main CRT body — slightly tapered (wider in back)
 const monBody = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.4, 0.35), monitorMat);
 monBody.position.y = 0.2;
 monGroup.add(monBody);
-const monScreen = new THREE.Mesh(new THREE.PlaneGeometry(0.44, 0.34), screenMat);
-monScreen.position.set(0, 0.2, 0.176);
+// Screen bezel — thin dark frame around the screen
+const bezelMat = new THREE.MeshStandardMaterial({ color: 0x111111, emissive: 0x1a1a1a, emissiveIntensity: 0.6, roughness: 0.5 });
+const bezelFront = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.38, 0.02), bezelMat);
+bezelFront.position.set(0, 0.2, 0.17);
+monGroup.add(bezelFront);
+// Screen surface
+const monScreen = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.32), screenMat);
+monScreen.position.set(0, 0.2, 0.181);
 monGroup.add(monScreen);
+// Monitor stand — short thick neck + base plate
+const standNeck = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.06, 0.1), monitorMat);
+standNeck.position.set(0, -0.03, 0);
+monGroup.add(standNeck);
+const standBase = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.015, 0.18), monitorMat);
+standBase.position.set(0, -0.06, 0.04);
+monGroup.add(standBase);
+// Subtle green glow from the screen onto the desk/monitor
+const screenGlow = new THREE.PointLight(0x30aa30, 0.4, 0.8);
+screenGlow.position.set(0, 0.2, 0.3);
+monGroup.add(screenGlow);
 monGroup.position.set(0.45, 0.78, -0.55);
 monGroup.rotation.y = -0.3;
 scene.add(monGroup);
