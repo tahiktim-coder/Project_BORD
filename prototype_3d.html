@@ -1306,7 +1306,7 @@ const suitMat = new THREE.MeshStandardMaterial({ color: 0x383838, roughness: 0.8
 const hatMat = new THREE.MeshStandardMaterial({ color: 0x252525, roughness: 0.8 });
 const skinMat = new THREE.MeshStandardMaterial({ color: 0x3a3530, roughness: 0.9 }); // dark enough to shadow under hat
 const monitorMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.3, metalness: 0.5 });
-const screenMat = new THREE.MeshStandardMaterial({ color: 0x1a2a1a, emissive: 0x3a6a3a, emissiveIntensity: 1.8, roughness: 0.5 });
+const screenMat = new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0xffffff, emissiveIntensity: 2.0, roughness: 0.5 });
 const paperMat = new THREE.MeshStandardMaterial({ color: 0xd8d0c0, roughness: 0.9 });
 
 // Red eye material - sharp pinpoints, lower emissive to avoid bloom merge
@@ -1745,7 +1745,7 @@ screenCanvas.height = 196;
 const screenCtx = screenCanvas.getContext('2d');
 const screenTexture = new THREE.CanvasTexture(screenCanvas);
 screenTexture.minFilter = THREE.LinearFilter;
-screenMat.map = screenTexture;
+screenMat.emissiveMap = screenTexture;
 screenMat.needsUpdate = true;
 
 // Case processing timer — each case gets a time budget that drains
