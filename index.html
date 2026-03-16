@@ -20,7 +20,7 @@
         #case-file {
             position: absolute;
             top: 50%;
-            left: 38%;
+            left: 50%;
             transform: translate(-50%, -45%);
             width: 420px;
             background: rgba(210, 200, 180, 0.97);
@@ -1748,9 +1748,15 @@ screenTexture.minFilter = THREE.LinearFilter;
 screenMat.map = screenTexture;
 screenMat.needsUpdate = true;
 
-// Shift start time: 22:00 (night shift), game minutes tick at ~4x realtime
+// Case processing timer — each case gets a time budget that drains
 let _screenClockBase = null; // set when game starts
 let _screenClockInterval = null;
+let _caseStartTime = null; // when current case appeared
+const CASE_TIME_BUDGET = 45; // seconds per case (real time)
+
+function startCaseTimer() {
+    _caseStartTime = Date.now();
+}
 
 function drawScreenClock() {
     const ctx = screenCtx;
@@ -1766,69 +1772,135 @@ function drawScreenClock() {
         ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
     }
 
-    // Terminal ID — top left
-    ctx.font = '12px monospace';
-    ctx.fillStyle = '#3a8a3a';
-    ctx.fillText('NP-L3-07', 8, 16);
+    // Terminal ID — top left small
+    ctx.font = '10px monospace';
+    ctx.fillStyle = '#2a6a2a';
+    ctx.fillText('NP-L3-07', 6, 12);
 
-    // Status line — left side
-    ctx.font = '11px monospace';
-    ctx.fillStyle = '#2a7a2a';
-    if (state.started && !state.gameOver) {
+    if (state.started && !state.gameOver && _caseStartTime) {
+        // === ACTIVE CASE: big countdown display ===
+        const elapsed = (Date.now() - _caseStartTime) / 1000;
+        const remaining = Math.max(0, CASE_TIME_BUDGET - elapsed);
+        const fraction = remaining / CASE_TIME_BUDGET;
+
+        // Color shifts from green to amber to red as time drains
+        let barR, barG, barB, textColor;
+        if (fraction > 0.5) {
+            barR = 0x20; barG = 0x90; barB = 0x20;
+            textColor = '#40aa40';
+        } else if (fraction > 0.2) {
+            barR = 0x90; barG = 0x80; barB = 0x10;
+            textColor = '#aa9030';
+        } else {
+            barR = 0x90; barG = 0x20; barB = 0x10;
+            textColor = '#aa4030';
+        }
+
+        // CASE # — top right
         const caseIdx = getAbsoluteCaseIndex() + 1;
-        const totalCases = allShifts.reduce((sum, s) => sum + s.length, 0);
-        ctx.fillText('ACTIVE', 8, 36);
-        ctx.fillText(`CASE ${caseIdx}/${totalCases}`, 8, 50);
-    } else if (state.gameOver) {
-        ctx.fillStyle = '#6a2a2a';
-        ctx.fillText('SESSION CLOSED', 8, 36);
-    } else {
-        ctx.fillText('STANDBY', 8, 36);
-    }
-
-    // Clock — right side, larger
-    if (_screenClockBase) {
-        const elapsed = (Date.now() - _screenClockBase) / 1000; // real seconds
-        const gameMinutes = Math.floor(elapsed * 0.4); // ~24 game-minutes per real-minute
-        const startHour = 22, startMin = 0;
-        const totalMin = startHour * 60 + startMin + gameMinutes;
-        const hrs = Math.floor(totalMin / 60) % 24;
-        const mins = totalMin % 60;
-        const timeStr = `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
-
-        ctx.font = 'bold 32px monospace';
-        ctx.fillStyle = '#40aa40';
-        ctx.textAlign = 'right';
-        ctx.fillText(timeStr, w - 8, 36);
-        ctx.textAlign = 'left';
-
-        // Shift indicator
         ctx.font = '11px monospace';
         ctx.fillStyle = '#3a8a3a';
         ctx.textAlign = 'right';
+        ctx.fillText(`CASE ${caseIdx}`, w - 6, 12);
+        ctx.textAlign = 'left';
+
+        // Shift label — below terminal ID
         const shiftLabel = ['SHIFT 1', 'SHIFT 2', 'SHIFT 3'][state.currentShift] || 'SHIFT 1';
-        ctx.fillText(shiftLabel, w - 8, 52);
+        ctx.font = '10px monospace';
+        ctx.fillStyle = '#2a6a2a';
+        ctx.fillText(shiftLabel, 6, 26);
+
+        // ── Big countdown number ── center of screen
+        const remainSec = Math.ceil(remaining);
+        const mins = Math.floor(remainSec / 60);
+        const secs = remainSec % 60;
+        const countStr = `${mins}:${String(secs).padStart(2, '0')}`;
+
+        // Pulsing effect when low
+        let alpha = 1.0;
+        if (fraction <= 0.2 && fraction > 0) {
+            alpha = 0.6 + 0.4 * Math.abs(Math.sin(Date.now() / 250));
+        }
+
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.font = 'bold 52px monospace';
+        ctx.fillStyle = textColor;
+        ctx.textAlign = 'center';
+        ctx.fillText(countStr, w / 2, h / 2 + 10);
+        ctx.restore();
+
+        // Small label above countdown
+        ctx.font = '9px monospace';
+        ctx.fillStyle = '#2a6a2a';
+        ctx.textAlign = 'center';
+        ctx.fillText('PROCESSING TIME', w / 2, h / 2 - 30);
+        ctx.textAlign = 'left';
+
+        // ── Drain bar ── bottom area, full width
+        const barX = 12, barY = h - 30, barW = w - 24, barH = 10;
+
+        // Bar background (empty track)
+        ctx.fillStyle = '#0e1e0e';
+        ctx.fillRect(barX, barY, barW, barH);
+
+        // Bar border
+        ctx.strokeStyle = '#1a3a1a';
+        ctx.strokeRect(barX, barY, barW, barH);
+
+        // Filled portion
+        const fillW = Math.floor(barW * fraction);
+        const barColor = `rgb(${barR},${barG},${barB})`;
+        ctx.fillStyle = barColor;
+        ctx.fillRect(barX, barY, fillW, barH);
+
+        // Tick marks on bar (every 25%)
+        ctx.strokeStyle = '#0a140a';
+        for (let i = 1; i < 4; i++) {
+            const tx = barX + Math.floor(barW * i / 4);
+            ctx.beginPath(); ctx.moveTo(tx, barY); ctx.lineTo(tx, barY + barH); ctx.stroke();
+        }
+
+        // Bottom label
+        ctx.font = '8px monospace';
+        ctx.fillStyle = '#2a6a2a';
+        ctx.textAlign = 'center';
+        ctx.fillText('REMAINING', w / 2, h - 8);
+        ctx.textAlign = 'left';
+
+        // Shift clock — bottom left
+        if (_screenClockBase) {
+            const shiftElapsed = (Date.now() - _screenClockBase) / 1000;
+            const gameMinutes = Math.floor(shiftElapsed * 0.4);
+            const totalMin = 22 * 60 + gameMinutes;
+            const hrs = Math.floor(totalMin / 60) % 24;
+            const mn = totalMin % 60;
+            ctx.font = '10px monospace';
+            ctx.fillStyle = '#1a4a1a';
+            ctx.fillText(`${String(hrs).padStart(2,'0')}:${String(mn).padStart(2,'0')}`, 6, h - 8);
+        }
+
+    } else if (state.gameOver) {
+        // SESSION CLOSED state
+        ctx.font = 'bold 20px monospace';
+        ctx.fillStyle = '#6a2a2a';
+        ctx.textAlign = 'center';
+        ctx.fillText('SESSION', w / 2, h / 2 - 8);
+        ctx.fillText('CLOSED', w / 2, h / 2 + 16);
         ctx.textAlign = 'left';
     } else {
-        ctx.font = 'bold 32px monospace';
-        ctx.fillStyle = '#2a6a2a';
-        ctx.textAlign = 'right';
-        ctx.fillText('--:--', w - 8, 36);
+        // STANDBY state
+        ctx.font = 'bold 28px monospace';
+        ctx.fillStyle = '#1a4a1a';
+        ctx.textAlign = 'center';
+        ctx.fillText('STANDBY', w / 2, h / 2 + 5);
         ctx.textAlign = 'left';
-    }
 
-    // Bottom bar — directive
-    ctx.font = '10px monospace';
-    ctx.fillStyle = '#2a6a2a';
-    const dir = (typeof getMemoDirective === 'function') ? getMemoDirective() : '';
-    if (dir && dir !== '.') {
-        ctx.fillText('DIR: ' + dir.substring(0, 26), 8, h - 8);
-    }
-
-    // Cursor blink (bottom right)
-    if (Math.floor(Date.now() / 600) % 2 === 0) {
-        ctx.fillStyle = '#40aa40';
-        ctx.fillRect(w - 16, h - 14, 8, 3);
+        // Blinking cursor
+        if (Math.floor(Date.now() / 600) % 2 === 0) {
+            ctx.fillStyle = '#2a6a2a';
+            ctx.fillRect(w / 2 + 50, h / 2 - 2, 8, 3);
+        }
     }
 
     screenTexture.needsUpdate = true;
@@ -1839,7 +1911,7 @@ const _origStartBtn = document.getElementById('start-btn');
 _origStartBtn.addEventListener('click', () => {
     if (!_screenClockBase) {
         _screenClockBase = Date.now();
-        _screenClockInterval = setInterval(drawScreenClock, 1000);
+        _screenClockInterval = setInterval(drawScreenClock, 500);
     }
     // HUD visibility now handled in animate loop
 });
@@ -2425,6 +2497,9 @@ function updateSuspicionPulse() {
 }
 
 function renderCase(c) {
+    // Start case processing timer on the monitor
+    startCaseTimer();
+
     // Update the directive memo on the desk paper
     const curDir = getMemoDirective();
     drawMemo(curDir);
@@ -6389,7 +6464,7 @@ document.getElementById('restart-btn').addEventListener('click', () => {
         // Start monitor clock + HUD
         if (!_screenClockBase) {
             _screenClockBase = Date.now();
-            _screenClockInterval = setInterval(drawScreenClock, 1000);
+            _screenClockInterval = setInterval(drawScreenClock, 500);
         }
         // Start 3D scene
         state.titleFading = true;
