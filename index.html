@@ -634,6 +634,10 @@
         <span class="tp-label">COLLECTED</span>
         <span class="tp-note">Silence witnesses. Knock sequence. Door.</span>
     </button>
+    <button class="tp-btn" data-ending="REPLACED">
+        <span class="tp-label">REPLACED</span>
+        <span class="tp-note">Too slow. Bureau sends replacement.</span>
+    </button>
 </div>
 
 <div id="debug-panel">
@@ -774,6 +778,7 @@ const state = {
     condemned: 0,
     totalSaved: 0,           // across all shifts
     totalCondemned: 0,       // across all shifts
+    timeouts: 0,             // cases where processing time expired
     evilStreak: 0,           // consecutive evil choices (for corruption)
     shiftChoices: [],        // array of {evil:bool} for current shift
     allChoices: [],          // array of {evil:bool, caseId:string} across all shifts
@@ -1752,10 +1757,56 @@ screenMat.needsUpdate = true;
 let _screenClockBase = null; // set when game starts
 let _screenClockInterval = null;
 let _caseStartTime = null; // when current case appeared
+let _caseTimedOut = false; // true when current case has already timed out
+let _timeoutFlashUntil = 0; // timestamp for TIMEOUT flash display
 const CASE_TIME_BUDGET = 45; // seconds per case (real time)
 
 function startCaseTimer() {
     _caseStartTime = Date.now();
+    _caseTimedOut = false;
+}
+
+function handleCaseTimeout() {
+    if (_caseTimedOut || state.gameOver || state.transitioning) return;
+    _caseTimedOut = true;
+    state.timeouts++;
+    _timeoutFlashUntil = Date.now() + 2500;
+
+    // Buzz sound for timeout
+    if (audioCtx) {
+        const osc = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        osc.connect(g); g.connect(window._audioMasterGain || audioCtx.destination);
+        osc.type = 'square';
+        osc.frequency.value = 80;
+        g.gain.setValueAtTime(0.05, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.0);
+        osc.start(); osc.stop(audioCtx.currentTime + 1.0);
+    }
+
+    // 2nd timeout: unique ending — your replacement has arrived
+    if (state.timeouts >= 2) {
+        setTimeout(() => {
+            state._timeoutEnding = true;
+            endGame(true);
+        }, 2000);
+        return;
+    }
+
+    // 1st timeout: auto-file case with the worst option (evil + max suspicion hit)
+    // Brief delay so player sees the TIMEOUT flash, then auto-stamp
+    setTimeout(() => {
+        if (state.gameOver) return;
+        // Cancel any pending stamp
+        if (state.stampPending) {
+            state.stampPending = false;
+            const caseEl = document.getElementById('case-file');
+            caseEl.classList.remove('stamp-mode');
+            document.getElementById('stamp-cursor').classList.remove('active');
+        }
+        // Force the evil choice — auto-filed by the system
+        window.gameChoice(15, true); // high suspicion penalty for timeout
+    }, 1500);
 }
 
 function drawScreenClock() {
@@ -1777,29 +1828,69 @@ function drawScreenClock() {
     ctx.fillStyle = '#2a6a2a';
     ctx.fillText('NP-L3-07', 6, 12);
 
-    if (state.started && !state.gameOver && _caseStartTime) {
+    // TIMEOUT flash state — bright red warning fills the screen
+    if (Date.now() < _timeoutFlashUntil) {
+        const flashPhase = Math.sin(Date.now() / 150);
+        const brightness = flashPhase > 0 ? 1.0 : 0.5;
+
+        ctx.save();
+        ctx.globalAlpha = brightness;
+        ctx.fillStyle = '#1a0000';
+        ctx.fillRect(0, 16, w, h - 16);
+        ctx.restore();
+
+        ctx.font = 'bold 36px monospace';
+        ctx.fillStyle = '#ff3030';
+        ctx.textAlign = 'center';
+        ctx.fillText('TIMEOUT', w / 2, h / 2 - 10);
+
+        ctx.font = '12px monospace';
+        ctx.fillStyle = '#cc2020';
+        ctx.fillText('AUTO-FILING', w / 2, h / 2 + 18);
+        ctx.textAlign = 'left';
+
+        if (state.timeouts >= 2) {
+            ctx.font = '10px monospace';
+            ctx.fillStyle = '#aa1515';
+            ctx.textAlign = 'center';
+            ctx.fillText('REASSIGNMENT INITIATED', w / 2, h / 2 + 42);
+            ctx.textAlign = 'left';
+        }
+
+        screenTexture.needsUpdate = true;
+        return;
+    }
+
+    if (state.started && !state.gameOver && _caseStartTime && !_caseTimedOut) {
         // === ACTIVE CASE: big countdown display ===
         const elapsed = (Date.now() - _caseStartTime) / 1000;
         const remaining = Math.max(0, CASE_TIME_BUDGET - elapsed);
         const fraction = remaining / CASE_TIME_BUDGET;
 
+        // Trigger timeout when time runs out
+        if (remaining <= 0) {
+            handleCaseTimeout();
+            screenTexture.needsUpdate = true;
+            return;
+        }
+
         // Color shifts from green to amber to red as time drains
         let barR, barG, barB, textColor;
         if (fraction > 0.5) {
-            barR = 0x20; barG = 0x90; barB = 0x20;
-            textColor = '#40aa40';
+            barR = 0x30; barG = 0xaa; barB = 0x30;
+            textColor = '#50cc50';
         } else if (fraction > 0.2) {
-            barR = 0x90; barG = 0x80; barB = 0x10;
-            textColor = '#aa9030';
+            barR = 0xcc; barG = 0xaa; barB = 0x20;
+            textColor = '#ccaa30';
         } else {
-            barR = 0x90; barG = 0x20; barB = 0x10;
-            textColor = '#aa4030';
+            barR = 0xee; barG = 0x40; barB = 0x20;
+            textColor = '#ff5040';
         }
 
         // CASE # — top right
         const caseIdx = getAbsoluteCaseIndex() + 1;
         ctx.font = '11px monospace';
-        ctx.fillStyle = '#3a8a3a';
+        ctx.fillStyle = '#4aaa4a';
         ctx.textAlign = 'right';
         ctx.fillText(`CASE ${caseIdx}`, w - 6, 12);
         ctx.textAlign = 'left';
@@ -1816,10 +1907,10 @@ function drawScreenClock() {
         const secs = remainSec % 60;
         const countStr = `${mins}:${String(secs).padStart(2, '0')}`;
 
-        // Pulsing effect when low
+        // Pulsing effect when low — brighter pulses
         let alpha = 1.0;
-        if (fraction <= 0.2 && fraction > 0) {
-            alpha = 0.6 + 0.4 * Math.abs(Math.sin(Date.now() / 250));
+        if (fraction <= 0.2) {
+            alpha = 0.7 + 0.3 * Math.abs(Math.sin(Date.now() / 200));
         }
 
         ctx.save();
@@ -1832,26 +1923,26 @@ function drawScreenClock() {
 
         // Small label above countdown
         ctx.font = '9px monospace';
-        ctx.fillStyle = '#2a6a2a';
+        ctx.fillStyle = '#3a8a3a';
         ctx.textAlign = 'center';
         ctx.fillText('PROCESSING TIME', w / 2, h / 2 - 30);
         ctx.textAlign = 'left';
 
         // ── Drain bar ── bottom area, full width
-        const barX = 12, barY = h - 30, barW = w - 24, barH = 10;
+        const barX = 12, barY = h - 30, barW = w - 24, barH = 12;
 
         // Bar background (empty track)
         ctx.fillStyle = '#0e1e0e';
         ctx.fillRect(barX, barY, barW, barH);
 
         // Bar border
-        ctx.strokeStyle = '#1a3a1a';
+        ctx.strokeStyle = '#1a4a1a';
+        ctx.lineWidth = 1;
         ctx.strokeRect(barX, barY, barW, barH);
 
         // Filled portion
         const fillW = Math.floor(barW * fraction);
-        const barColor = `rgb(${barR},${barG},${barB})`;
-        ctx.fillStyle = barColor;
+        ctx.fillStyle = `rgb(${barR},${barG},${barB})`;
         ctx.fillRect(barX, barY, fillW, barH);
 
         // Tick marks on bar (every 25%)
@@ -1861,45 +1952,40 @@ function drawScreenClock() {
             ctx.beginPath(); ctx.moveTo(tx, barY); ctx.lineTo(tx, barY + barH); ctx.stroke();
         }
 
-        // Bottom label
+        // "REMAINING" label below bar
         ctx.font = '8px monospace';
-        ctx.fillStyle = '#2a6a2a';
+        ctx.fillStyle = '#3a8a3a';
         ctx.textAlign = 'center';
-        ctx.fillText('REMAINING', w / 2, h - 8);
+        ctx.fillText('REMAINING', w / 2, h - 6);
         ctx.textAlign = 'left';
 
-        // Shift clock — bottom left
-        if (_screenClockBase) {
-            const shiftElapsed = (Date.now() - _screenClockBase) / 1000;
-            const gameMinutes = Math.floor(shiftElapsed * 0.4);
-            const totalMin = 22 * 60 + gameMinutes;
-            const hrs = Math.floor(totalMin / 60) % 24;
-            const mn = totalMin % 60;
-            ctx.font = '10px monospace';
-            ctx.fillStyle = '#1a4a1a';
-            ctx.fillText(`${String(hrs).padStart(2,'0')}:${String(mn).padStart(2,'0')}`, 6, h - 8);
+        // Timeout warning count — bottom left
+        if (state.timeouts > 0) {
+            ctx.font = '9px monospace';
+            ctx.fillStyle = '#aa3030';
+            ctx.fillText(`DELAYS: ${state.timeouts}`, 6, h - 6);
         }
 
     } else if (state.gameOver) {
         // SESSION CLOSED state
-        ctx.font = 'bold 20px monospace';
-        ctx.fillStyle = '#6a2a2a';
+        ctx.font = 'bold 22px monospace';
+        ctx.fillStyle = '#aa3030';
         ctx.textAlign = 'center';
-        ctx.fillText('SESSION', w / 2, h / 2 - 8);
-        ctx.fillText('CLOSED', w / 2, h / 2 + 16);
+        ctx.fillText('SESSION', w / 2, h / 2 - 10);
+        ctx.fillText('CLOSED', w / 2, h / 2 + 18);
         ctx.textAlign = 'left';
     } else {
-        // STANDBY state
+        // STANDBY state — waiting for case
         ctx.font = 'bold 28px monospace';
-        ctx.fillStyle = '#1a4a1a';
+        ctx.fillStyle = '#2a6a2a';
         ctx.textAlign = 'center';
         ctx.fillText('STANDBY', w / 2, h / 2 + 5);
         ctx.textAlign = 'left';
 
         // Blinking cursor
         if (Math.floor(Date.now() / 600) % 2 === 0) {
-            ctx.fillStyle = '#2a6a2a';
-            ctx.fillRect(w / 2 + 50, h / 2 - 2, 8, 3);
+            ctx.fillStyle = '#3a8a3a';
+            ctx.fillRect(w / 2 + 55, h / 2 - 2, 8, 3);
         }
     }
 
@@ -5604,7 +5690,12 @@ function endGame(caught) {
     const totalCases = allShifts.reduce((sum, s) => sum + s.length, 0);
 
     const reachedFinalCase = getAbsoluteCaseIndex() >= 17; // Case 18 (index 17) is the final testimony case
-    if (state.breakoutPath && caught) {
+    if (state._timeoutEnding) {
+        // REPLACED — too slow, the Bureau found someone faster
+        title = 'REPLACED';
+        titleClass = 'e-title caught';
+        msg = 'Your average processing time has exceeded departmental standards. A replacement clerk has been assigned to your station effective immediately. Please leave your stamp on the desk. Your personal effects will be mailed. Do not use the elevator.';
+    } else if (state.breakoutPath && caught) {
         // SACRIFICE ENDING -caught, but refused to harm anyone
         // Starts as PROCESSED, morphs into UNSEALED
         title = 'PROCESSED';
@@ -6624,6 +6715,15 @@ document.getElementById('restart-btn').addEventListener('click', () => {
                     evil: true, caseId: c.id
                 }));
                 triggerKnockEnding();
+                break;
+            }
+            case 'REPLACED': {
+                state.currentShift = 0;
+                state.totalSaved = 2;
+                state.totalCondemned = 3;
+                state.timeouts = 2;
+                state._timeoutEnding = true;
+                endGame(true);
                 break;
             }
         }
