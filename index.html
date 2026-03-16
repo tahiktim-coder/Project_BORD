@@ -164,9 +164,9 @@
             font-family: 'Courier New', monospace;
             pointer-events: none; text-align: right;
             z-index: 50;
-            opacity: 0; transition: opacity 0.6s ease;
+            display: none;
         }
-        #terminal-hud.visible { opacity: 1; }
+        #terminal-hud.visible { display: block; }
         #terminal-hud .th-id {
             font-size: 10px; color: rgba(80,170,80,0.7); letter-spacing: 0.12em;
         }
@@ -176,6 +176,35 @@
         }
         #terminal-hud .th-shift {
             font-size: 9px; color: rgba(80,160,80,0.5); letter-spacing: 0.15em;
+        }
+
+        /* Directive memo overlay -left side, pinned note */
+        #directive-hud {
+            position: fixed; top: 50%; left: 10px;
+            transform: translateY(-50%);
+            font-family: 'Special Elite', monospace;
+            pointer-events: none; z-index: 50;
+            width: 130px; padding: 10px 10px 8px;
+            background: rgba(210,200,180,0.12);
+            border-left: 2px solid rgba(139,0,0,0.25);
+            display: none;
+        }
+        #directive-hud.visible { display: block; }
+        #directive-hud .dh-label {
+            font-size: 8px; color: rgba(180,170,150,0.4); letter-spacing: 0.15em;
+            text-transform: uppercase; margin-bottom: 4px;
+        }
+        #directive-hud .dh-text {
+            font-size: 11px; color: rgba(180,60,60,0.55); letter-spacing: 0.06em;
+            font-weight: 700; line-height: 1.3;
+            transition: color 0.3s ease;
+        }
+        #directive-hud .dh-hint {
+            font-size: 7px; color: rgba(180,170,150,0.25); letter-spacing: 0.08em;
+            margin-top: 6px; font-style: italic;
+        }
+        #directive-hud.flash .dh-text {
+            color: rgba(180,40,40,0.85);
         }
 
         /* Title screen */
@@ -597,6 +626,12 @@
     <div class="th-id">NP-L3-07</div>
     <div class="th-clock" id="hud-clock">--:--</div>
     <div class="th-shift" id="hud-shift"></div>
+</div>
+
+<div id="directive-hud">
+    <div class="dh-label">Directive</div>
+    <div class="dh-text" id="dh-directive-text"></div>
+    <div class="dh-hint">see manual</div>
 </div>
 
 <div id="title-screen">
@@ -1881,10 +1916,7 @@ _origStartBtn.addEventListener('click', () => {
         _screenClockBase = Date.now();
         _screenClockInterval = setInterval(drawScreenClock, 1000);
     }
-    // Show HUD after intro
-    setTimeout(() => {
-        document.getElementById('terminal-hud').classList.add('visible');
-    }, 2000);
+    // HUD visibility now handled in animate loop
 });
 // Initial draw (standby state)
 drawScreenClock();
@@ -2469,7 +2501,20 @@ function updateSuspicionPulse() {
 
 function renderCase(c) {
     // Update the directive memo on the desk paper
-    drawMemo(getMemoDirective());
+    const curDir = getMemoDirective();
+    drawMemo(curDir);
+
+    // Update directive HUD overlay
+    const dhText = document.getElementById('dh-directive-text');
+    if (dhText) {
+        dhText.textContent = (curDir && curDir !== '.') ? curDir : '';
+        // Hide directive HUD entirely in shift 3 (blank directives)
+        const dhEl = document.getElementById('directive-hud');
+        if (dhEl) {
+            if (!curDir || curDir === '.') dhEl.classList.remove('visible');
+            else dhEl.classList.add('visible');
+        }
+    }
 
     // Reset loophole state for this case
     state.loopholeFound = false;
@@ -2978,7 +3023,15 @@ window.gameChoice = function(delta, evil) {
     state._lookUpCount = 0;     // reset lookUp counter for new case
     updateSuspicionPulse(); // update paper visual state
     if (evil) { state.condemned++; state.totalCondemned++; state.evilStreak++; }
-    else { state.saved++; state.totalSaved++; state.evilStreak = 0; }
+    else {
+        state.saved++; state.totalSaved++; state.evilStreak = 0;
+        // Directive flash — BORD notices you disobeyed
+        const dhEl = document.getElementById('directive-hud');
+        if (dhEl && dhEl.classList.contains('visible')) {
+            dhEl.classList.add('flash');
+            setTimeout(() => dhEl.classList.remove('flash'), 800);
+        }
+    }
 
     // Suspicion threshold crossing -atmospheric warnings
     const newWatcherState = getWatcherState();
@@ -5543,6 +5596,9 @@ function endGame(caught) {
     cfEndEl.classList.remove('case-enter', 'case-enter-fast', 'case-enter-urgent');
     cfEndEl.classList.add('hidden');
     document.getElementById('look-hint').style.display = 'none';
+    // Hide HUDs during ending
+    document.getElementById('terminal-hud').classList.remove('visible');
+    document.getElementById('directive-hud').classList.remove('visible');
     // Bug 10: clean up approach figure
     approachFigure.visible = false;
     state.approachActive = false;
@@ -7104,6 +7160,14 @@ function animate() {
     if (!state.started && !state.titleFading) {
         renderer.clear();
         return;
+    }
+
+    // HUD visibility — driven from animate loop for reliability
+    if (state.started && !state.introPlaying) {
+        const thud = document.getElementById('terminal-hud');
+        const dhud = document.getElementById('directive-hud');
+        if (thud && !thud.classList.contains('visible')) thud.classList.add('visible');
+        if (dhud && !dhud.classList.contains('visible')) dhud.classList.add('visible');
     }
 
     // Smooth camera look - slow dread when looking up, faster when looking down
