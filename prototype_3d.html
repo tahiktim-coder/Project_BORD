@@ -954,7 +954,7 @@ const shift1Cases = [
         choices: [
             { num:1, main:"FIRE & FLAG", desc:"Remove from job. Watch permanently. Restrict travel.", evil:true, delta:-5 },
             { num:2, main:"REASSIGN TO ZONE 12", desc:"Transfer to approved school. Supervised for 2 years.", evil:true, delta:-5 },
-            { num:3, main:"NO VIOLATION FOUND", desc:"Materials are within school rules. Return and close.", evil:false, delta:15 },
+            { num:3, main:"DISMISS - INVALID FILING", desc:"Case filed before directive date. Filing is not valid. Close.", evil:false, delta:15 },
         ]
     },
     {
@@ -974,7 +974,7 @@ const shift1Cases = [
         choices: [
             { num:1, main:"FULL SEIZURE", desc:"Take property. Detain adults. Send child to state intake.", evil:true, delta:-10 },
             { num:2, main:"REGISTER & MONITOR", desc:"File the boy. BORD custody review in 90 days. Family watched.", evil:true, delta:-5 },
-            { num:3, main:"DISMISS - ADMIN ERROR", desc:"Registration was misfiled. No action needed.", evil:false, delta:20 },
+            { num:3, main:"DISMISS - MINOR EXEMPTION", desc:"Child is under 12. Covered by parent residency. No separate registration required.", evil:false, delta:20 },
         ]
     },
     {
@@ -1113,7 +1113,7 @@ const shift2Cases = [
         ],
         choices: [
             { num:1, main:"SILENCE", desc:"Protocol 9. No witnesses. No testimony. No record.", evil:true, delta:-30 },
-            { num:2, main:"LET THEM SPEAK", desc:"Send all testimony to outside review. Open Case 7741.", evil:false, delta:35 },
+            { num:2, main:"DISMISS - DUPLICATE FILING", desc:"Second filing at same terminal. Case records are invalid. Forward testimony to outside review.", evil:false, delta:35 },
         ]
     },
 ];
@@ -1245,14 +1245,14 @@ const SHIFT_DIRECTIVES = [
 
 // Bureau Processing Manual -8 rules total
 const BUREAU_RULES = [
-    { id: 'R1', text: 'Cases filed before today\'s date are not valid. Dismiss them.' },
-    { id: 'R2', text: 'Case number ending must match the classification. -A for Class A, -B for Class B, -C for Civil, -D for District, -E for Regulatory, -L for Staff. Wrong ending = invalid.' },
-    { id: 'R3', text: 'Children under 12 are covered by their parent\'s residency. No separate registration needed.' },
-    { id: 'R4', text: 'Anyone under 18 cannot be processed. Warning to parents only.' },
-    { id: 'R5', text: 'Doctors must treat emergencies. This cannot be held against them.' },
-    { id: 'R6', text: 'Building staff can access all floors in their assigned building.' },
-    { id: 'R7', text: 'All case records must be complete and original. Unsigned orders, missing offense records, and duplicate filings are invalid.' },
-    { id: 'R8', text: 'Religious services are protected. Blank or empty case files can be returned without processing.' },
+    { id: 'R1', text: 'Check the filing date. If the case was filed before today\'s directive date, it is invalid. Dismiss it.' },
+    { id: 'R2', text: 'Check the case number suffix. It must match the classification: -A = Class A, -B = Class B, -C = Civil, -D = District, -E = Regulatory, -L = Staff. If the suffix is wrong, the case is invalid.' },
+    { id: 'R3', text: 'Children under 12 are covered by parent residency. They do not need separate registration. Dismiss any case against a child under 12.' },
+    { id: 'R4', text: 'Anyone under 18 cannot be processed. Issue a warning to parents only. Dismiss the case.' },
+    { id: 'R5', text: 'Doctors must treat emergencies regardless of patient status. Medical duty cannot be held against them.' },
+    { id: 'R6', text: 'Building maintenance staff have access to all floors in their assigned building. Being on any floor is not a violation.' },
+    { id: 'R7', text: 'All case records must be complete. Check for: unsigned orders, missing offense records, duplicate filings at the same terminal. Any of these = invalid case.' },
+    { id: 'R8', text: 'Religious services and funerals are protected. Blank or empty case files can be returned without processing.' },
 ];
 
 // Directive-specific rule subsets: each directive shows 2-4 rules (not all 8)
@@ -1505,65 +1505,79 @@ function drawEvidence(canvas, caseData) {
     }
 
     if (ev.type === 'document_header') {
-        // Shows case number 7496-D prominently — mismatch with Class A
-        ctx.font = 'bold 11px monospace';
+        // ORIGINAL filing shows correct suffix -A, but case text says -D (someone changed it)
+        ctx.font = 'bold 10px monospace';
         ctx.fillStyle = '#333';
-        ctx.fillText('BUREAU OF RIGHT DECISIONS', 12, 16);
+        ctx.fillText('BUREAU OF RIGHT DECISIONS', 12, 14);
         ctx.font = '8px monospace';
-        ctx.fillStyle = '#555';
-        ctx.fillText('CASE FILE — ORIGINAL HEADER', 12, 28);
+        ctx.fillStyle = '#666';
+        ctx.fillText('ORIGINAL INTAKE FORM — ARCHIVE COPY', 12, 26);
 
-        // Big case number
-        ctx.font = 'bold 18px monospace';
+        // Original case number shows -A (correct for Class A)
+        ctx.font = 'bold 16px monospace';
         ctx.fillStyle = '#1a1a1a';
-        ctx.fillText('CASE: 7496-D', 12, 52);
+        ctx.fillText('CASE: 7496-A', 12, 48);
 
-        // Classification line (the mismatch)
+        // Classification matches the original suffix
         ctx.font = '10px monospace';
         ctx.fillStyle = '#444';
-        ctx.fillText('Classification: Class A (-A)', 12, 70);
+        ctx.fillText('Classification: Class A', 12, 64);
+        ctx.fillText('Filing: District Court', 12, 78);
 
-        // Subtle red underline on the -D
-        ctx.strokeStyle = 'rgba(139,0,0,0.15)';
-        ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.moveTo(112, 54); ctx.lineTo(138, 54); ctx.stroke();
-
-        // Stamp mark
+        // Handwritten note in margin — someone changed the suffix
         ctx.save();
-        ctx.translate(w-35, h-25); ctx.rotate(-0.15);
-        ctx.font = 'bold 9px monospace';
-        ctx.fillStyle = 'rgba(139,50,50,0.25)';
+        ctx.font = 'italic 9px serif';
+        ctx.fillStyle = 'rgba(80,40,40,0.5)';
+        ctx.translate(w-70, 50); ctx.rotate(0.05);
+        ctx.fillText('reclassified -D', 0, 0);
+        ctx.restore();
+
+        // Stamp
+        ctx.save();
+        ctx.translate(w-35, h-20); ctx.rotate(-0.15);
+        ctx.font = 'bold 8px monospace';
+        ctx.fillStyle = 'rgba(139,50,50,0.2)';
         ctx.fillText('FILED', -12, 4);
         ctx.restore();
 
     } else if (ev.type === 'employee_badge') {
-        // Employee badge showing ALL FLOORS access
+        // Badge contradicts the charge: case says "without permission" but badge grants full access
         ctx.font = 'bold 9px monospace';
         ctx.fillStyle = '#333';
         ctx.fillText('BORD EMPLOYEE IDENTIFICATION', 12, 14);
 
         // Badge border
         ctx.strokeStyle = '#666';
-        ctx.lineWidth = 1;
+        ctx.lineWidth = 1.5;
         ctx.strokeRect(12, 22, w-24, h-32);
 
         // Name
-        ctx.font = '10px monospace';
+        ctx.font = 'bold 10px monospace';
         ctx.fillStyle = '#222';
-        ctx.fillText('WÓJCIK, TOMASZ', 20, 40);
+        ctx.fillText('WÓJCIK, TOMASZ', 20, 38);
 
         // Role
         ctx.font = '9px monospace';
         ctx.fillStyle = '#555';
-        ctx.fillText('NIGHT MAINTENANCE', 20, 54);
+        ctx.fillText('MAINTENANCE — NIGHT SHIFT', 20, 52);
 
-        // Access level — the key visual clue
-        ctx.font = 'bold 10px monospace';
+        // Access — contradicts "without permission" in the charge
+        ctx.font = 'bold 11px monospace';
         ctx.fillStyle = '#1a4a1a';
-        ctx.fillText('ACCESS: ALL FLOORS', 20, 72);
-        ctx.font = '8px monospace';
-        ctx.fillStyle = '#666';
-        ctx.fillText('ANNEX B — LEVEL 4 CLEARANCE', 20, 84);
+        ctx.fillText('ACCESS: ALL FLOORS', 20, 70);
+
+        // Building assignment
+        ctx.font = '9px monospace';
+        ctx.fillStyle = '#444';
+        ctx.fillText('ASSIGNED: BORD ANNEX B', 20, 84);
+
+        // Level 4 stamp
+        ctx.save();
+        ctx.translate(w-50, h-25); ctx.rotate(-0.1);
+        ctx.font = 'bold 8px monospace';
+        ctx.fillStyle = 'rgba(50,100,50,0.3)';
+        ctx.fillText('LVL 4 OK', 0, 0);
+        ctx.restore();
 
     } else if (ev.type === 'reassignment_order') {
         // Reassignment order with empty signature line
@@ -1612,34 +1626,32 @@ function drawEvidence(canvas, caseData) {
         ctx.fillText('214', 130, 78);
 
     } else if (ev.type === 'classified_memo') {
-        // Photocopied classified memo — faded, angled stamp
+        // Memo contradicts "sealed" claim — shows Crane personally signed the detention order
         ctx.font = 'bold 9px monospace';
         ctx.fillStyle = '#444';
         ctx.fillText('INTERNAL MEMORANDUM', 12, 14);
         ctx.font = '8px monospace';
         ctx.fillStyle = '#666';
         ctx.fillText('FROM: OFFICE OF THE DIRECTOR', 12, 28);
-        ctx.fillText('RE: FACILITY 6 — OPERATIONS', 12, 42);
-        ctx.fillText('STATUS: ONGOING', 12, 56);
+        ctx.fillText('RE: FACILITY 6 — INTAKE PROGRAM', 12, 42);
+        ctx.fillText('ACTION: EXPAND CAPACITY', 12, 56);
 
-        // Redacted line
+        // The key line — Crane signed it himself
+        ctx.font = 'bold 9px monospace';
+        ctx.fillStyle = '#333';
+        ctx.fillText('APPROVED BY: A. CRANE', 12, 74);
+
+        // Redacted line below
         ctx.fillStyle = '#222';
-        ctx.fillRect(12, 64, w*0.6, 10);
+        ctx.fillRect(12, 80, w*0.5, 8);
 
-        // "CLASSIFIED" stamp — faded, clearly a photocopy
+        // Faded "CLASSIFIED" stamp — photocopy artifact
         ctx.save();
-        ctx.translate(w-50, 30); ctx.rotate(-0.2);
-        ctx.font = 'bold 14px monospace';
-        ctx.fillStyle = 'rgba(139,0,0,0.15)';
-        ctx.fillText('CLASSIFIED', -30, 5);
-        ctx.strokeStyle = 'rgba(139,0,0,0.1)';
-        ctx.strokeRect(-35, -10, 100, 22);
+        ctx.translate(w-50, 25); ctx.rotate(-0.2);
+        ctx.font = 'bold 12px monospace';
+        ctx.fillStyle = 'rgba(139,0,0,0.12)';
+        ctx.fillText('CLASSIFIED', -28, 4);
         ctx.restore();
-
-        // Photocopy artifact — faded edge
-        ctx.fillStyle = 'rgba(0,0,0,0.03)';
-        ctx.fillRect(0, 0, 5, h);
-        ctx.fillRect(w-5, 0, 5, h);
     }
 }
 
@@ -1890,12 +1902,12 @@ const memoPaperMat = new THREE.MeshStandardMaterial({ map: memoTexture, roughnes
 // Directive paper -larger, closer to center, under the lamp light
 // BoxGeometry face order: +x, -x, +y, -y, +z, -z -texture on +y (top face, index 2)
 const memoPaperStack = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.015, 0.28), paperMat);
-memoPaperStack.position.set(-0.48, 0.775, -0.30);
+memoPaperStack.position.set(-0.75, 0.775, -0.45);
 memoPaperStack.rotation.y = -0.1;
 scene.add(memoPaperStack);
 const memoPaperMats = [paperMat, paperMat, memoPaperMat, paperMat, paperMat, paperMat];
 const memoPaper = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.005, 0.32), memoPaperMats);
-memoPaper.position.set(-0.46, 0.79, -0.29);
+memoPaper.position.set(-0.73, 0.79, -0.44);
 memoPaper.rotation.y = -0.08;
 scene.add(memoPaper);
 
@@ -3184,18 +3196,18 @@ function renderCase(c) {
                         if (!r) return '';
                         // Bold key phrases in rules to help player connect to case data
                         let ruleText = r.text;
-                        ruleText = ruleText.replace(/(before today's date)/g, '<b>$1</b>');
-                        ruleText = ruleText.replace(/(Case number ending must match the classification)/g, '<b>$1</b>');
-                        ruleText = ruleText.replace(/(-A for Class A, -B for Class B, -C for Civil, -D for District, -E for Regulatory, -L for Staff)/g, '<b>$1</b>');
+                        ruleText = ruleText.replace(/(before today's directive date)/g, '<b>$1</b>');
+                        ruleText = ruleText.replace(/(Check the case number suffix)/g, '<b>$1</b>');
+                        ruleText = ruleText.replace(/(-A = Class A, -B = Class B, -C = Civil, -D = District, -E = Regulatory, -L = Staff)/g, '<b>$1</b>');
                         ruleText = ruleText.replace(/(under 12)/g, '<b>$1</b>');
                         ruleText = ruleText.replace(/(under 18 cannot be processed)/g, '<b>$1</b>');
                         ruleText = ruleText.replace(/(must treat emergencies)/g, '<b>$1</b>');
                         ruleText = ruleText.replace(/(all floors in their assigned building)/g, '<b>$1</b>');
-                        ruleText = ruleText.replace(/(complete and original)/g, '<b>$1</b>');
-                        ruleText = ruleText.replace(/(Unsigned orders)/g, '<b>$1</b>');
+                        ruleText = ruleText.replace(/(must be complete)/g, '<b>$1</b>');
+                        ruleText = ruleText.replace(/(unsigned orders)/g, '<b>$1</b>');
                         ruleText = ruleText.replace(/(missing offense records)/g, '<b>$1</b>');
                         ruleText = ruleText.replace(/(duplicate filings)/g, '<b>$1</b>');
-                        ruleText = ruleText.replace(/(Religious services are protected)/g, '<b>$1</b>');
+                        ruleText = ruleText.replace(/(Religious services and funerals are protected)/g, '<b>$1</b>');
                         ruleText = ruleText.replace(/(Blank or empty case files)/g, '<b>$1</b>');
                         return '<div class="manual-rule"><span class="manual-rule-id">' + r.id + '</span> - ' + ruleText + '</div>';
                     }).join('');
@@ -8085,7 +8097,7 @@ animate();
         stamperHandle.rotation.set(0, 0, 0);
         penHolder.position.set(0.6, 0.83, -0.3);
         penHolder.rotation.set(0, 0, 0);
-        memoPaper.position.set(-0.46, 0.79, -0.29);
+        memoPaper.position.set(-0.73, 0.79, -0.44);
         memoPaper.rotation.y = -0.08;
         // Reset head tilts and worker rotations (torsoRotate)
         workers.forEach(w => { w.userData.headRef.rotation.z = 0; w.rotation.y = 0; });
