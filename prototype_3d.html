@@ -1287,7 +1287,7 @@ renderer.toneMappingExposure = 2.5;
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0a0a0a);
-scene.fog = new THREE.FogExp2(0x0a0a0a, 0.012);
+scene.fog = new THREE.FogExp2(0x0a0a0a, 0.025);
 
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 200);
 camera.position.set(0, 1.8, 0);
@@ -2123,7 +2123,7 @@ function createWorker(x, z, rotY = 0) {
     group.add(hatTop);
 
     // Eyes - wider apart, larger, tucked deep under hat brim
-    const eyeGeo = new THREE.SphereGeometry(0.025, 8, 8);
+    const eyeGeo = new THREE.SphereGeometry(0.025, 4, 4);
     const leftEye = new THREE.Mesh(eyeGeo, eyeMatOff.clone());
     leftEye.position.set(-0.065, 1.43, -0.28);
     group.add(leftEye);
@@ -2198,9 +2198,9 @@ function createStation(x, z, facingAngle) {
 const workers = [];
 const stations = [];
 
-for (let row = 0; row < 18; row++) {
+for (let row = 0; row < 8; row++) {
     const z = -(row * 2.5 + 3);
-    for (let col = 0; col < 4; col++) {
+    for (let col = 0; col < 3; col++) {
         // Left side
         const xL = -(col * 2.0 + 1.5);
         const stL = createStation(xL, z, Math.PI);
@@ -2220,13 +2220,13 @@ for (let row = 0; row < 18; row++) {
 workers.forEach(w => { w.userData.leftEye.visible = false; w.userData.rightEye.visible = false; });
 
 // Dividers
-for (let row = 0; row < 18; row++) {
+for (let row = 0; row < 8; row++) {
     const z = -(row * 2.5 + 1.8);
-    const divL = new THREE.Mesh(new THREE.BoxGeometry(8, 1.2, 0.05), dividerMat);
-    divL.position.set(-4.5, 0.6, z);
+    const divL = new THREE.Mesh(new THREE.BoxGeometry(6, 1.2, 0.05), dividerMat);
+    divL.position.set(-4.0, 0.6, z);
     scene.add(divL);
-    const divR = new THREE.Mesh(new THREE.BoxGeometry(8, 1.2, 0.05), dividerMat);
-    divR.position.set(4.5, 0.6, z);
+    const divR = new THREE.Mesh(new THREE.BoxGeometry(6, 1.2, 0.05), dividerMat);
+    divR.position.set(4.0, 0.6, z);
     scene.add(divR);
 }
 
@@ -2266,7 +2266,7 @@ function createFluorescent(x, z, intensity) {
     const fixture = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.05, 0.15), fixtureMat);
     fixture.position.y = 3.48;
     group.add(fixture);
-    const light = new THREE.PointLight(0xeeddcc, intensity || 2.5, 16, 1.5);
+    const light = new THREE.PointLight(0xeeddcc, intensity || 2.5, 20, 1.2);
     light.position.set(0, 3.2, 0);
     group.add(light);
     group.position.set(x, 0, z);
@@ -2279,19 +2279,22 @@ scene.add(createFluorescent(0, -0.5, 3.0));
 // Track office lights for lights-die event
 const officeLights = [];
 
-// Office lights - every row center, alternating sides
-for (let row = 0; row < 18; row++) {
+// Office lights - every other row, center only (side lights removed for perf)
+for (let row = 0; row < 8; row += 2) {
     const z = -(row * 2.5 + 3);
-    const c = createFluorescent(0, z, 2.0);
-    const l = createFluorescent(-3.5, z, 1.5);
-    const r = createFluorescent(3.5, z, 1.5);
-    scene.add(c); scene.add(l); scene.add(r);
-    officeLights.push({ row, z, groups: [c, l, r], dead: false });
+    const c = createFluorescent(0, z, 3.0);
+    scene.add(c);
+    // Keep 3-group structure for compatibility with lightsDie event
+    officeLights.push({ row, z, groups: [c], dead: false });
 }
 
 // Hemisphere fill
 const hemiLight = new THREE.HemisphereLight(0x444444, 0x111111, 0.5);
 scene.add(hemiLight);
+
+// Collect all point lights once for flicker (avoids scene.traverse every frame)
+const _allPointLights = [];
+scene.traverse(child => { if (child instanceof THREE.PointLight) _allPointLights.push(child); });
 
 // ============================================================
 // POST-PROCESSING
@@ -2301,7 +2304,7 @@ composer.addPass(new RenderPass(scene, camera));
 
 // Bloom - very tight, high threshold so only bright red eyes trigger it
 const bloomPass = new UnrealBloomPass(
-    new THREE.Vector2(window.innerWidth, window.innerHeight),
+    new THREE.Vector2(window.innerWidth / 2, window.innerHeight / 2),
     0.3, 0.15, 0.95
 );
 composer.addPass(bloomPass);
@@ -7313,24 +7316,22 @@ function animate() {
     }
 
     // Subtle fluorescent flicker -lamp flicker intensifies with suspicion
-    scene.traverse(child => {
-        if (child instanceof THREE.PointLight) {
-            if (child.userData.baseIntensity === undefined) {
-                child.userData.baseIntensity = child.intensity;
-                child.userData.origIntensity = child.intensity; // save for restart reset
-            }
-            const base = child.userData.baseIntensity;
-            if (base <= 0) { child.intensity = 0; return; } // dead light stays dead
-            // Desk lamp (lampLight) gets amplified flicker at high suspicion
-            const isDesklamp = (child === lampLight);
-            const flickerAmp = isDesklamp ? (0.08 + suspPct * 0.35) : 0.08;
-            const flicker = Math.sin(t * 20 + child.id * 5) * flickerAmp + Math.random() * 0.04;
-            child.intensity = Math.max(0.1, base + flicker);
+    for (let i = 0; i < _allPointLights.length; i++) {
+        const child = _allPointLights[i];
+        if (child.userData.baseIntensity === undefined) {
+            child.userData.baseIntensity = child.intensity;
+            child.userData.origIntensity = child.intensity;
         }
-    });
+        const base = child.userData.baseIntensity;
+        if (base <= 0) { child.intensity = 0; continue; }
+        const isDesklamp = (child === lampLight);
+        const flickerAmp = isDesklamp ? (0.08 + suspPct * 0.35) : 0.08;
+        const flicker = Math.sin(t * 20 + child.id * 5) * flickerAmp + Math.random() * 0.04;
+        child.intensity = Math.max(0.1, base + flicker);
+    }
 
     // Fog density scales with suspicion -far workers disappear
-    const targetFogDensity = 0.012 + suspPct * 0.018;
+    const targetFogDensity = 0.025 + suspPct * 0.020;
     scene.fog.density += (targetFogDensity - scene.fog.density) * 0.01;
 
     // Monitor screen color shifts from green toward amber/red with suspicion
