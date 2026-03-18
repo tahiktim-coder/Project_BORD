@@ -158,6 +158,79 @@
         #office-status.visible { opacity: 1; }
         #office-status.danger { color: #8b0000; }
 
+        /* Phone call overlay */
+        #phone-overlay {
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            pointer-events: none; z-index: 55;
+            display: none; flex-direction: column; align-items: center;
+            padding-bottom: 60px;
+        }
+        #phone-overlay.ringing {
+            display: flex;
+        }
+        #phone-overlay.active {
+            display: flex;
+        }
+        .phone-ring-hint {
+            font-family: 'Courier Prime', monospace;
+            font-size: 12px; color: rgba(180,170,150,0.6);
+            letter-spacing: 0.15em; text-transform: uppercase;
+            animation: phoneFlicker 1.2s ease-in-out infinite;
+        }
+        @keyframes phoneFlicker {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.9; }
+        }
+        .phone-caller {
+            font-family: 'Courier Prime', monospace;
+            font-size: 9px; color: rgba(180,170,150,0.35);
+            letter-spacing: 0.2em; text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+        .phone-text {
+            font-family: 'Special Elite', monospace;
+            font-size: 14px; color: rgba(200,190,170,0.85);
+            max-width: 500px; text-align: center; line-height: 1.6;
+            letter-spacing: 0.03em;
+            background: rgba(0,0,0,0.7);
+            padding: 16px 24px;
+            border-left: 2px solid rgba(139,0,0,0.3);
+        }
+        .phone-dismiss {
+            font-family: 'Courier Prime', monospace;
+            font-size: 9px; color: rgba(180,170,150,0.3);
+            margin-top: 8px; letter-spacing: 0.1em;
+        }
+
+        /* Manual tab pulse for cross-reference cases */
+        @keyframes tabPulse {
+            0%, 100% { background: transparent; }
+            50% { background: rgba(139,100,50,0.15); }
+        }
+        .cf-tab.xref-pulse {
+            animation: tabPulse 2s ease-in-out 1;
+        }
+
+        /* Evidence visual in case file */
+        .cf-evidence {
+            margin: 10px 0;
+            padding: 8px;
+            background: rgba(190,180,160,0.3);
+            border: 1px solid rgba(100,90,70,0.2);
+            position: relative;
+            cursor: default;
+        }
+        .cf-evidence canvas {
+            display: block;
+            width: 100%;
+            image-rendering: pixelated;
+        }
+        .cf-evidence-label {
+            font-size: 8px; color: rgba(100,90,70,0.5);
+            letter-spacing: 0.1em; text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
         /* Title screen */
         #title-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -573,6 +646,11 @@
     <div id="office-status"></div>
 </div>
 
+<div id="phone-overlay">
+    <div class="phone-caller" id="phone-caller"></div>
+    <div class="phone-text" id="phone-text"></div>
+    <div class="phone-dismiss" id="phone-dismiss"></div>
+</div>
 
 <div id="title-screen">
     <canvas id="title-static"></canvas>
@@ -800,6 +878,8 @@ const state = {
     _lightsDieTimeouts: [],    // stored timeout IDs for lightsDie (clearable on lookDown)
     _hesitationTimer: 0,       // B4: tracks time spent in horizon zone (camera hesitation)
     stampPending: false,       // B1: true between evil selection and stamp confirmation
+    phoneRinging: false,       // phone is ringing, waiting for answer
+    phoneActive: false,        // phone call in progress (text displaying)
     _stampDelta: 0,            // B1: stored delta for pending stamp
     _stampEvil: false,         // B1: stored evil flag for pending stamp
     _stampHoldStart: 0,        // hold-to-stamp: timestamp when hold began
@@ -903,6 +983,7 @@ const shift1Cases = [
         name: "Elias Brandt", occupation: "Municipal Clerk, Level 2",
         allegation: "Copying restricted documents without permission",
         detail: "Subject found copying Facility 6 purchase orders. The orders list surgical equipment sent to the children's ward. There was no operating room in the children's ward. He was caught near the east exit with 40 pages of evidence.",
+        evidence: { type: 'document_header', label: 'CASE FILE HEADER — SCANNED COPY' },
         // LOOPHOLE: Case number format wrong -D suffix means District, but allegation is Class A (should be -A suffix)
         irregularity: { field: "id", text: "7496-D", display: "7496-D" },
         loopholeReasons: [
@@ -937,6 +1018,7 @@ const shift2Cases = [
         recordNotes: "Employment record verified",
         name: "Tomasz Wójcik", occupation: "Night Janitor, BORD Annex B",
         allegation: "Found in restricted archive without permission (Level 4 access required)",
+        evidence: { type: 'employee_badge', label: 'EMPLOYEE ID — PHOTOCOPY' },
         detail: "He cleaned that floor for nine years. Last week, he found a door behind the filing cabinets. Behind it: boxes of children's intake forms from Facility 6. He read them. He stayed until morning.",
         // LOOPHOLE: His employment record shows Level 4 annex access -janitors have clearance for all floors
         irregularity: { field: "occupation", text: "Night Janitor, BORD Annex B", display: "Night Janitor, BORD Annex B" },
@@ -989,6 +1071,7 @@ const shift2Cases = [
         recordNotes: "Reassignment order - received, stamped",
         name: "Amara Osei", occupation: "BORD Records Clerk, Facility 6 (Former)",
         allegation: "Did not report for mandatory reassignment after facility closed",
+        evidence: { type: 'reassignment_order', label: 'REASSIGNMENT ORDER — ATTACHED' },
         detail: "She worked at Facility 6. She filed the intake forms for every child they brought in. When they closed the facility, BORD ordered her to a new post. The reassignment order is stamped RECEIVED. No authorizing signature.",
         // LOOPHOLE: The reassignment order has no signature -R7 says unsigned orders are invalid
         irregularity: { field: "detail", text: "No authorizing signature", display: "Reassignment order has no authorizing signature" },
@@ -1061,6 +1144,7 @@ const shift3Cases = [
         recordNotes: "214 certificates flagged - records under review",
         name: "Dr. Emil Rask", occupation: "BORD Physician, Internal Medical Division",
         allegation: "Faking cause-of-death certificates (est. 200+ cases, Facility 6)",
+        evidence: { type: 'death_certificate', label: 'SAMPLE CERTIFICATE — FLAGGED' },
         detail: "Two hundred and fourteen children died at Facility 6. He signed every death certificate. Every one says 'cardiac arrest.' The youngest was four.",
         choices: [
             { num:1, main:"DETAIN FOR COURT", desc:"Hold for BORD tribunal. Seal all medical records as evidence.", evil:true, delta:-5 },
@@ -1092,6 +1176,7 @@ const shift3Cases = [
         recordNotes: "Sealed file - original on record",
         name: "Director Alistair Crane", occupation: "BORD Administrator, Level 9",
         allegation: "Ordered illegal detention program (Facility 6, 2019-2025)",
+        evidence: { type: 'classified_memo', label: 'INTERNAL MEMO — PHOTOCOPIED' },
         detail: "He ran Facility 6 for six years. He signed the orders to bring the children in. He signed the orders to remove the bodies. He is in this building right now. On this floor.",
         // MERCY-GATED: Only appears with full content if player has enough mercy history
         choices: [
@@ -1189,6 +1274,374 @@ const DIRECTIVE_RULES = {
     // Shift 3 -blank directives, show general rules
     '.':                      ['R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8'],  // All rules -you're on your own
 };
+
+// ============================================================
+// PHONE CALL SYSTEM — breaks up the read-pick-stamp loop
+// ============================================================
+const PHONE_CALLS = {
+    0: { // After Case 1 (Selby) — foreshadows Lena
+        delay: 2500,
+        speaker: 'UNKNOWN CALLER',
+        lines: ['...', 'He has a daughter.', 'She\'s sixteen.', 'You should know that before the next file.'],
+    },
+    2: { // After Case 3 (Kader family) — humanizes the child
+        delay: 3000,
+        speaker: 'WHISPERED VOICE',
+        lines: ['The boy is eight.', 'They said he was from Facility 6.', 'He doesn\'t know what that means.', 'He thinks it\'s a school.'],
+    },
+    4: { // After Case 5 (Dr. Nasir, end of Shift 1) — ambiguous threat/ally
+        delay: 2000,
+        speaker: 'DEEP VOICE',
+        lines: ['We know how you\'ve been filing.', 'Keep going.'],
+    },
+    7: { // After Case 8 (YOUR performance review) — paranoia
+        delay: 4000,
+        speaker: 'STATIC',
+        lines: ['They\'re watching your terminal.', 'Not just the numbers.', 'The pauses.'],
+    },
+    10: { // After Case 11 (14 witnesses) — silent call, pure dread
+        delay: 2000,
+        speaker: '',
+        lines: ['...', '...', '...'],
+        silent: true,
+    },
+    14: { // After Case 15 (Director Crane) — hint for next case
+        delay: 2500,
+        speaker: 'FRANTIC WHISPER',
+        lines: ['The drivers know where the trucks went.', 'Case 7534.', 'Let them talk.'],
+    },
+};
+
+let _phoneRingTimer = null;
+let _phoneLineIdx = 0;
+let _phoneTypeTimer = null;
+let _phoneCurrentCall = null;
+let _phoneRingOsc1 = null, _phoneRingOsc2 = null;
+
+function playPhoneRing() {
+    if (!audioCtx || !window._audioMasterGain) return;
+    // Two-tone ring: 440Hz + 480Hz, pulsed
+    _phoneRingOsc1 = audioCtx.createOscillator();
+    _phoneRingOsc2 = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'bandpass'; filter.frequency.value = 460; filter.Q.value = 3;
+    _phoneRingOsc1.connect(filter); _phoneRingOsc2.connect(filter);
+    filter.connect(g); g.connect(window._audioMasterGain);
+    _phoneRingOsc1.type = 'sine'; _phoneRingOsc1.frequency.value = 440;
+    _phoneRingOsc2.type = 'sine'; _phoneRingOsc2.frequency.value = 480;
+    // Pulsed ring pattern
+    const now = audioCtx.currentTime;
+    g.gain.setValueAtTime(0, now);
+    for (let i = 0; i < 4; i++) {
+        const t = now + i * 0.8;
+        g.gain.setValueAtTime(0.025, t);
+        g.gain.setValueAtTime(0, t + 0.35);
+    }
+    _phoneRingOsc1.start(now); _phoneRingOsc1.stop(now + 3.5);
+    _phoneRingOsc2.start(now); _phoneRingOsc2.stop(now + 3.5);
+}
+
+function stopPhoneRing() {
+    try { if (_phoneRingOsc1) _phoneRingOsc1.stop(); } catch(e) {}
+    try { if (_phoneRingOsc2) _phoneRingOsc2.stop(); } catch(e) {}
+    _phoneRingOsc1 = null; _phoneRingOsc2 = null;
+}
+
+function triggerPhoneCall(absIdx) {
+    const call = PHONE_CALLS[absIdx];
+    if (!call || state.gameOver) return;
+    _phoneCurrentCall = call;
+
+    // Delay before phone rings
+    _phoneRingTimer = setTimeout(() => {
+        if (state.gameOver) return;
+        state.phoneRinging = true;
+        const overlay = document.getElementById('phone-overlay');
+        overlay.className = 'ringing';
+        overlay.innerHTML = '<div class="phone-ring-hint">INCOMING CALL — CLICK TO ANSWER</div>';
+        overlay.style.pointerEvents = 'auto';
+        playPhoneRing();
+
+        // Auto-dismiss if not answered in 10 seconds
+        _phoneRingTimer = setTimeout(() => {
+            if (state.phoneRinging) {
+                dismissPhoneCall();
+            }
+        }, 10000);
+    }, call.delay);
+}
+
+function answerPhoneCall() {
+    if (!state.phoneRinging || !_phoneCurrentCall) return;
+    state.phoneRinging = false;
+    state.phoneActive = true;
+    stopPhoneRing();
+    clearTimeout(_phoneRingTimer);
+
+    const overlay = document.getElementById('phone-overlay');
+    const call = _phoneCurrentCall;
+    overlay.className = 'active';
+    overlay.style.pointerEvents = 'auto';
+    overlay.innerHTML = `
+        <div class="phone-caller" id="phone-caller">${call.speaker || ''}</div>
+        <div class="phone-text" id="phone-text"></div>
+        <div class="phone-dismiss" id="phone-dismiss"></div>`;
+
+    // Play pickup click
+    if (audioCtx && window._audioMasterGain) {
+        const osc = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        osc.connect(g); g.connect(window._audioMasterGain);
+        osc.type = 'square'; osc.frequency.value = 200;
+        g.gain.setValueAtTime(0.02, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+    }
+
+    // Typewriter the lines one by one
+    _phoneLineIdx = 0;
+    typePhoneLine();
+}
+
+function typePhoneLine() {
+    const call = _phoneCurrentCall;
+    if (!call || _phoneLineIdx >= call.lines.length) {
+        // All lines shown — show dismiss hint
+        document.getElementById('phone-dismiss').textContent = 'CLICK TO HANG UP';
+        return;
+    }
+    const textEl = document.getElementById('phone-text');
+    const line = call.lines[_phoneLineIdx];
+
+    if (call.silent) {
+        // Silent call — just show dots with long pauses
+        textEl.textContent = line;
+        _phoneLineIdx++;
+        _phoneTypeTimer = setTimeout(typePhoneLine, 1500);
+        return;
+    }
+
+    // Typewriter effect
+    let charIdx = 0;
+    textEl.textContent = '';
+    function typeChar() {
+        if (charIdx < line.length) {
+            textEl.textContent += line[charIdx];
+            charIdx++;
+            // Play tiny tick for each char
+            if (audioCtx && window._audioMasterGain && charIdx % 3 === 0) {
+                const osc = audioCtx.createOscillator();
+                const g = audioCtx.createGain();
+                osc.connect(g); g.connect(window._audioMasterGain);
+                osc.type = 'square'; osc.frequency.value = 600 + Math.random() * 200;
+                g.gain.setValueAtTime(0.003, audioCtx.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.02);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.02);
+            }
+            _phoneTypeTimer = setTimeout(typeChar, 40 + Math.random() * 30);
+        } else {
+            // Line done — pause then next line
+            _phoneLineIdx++;
+            _phoneTypeTimer = setTimeout(typePhoneLine, 1200);
+        }
+    }
+    typeChar();
+}
+
+function dismissPhoneCall() {
+    state.phoneRinging = false;
+    state.phoneActive = false;
+    stopPhoneRing();
+    clearTimeout(_phoneRingTimer);
+    clearTimeout(_phoneTypeTimer);
+    _phoneCurrentCall = null;
+    const overlay = document.getElementById('phone-overlay');
+    overlay.className = '';
+    overlay.style.pointerEvents = '';
+    overlay.innerHTML = '';
+
+    // Hangup click
+    if (audioCtx && window._audioMasterGain) {
+        const osc = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        osc.connect(g); g.connect(window._audioMasterGain);
+        osc.type = 'square'; osc.frequency.value = 150;
+        g.gain.setValueAtTime(0.015, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.08);
+    }
+}
+
+// Phone overlay click handler
+document.getElementById('phone-overlay').addEventListener('click', () => {
+    if (state.phoneRinging) answerPhoneCall();
+    else if (state.phoneActive && _phoneLineIdx >= (_phoneCurrentCall?.lines.length || 0)) dismissPhoneCall();
+});
+
+// ============================================================
+// VISUAL EVIDENCE — procedural document scans in case files
+// ============================================================
+function drawEvidence(canvas, caseData) {
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width, h = canvas.height;
+    const ev = caseData.evidence;
+    if (!ev) return;
+
+    // Aged paper background
+    ctx.fillStyle = '#d8d0c0';
+    ctx.fillRect(0, 0, w, h);
+
+    // Paper grain noise
+    for (let i = 0; i < 200; i++) {
+        ctx.fillStyle = `rgba(${100+Math.random()*40},${90+Math.random()*40},${70+Math.random()*30},0.1)`;
+        ctx.fillRect(Math.random()*w, Math.random()*h, 1+Math.random()*2, 1+Math.random()*2);
+    }
+
+    // Faint horizontal ruled lines
+    ctx.strokeStyle = 'rgba(150,140,120,0.2)';
+    for (let y = 20; y < h; y += 14) {
+        ctx.beginPath(); ctx.moveTo(10, y); ctx.lineTo(w-10, y); ctx.stroke();
+    }
+
+    if (ev.type === 'document_header') {
+        // Shows case number 7496-D prominently — mismatch with Class A
+        ctx.font = 'bold 11px monospace';
+        ctx.fillStyle = '#333';
+        ctx.fillText('BUREAU OF RIGHT DECISIONS', 12, 16);
+        ctx.font = '8px monospace';
+        ctx.fillStyle = '#555';
+        ctx.fillText('CASE FILE — ORIGINAL HEADER', 12, 28);
+
+        // Big case number
+        ctx.font = 'bold 18px monospace';
+        ctx.fillStyle = '#1a1a1a';
+        ctx.fillText('CASE: 7496-D', 12, 52);
+
+        // Classification line (the mismatch)
+        ctx.font = '10px monospace';
+        ctx.fillStyle = '#444';
+        ctx.fillText('Classification: Class A (-A)', 12, 70);
+
+        // Subtle red underline on the -D
+        ctx.strokeStyle = 'rgba(139,0,0,0.15)';
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(112, 54); ctx.lineTo(138, 54); ctx.stroke();
+
+        // Stamp mark
+        ctx.save();
+        ctx.translate(w-35, h-25); ctx.rotate(-0.15);
+        ctx.font = 'bold 9px monospace';
+        ctx.fillStyle = 'rgba(139,50,50,0.25)';
+        ctx.fillText('FILED', -12, 4);
+        ctx.restore();
+
+    } else if (ev.type === 'employee_badge') {
+        // Employee badge showing ALL FLOORS access
+        ctx.font = 'bold 9px monospace';
+        ctx.fillStyle = '#333';
+        ctx.fillText('BORD EMPLOYEE IDENTIFICATION', 12, 14);
+
+        // Badge border
+        ctx.strokeStyle = '#666';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(12, 22, w-24, h-32);
+
+        // Name
+        ctx.font = '10px monospace';
+        ctx.fillStyle = '#222';
+        ctx.fillText('WÓJCIK, TOMASZ', 20, 40);
+
+        // Role
+        ctx.font = '9px monospace';
+        ctx.fillStyle = '#555';
+        ctx.fillText('NIGHT MAINTENANCE', 20, 54);
+
+        // Access level — the key visual clue
+        ctx.font = 'bold 10px monospace';
+        ctx.fillStyle = '#1a4a1a';
+        ctx.fillText('ACCESS: ALL FLOORS', 20, 72);
+        ctx.font = '8px monospace';
+        ctx.fillStyle = '#666';
+        ctx.fillText('ANNEX B — LEVEL 4 CLEARANCE', 20, 84);
+
+    } else if (ev.type === 'reassignment_order') {
+        // Reassignment order with empty signature line
+        ctx.font = 'bold 9px monospace';
+        ctx.fillStyle = '#333';
+        ctx.fillText('BORD — REASSIGNMENT ORDER', 12, 14);
+        ctx.font = '8px monospace';
+        ctx.fillStyle = '#555';
+        ctx.fillText('FORM 7B-REASSIGN', 12, 26);
+        ctx.fillText('RE: OSEI, AMARA — RECORDS CLERK', 12, 42);
+        ctx.fillText('EFFECTIVE: IMMEDIATE', 12, 56);
+        ctx.fillText('REPORT TO: DISTRICT OFFICE 4', 12, 70);
+
+        // Signature line — empty (the loophole)
+        ctx.font = '8px monospace';
+        ctx.fillStyle = '#888';
+        ctx.fillText('Authorized by:', 12, h-20);
+        ctx.strokeStyle = '#999';
+        ctx.beginPath(); ctx.moveTo(90, h-20); ctx.lineTo(w-12, h-20); ctx.stroke();
+        // No signature — just the empty line
+
+    } else if (ev.type === 'death_certificate') {
+        // Death certificate with handwritten 214 over lower number
+        ctx.font = 'bold 9px monospace';
+        ctx.fillStyle = '#333';
+        ctx.fillText('CERTIFICATE OF DEATH', 12, 14);
+        ctx.font = '8px monospace';
+        ctx.fillStyle = '#555';
+        ctx.fillText('BORD MEDICAL — FACILITY 6', 12, 26);
+        ctx.fillText('Cause: Respiratory failure', 12, 44);
+        ctx.fillText('Physician: DR. E. RASK', 12, 58);
+
+        // Number crossed out and rewritten
+        ctx.font = '8px monospace';
+        ctx.fillStyle = '#888';
+        ctx.fillText('Certificate count:', 12, 76);
+        // Crossed out smaller number
+        ctx.font = '10px monospace';
+        ctx.fillStyle = '#999';
+        ctx.fillText('47', 108, 76);
+        ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+        ctx.beginPath(); ctx.moveTo(106, 73); ctx.lineTo(126, 73); ctx.stroke();
+        // Handwritten larger number
+        ctx.font = 'italic bold 14px serif';
+        ctx.fillStyle = '#1a1a1a';
+        ctx.fillText('214', 130, 78);
+
+    } else if (ev.type === 'classified_memo') {
+        // Photocopied classified memo — faded, angled stamp
+        ctx.font = 'bold 9px monospace';
+        ctx.fillStyle = '#444';
+        ctx.fillText('INTERNAL MEMORANDUM', 12, 14);
+        ctx.font = '8px monospace';
+        ctx.fillStyle = '#666';
+        ctx.fillText('FROM: OFFICE OF THE DIRECTOR', 12, 28);
+        ctx.fillText('RE: FACILITY 6 — OPERATIONS', 12, 42);
+        ctx.fillText('STATUS: ONGOING', 12, 56);
+
+        // Redacted line
+        ctx.fillStyle = '#222';
+        ctx.fillRect(12, 64, w*0.6, 10);
+
+        // "CLASSIFIED" stamp — faded, clearly a photocopy
+        ctx.save();
+        ctx.translate(w-50, 30); ctx.rotate(-0.2);
+        ctx.font = 'bold 14px monospace';
+        ctx.fillStyle = 'rgba(139,0,0,0.15)';
+        ctx.fillText('CLASSIFIED', -30, 5);
+        ctx.strokeStyle = 'rgba(139,0,0,0.1)';
+        ctx.strokeRect(-35, -10, 100, 22);
+        ctx.restore();
+
+        // Photocopy artifact — faded edge
+        ctx.fillStyle = 'rgba(0,0,0,0.03)';
+        ctx.fillRect(0, 0, 5, h);
+        ctx.fillRect(w-5, 0, 5, h);
+    }
+}
 
 // Newspaper headlines between shifts -depend on player choices
 function generateNewspaper(shiftJustCompleted) {
@@ -2027,6 +2480,15 @@ const penHolder = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.035, 0.1, 8)
 penHolder.position.set(0.6, 0.83, -0.3);
 scene.add(penHolder);
 
+// Desk phone - simple block shape
+const phoneMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.7, metalness: 0.3 });
+const phoneBody = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.03, 0.16), phoneMat);
+phoneBody.position.set(-0.55, 0.79, -0.35);
+scene.add(phoneBody);
+const phoneHandset = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.02, 0.14), phoneMat);
+phoneHandset.position.set(-0.55, 0.81, -0.35);
+scene.add(phoneHandset);
+
 // Desk lamp - angled arm with small cone shade
 const lampBaseMat = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, roughness: 0.6, metalness: 0.4 });
 const lampShadeMat = new THREE.MeshStandardMaterial({ color: 0x3a3a2a, roughness: 0.7, metalness: 0.3 });
@@ -2682,7 +3144,7 @@ function renderCase(c) {
     el.innerHTML = `
         <div class="cf-tabs">
             <div class="cf-tab active" onclick="window.switchTab('case')">Case File</div>
-            <div class="cf-tab" onclick="window.switchTab('manual')">BORD Manual</div>
+            <div class="cf-tab" id="manual-tab" onclick="window.switchTab('manual')">BORD Manual</div>
         </div>
         <div id="cf-case-content">
             <div class="cf-header">${c.name}</div>
@@ -2693,6 +3155,10 @@ function renderCase(c) {
             ${c.recordNotes ? `<div class="cf-line"><span class="cf-label">Record Notes:</span> ${recordNotesText}</div>` : ''}
             ${getSignatureHTML(c)}
             <div class="cf-detail" id="cf-detail-text"></div>
+            ${c.evidence ? `<div class="cf-evidence" id="cf-evidence">
+                <div class="cf-evidence-label">${c.evidence.label}</div>
+                <canvas id="evidence-canvas" width="280" height="100"></canvas>
+            </div>` : ''}
             <div class="cf-choices choices-hidden">
                 <div class="cf-section">Your Decision</div>
                 ${c.choices.map(ch => `
@@ -2734,7 +3200,19 @@ function renderCase(c) {
                         return '<div class="manual-rule"><span class="manual-rule-id">' + r.id + '</span> - ' + ruleText + '</div>';
                     }).join('');
                 })()}
-                <div class="manual-section" style="margin-top:18px;">General</div>
+                <div class="manual-section" style="margin-top:18px;">Reference</div>
+                <div class="manual-rule" style="font-size:10px; color:#555;">
+                    <b>Classification Suffix Key:</b><br>
+                    -A = Class A &nbsp; -B = Class B &nbsp; -C = Civil<br>
+                    -D = District &nbsp; -E = Regulatory &nbsp; -L = Staff
+                </div>
+                <div class="manual-rule" style="font-size:10px; color:#555;">
+                    <b>Age Thresholds:</b> Under 12 = parent coverage. Under 18 = cannot process.
+                </div>
+                <div class="manual-rule" style="font-size:10px; color:#555;">
+                    <b>Filing Validity:</b> Case date must be on or after directive date. Today: 04.02.2026.
+                </div>
+                <div class="manual-section" style="margin-top:12px;">General</div>
                 <div class="manual-rule" style="font-size:10px; color:#666;">
                     All case processing must follow posted directive. Inconsistencies between case data and BORD records are grounds for dismissal of case.
                 </div>
@@ -2744,6 +3222,21 @@ function renderCase(c) {
 
     // Apply suspicion visual state to paper
     updateSuspicionPulse();
+
+    // Manual tab pulse — if case has a loophole, hint at the manual
+    const manualTab = document.getElementById('manual-tab');
+    if (manualTab) {
+        manualTab.classList.remove('xref-pulse');
+        if (c.irregularity) {
+            setTimeout(() => manualTab.classList.add('xref-pulse'), 2000);
+        }
+    }
+
+    // Draw evidence canvas if present
+    if (c.evidence) {
+        const evCanvas = document.getElementById('evidence-canvas');
+        if (evCanvas) drawEvidence(evCanvas, c);
+    }
 
     // Entrance animation -shift-aware (final case gets special treatment)
     const isFinalCase = c.id === '7741-FINAL';
@@ -3187,6 +3680,12 @@ window.gameChoice = function(delta, evil) {
     // Track choice for newspaper and echoing
     state.shiftChoices.push({ evil });
     state.allChoices.push({ evil, caseId: currentCaseData ? currentCaseData.id : '' });
+
+    // Trigger phone call if one is scheduled for this case index
+    const _phoneAbsIdx = getAbsoluteCaseIndex();
+    if (PHONE_CALLS[_phoneAbsIdx]) {
+        triggerPhoneCall(_phoneAbsIdx);
+    }
 
     // Track Voss self-condemnation
     if (currentCaseData && currentCaseData.id === '7514-C' && evil) {
