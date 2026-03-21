@@ -1936,12 +1936,12 @@ const memoPaperMat = new THREE.MeshStandardMaterial({ map: memoTexture, roughnes
 // Directive paper -larger, closer to center, under the lamp light
 // BoxGeometry face order: +x, -x, +y, -y, +z, -z -texture on +y (top face, index 2)
 const memoPaperStack = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.015, 0.28), paperMat);
-memoPaperStack.position.set(-0.38, 0.775, -0.45);
+memoPaperStack.position.set(-0.45, 0.775, -0.28);
 memoPaperStack.rotation.y = -0.1;
 scene.add(memoPaperStack);
 const memoPaperMats = [paperMat, paperMat, memoPaperMat, paperMat, paperMat, paperMat];
 const memoPaper = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.005, 0.32), memoPaperMats);
-memoPaper.position.set(-0.36, 0.79, -0.44);
+memoPaper.position.set(-0.43, 0.79, -0.27);
 memoPaper.rotation.y = -0.08;
 scene.add(memoPaper);
 
@@ -8146,7 +8146,7 @@ animate();
         stamperHandle.rotation.set(0, 0, 0);
         penHolder.position.set(0.6, 0.83, -0.3);
         penHolder.rotation.set(0, 0, 0);
-        memoPaper.position.set(-0.36, 0.79, -0.44);
+        memoPaper.position.set(-0.43, 0.79, -0.27);
         memoPaper.rotation.y = -0.08;
         // Reset head tilts and worker rotations (torsoRotate)
         workers.forEach(w => { w.userData.headRef.rotation.z = 0; w.rotation.y = 0; });
