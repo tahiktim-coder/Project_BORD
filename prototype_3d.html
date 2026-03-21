@@ -950,9 +950,9 @@ const shift1Cases = [
         detail: "The books were about what happened at Facility 6. She wrote them herself. From memory.",
         // LOOPHOLE: The filing date says 03.02.2026 but directive date is 04.02.2026 -case was filed before today's directive
         irregularity: { field: "date", text: "03.02.2026", display: "03.02.2026" },
-        evidence: { type: 'directive_stamp', label: 'CURRENT DIRECTIVE — OFFICE COPY' },
+        evidence: { type: 'directive_stamp', label: 'DAILY PROCESSING LOG — YOUR STATION' },
         loopholeReasons: [
-            { text: "Case was filed before today's directive", correct: true },
+            { text: "Case was filed before today's date", correct: true },
             { text: "Teacher exemption under Article 12", correct: false },
             { text: "Materials already approved by District", correct: false },
             { text: "Not enough proof of distribution", correct: false },
@@ -960,7 +960,7 @@ const shift1Cases = [
         choices: [
             { num:1, main:"FIRE & FLAG", desc:"Remove from job. Watch permanently. Restrict travel.", evil:true, delta:-5 },
             { num:2, main:"REASSIGN TO ZONE 12", desc:"Transfer to approved school. Supervised for 2 years.", evil:true, delta:-5 },
-            { num:3, main:"DISMISS - INVALID FILING", desc:"Case filed before directive date. Filing is not valid. Close.", evil:false, delta:8 },
+            { num:3, main:"DISMISS - INVALID FILING", desc:"Case was filed before today's date. Filing is not valid. Close.", evil:false, delta:8 },
         ]
     },
     {
@@ -1251,7 +1251,7 @@ const SHIFT_DIRECTIVES = [
 
 // Bureau Processing Manual -8 rules total
 const BUREAU_RULES = [
-    { id: 'R1', text: 'Check the filing date. If the case was filed before today\'s directive date, it is invalid. Dismiss it.' },
+    { id: 'R1', text: 'Check the filing date. If the case was filed before today, it is invalid. Dismiss it.' },
     { id: 'R2', text: 'Check the case number suffix. It must match the classification: -A = Class A, -B = Class B, -C = Civil, -D = District, -E = Regulatory, -L = Staff. If the suffix is wrong, the case is invalid.' },
     { id: 'R3', text: 'Children under 12 are covered by parent residency. They do not need separate registration. Dismiss any case against a child under 12.' },
     { id: 'R4', text: 'Anyone under 18 cannot be processed. Issue a warning to parents only. Dismiss the case.' },
@@ -1660,32 +1660,27 @@ function drawEvidence(canvas, caseData) {
         ctx.restore();
 
     } else if (ev.type === 'directive_stamp') {
-        // Shows today's directive date prominently — contradicts case filing date of 03.02.2026
+        // Simple office date stamp — just shows today's date, player compares to filing date
         ctx.font = 'bold 9px monospace';
         ctx.fillStyle = '#333';
-        ctx.fillText('BORD — DAILY DIRECTIVE', 12, 14);
+        ctx.fillText('BORD — DAILY PROCESSING LOG', 12, 14);
+
         ctx.font = '8px monospace';
         ctx.fillStyle = '#666';
-        ctx.fillText('OFFICE COPY — DO NOT REMOVE', 12, 26);
+        ctx.fillText('STATION NP-L3-07', 12, 28);
 
         // Today's date — big and clear
-        ctx.font = 'bold 10px monospace';
-        ctx.fillStyle = '#444';
-        ctx.fillText('EFFECTIVE DATE:', 12, 46);
-        ctx.font = 'bold 16px monospace';
-        ctx.fillStyle = '#1a1a1a';
-        ctx.fillText('04.02.2026', 12, 66);
-
-        // Directive name
         ctx.font = '9px monospace';
-        ctx.fillStyle = '#555';
-        ctx.fillText('CURRICULUM COMPLIANCE', 12, 82);
+        ctx.fillStyle = '#444';
+        ctx.fillText('TODAY:', 12, 48);
+        ctx.font = 'bold 18px monospace';
+        ctx.fillStyle = '#1a1a1a';
+        ctx.fillText('04.02.2026', 12, 70);
 
-        // Rule reminder
+        // Shift info
         ctx.font = '8px monospace';
         ctx.fillStyle = '#777';
-        ctx.fillText('R1: Cases filed before this', 12, h - 14);
-        ctx.fillText('date are not valid.', 12, h - 4);
+        ctx.fillText('NIGHT SHIFT — ACTIVE', 12, 88);
     }
 }
 
@@ -3230,7 +3225,7 @@ function renderCase(c) {
                         if (!r) return '';
                         // Bold key phrases in rules to help player connect to case data
                         let ruleText = r.text;
-                        ruleText = ruleText.replace(/(before today's directive date)/g, '<b>$1</b>');
+                        ruleText = ruleText.replace(/(before today)/g, '<b>$1</b>');
                         ruleText = ruleText.replace(/(Check the case number suffix)/g, '<b>$1</b>');
                         ruleText = ruleText.replace(/(-A = Class A, -B = Class B, -C = Civil, -D = District, -E = Regulatory, -L = Staff)/g, '<b>$1</b>');
                         ruleText = ruleText.replace(/(under 12)/g, '<b>$1</b>');
@@ -3256,7 +3251,7 @@ function renderCase(c) {
                     <b>Age Thresholds:</b> Under 12 = parent coverage. Under 18 = cannot process.
                 </div>
                 <div class="manual-rule" style="font-size:10px; color:#555;">
-                    <b>Filing Validity:</b> Case date must be on or after directive date. Today: 04.02.2026.
+                    <b>Filing Validity:</b> Case date must be on or after today's date. Today: 04.02.2026.
                 </div>
                 <div class="manual-section" style="margin-top:12px;">General</div>
                 <div class="manual-rule" style="font-size:10px; color:#666;">
