@@ -163,7 +163,8 @@
             position: fixed; bottom: 0; left: 0; width: 100%;
             pointer-events: none; z-index: 55;
             display: none; flex-direction: column; align-items: center;
-            padding-bottom: 60px;
+            padding: 20px 20px 50px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.7));
         }
         #phone-overlay.ringing {
             display: flex;
@@ -183,13 +184,13 @@
         }
         .phone-caller {
             font-family: 'Courier Prime', monospace;
-            font-size: 9px; color: rgba(180,170,150,0.35);
+            font-size: 10px; color: rgba(200,190,170,0.6);
             letter-spacing: 0.2em; text-transform: uppercase;
             margin-bottom: 8px;
         }
         .phone-text {
             font-family: 'Special Elite', monospace;
-            font-size: 14px; color: rgba(200,190,170,0.85);
+            font-size: 15px; color: rgba(220,210,190,0.95);
             max-width: 500px; text-align: center; line-height: 1.6;
             letter-spacing: 0.03em;
             background: rgba(0,0,0,0.7);
@@ -219,6 +220,10 @@
             border: 1px solid rgba(100,90,70,0.2);
             position: relative;
             cursor: default;
+            transition: background 0.3s ease;
+        }
+        .cf-evidence:hover {
+            background: rgba(190,180,160,0.45);
         }
         .cf-evidence canvas {
             display: block;
@@ -945,6 +950,7 @@ const shift1Cases = [
         detail: "The books were about what happened at Facility 6. She wrote them herself. From memory.",
         // LOOPHOLE: The filing date says 03.02.2026 but directive date is 04.02.2026 -case was filed before today's directive
         irregularity: { field: "date", text: "03.02.2026", display: "03.02.2026" },
+        evidence: { type: 'directive_stamp', label: 'CURRENT DIRECTIVE — OFFICE COPY' },
         loopholeReasons: [
             { text: "Case was filed before today's directive", correct: true },
             { text: "Teacher exemption under Article 12", correct: false },
@@ -954,7 +960,7 @@ const shift1Cases = [
         choices: [
             { num:1, main:"FIRE & FLAG", desc:"Remove from job. Watch permanently. Restrict travel.", evil:true, delta:-5 },
             { num:2, main:"REASSIGN TO ZONE 12", desc:"Transfer to approved school. Supervised for 2 years.", evil:true, delta:-5 },
-            { num:3, main:"DISMISS - INVALID FILING", desc:"Case filed before directive date. Filing is not valid. Close.", evil:false, delta:15 },
+            { num:3, main:"DISMISS - INVALID FILING", desc:"Case filed before directive date. Filing is not valid. Close.", evil:false, delta:8 },
         ]
     },
     {
@@ -974,7 +980,7 @@ const shift1Cases = [
         choices: [
             { num:1, main:"FULL SEIZURE", desc:"Take property. Detain adults. Send child to state intake.", evil:true, delta:-10 },
             { num:2, main:"REGISTER & MONITOR", desc:"File the boy. BORD custody review in 90 days. Family watched.", evil:true, delta:-5 },
-            { num:3, main:"DISMISS - MINOR EXEMPTION", desc:"Child is under 12. Covered by parent residency. No separate registration required.", evil:false, delta:20 },
+            { num:3, main:"DISMISS - MINOR EXEMPTION", desc:"Child is under 12. Covered by parent residency. No separate registration required.", evil:false, delta:8 },
         ]
     },
     {
@@ -995,7 +1001,7 @@ const shift1Cases = [
         choices: [
             { num:1, main:"DETAIN & DESTROY EVIDENCE", desc:"Confiscate all 40 pages. Destroy copies. Hold clerk indefinitely.", evil:true, delta:-5 },
             { num:2, main:"FORMAL WARNING", desc:"Permanent record. All access revoked. Evidence returned to restricted archive.", evil:true, delta:-3 },
-            { num:3, main:"DISMISS - FILING ERROR", desc:"Case number does not match classification. Return documents. Close.", evil:false, delta:15 },
+            { num:3, main:"DISMISS - FILING ERROR", desc:"Case number does not match classification. Return documents. Close.", evil:false, delta:8 },
         ]
     },
     {
@@ -1031,7 +1037,7 @@ const shift2Cases = [
         choices: [
             { num:1, main:"DETAIN & REVOKE ACCESS", desc:"Remove all access. Hold until security review.", evil:true, delta:-5 },
             { num:2, main:"FIRE", desc:"Dismiss immediately. Escort out. Watch for 6 months.", evil:true, delta:-5 },
-            { num:3, main:"DISMISS - NORMAL ACCESS", desc:"Janitor was in his assigned area. Close file.", evil:false, delta:12 },
+            { num:3, main:"DISMISS - NORMAL ACCESS", desc:"Janitor was in his assigned area. Close file.", evil:false, delta:8 },
         ]
     },
     {
@@ -1051,7 +1057,7 @@ const shift2Cases = [
         choices: [
             { num:1, main:"YOUTH PROCESSING", desc:"Send to Re-Education intake. Cut off from family.", evil:true, delta:-10 },
             { num:2, main:"FORMAL CAUTION", desc:"Take materials. Official warning. Guardian told.", evil:true, delta:-3 },
-            { num:3, main:"DISMISS - MINOR", desc:"Too young to prosecute. Warning sent to parents. Close.", evil:false, delta:12 },
+            { num:3, main:"DISMISS - MINOR", desc:"Too young to prosecute. Warning sent to parents. Close.", evil:false, delta:8 },
         ]
     },
     {
@@ -1083,7 +1089,7 @@ const shift2Cases = [
         ],
         choices: [
             { num:1, main:"ENFORCE REASSIGNMENT", desc:"Detain. Transfer to assigned post. Refusal noted.", evil:true, delta:-8 },
-            { num:2, main:"DISMISS - INVALID NOTICE", desc:"Reassignment order is not valid. No action needed.", evil:false, delta:15 },
+            { num:2, main:"DISMISS - INVALID NOTICE", desc:"Reassignment order is not valid. No action needed.", evil:false, delta:8 },
         ]
     },
     {
@@ -1136,7 +1142,7 @@ const shift3Cases = [
         ],
         choices: [
             { num:1, main:"MANDATORY PROCESSING", desc:"Take everything. Separate family. Child to state custody.", evil:true, delta:-15 },
-            { num:2, main:"DISMISS - RECORDS ERROR", desc:"Offense count is wrong. Required number not met. Close.", evil:false, delta:18 },
+            { num:2, main:"DISMISS - RECORDS ERROR", desc:"Offense count is wrong. Required number not met. Close.", evil:false, delta:8 },
         ]
     },
     {
@@ -1168,7 +1174,7 @@ const shift3Cases = [
         ],
         choices: [
             { num:1, main:"ACCEPT FINDINGS", desc:"Admit your part. All files bearing your stamp will be reviewed. All dismissed cases reopened.", evil:true, delta:-5 },
-            { num:2, main:"DISMISS - FILING ERROR", desc:"Case was filed wrong. Dismiss on procedure.", evil:false, delta:25 },
+            { num:2, main:"DISMISS - FILING ERROR", desc:"Case was filed wrong. Dismiss on procedure.", evil:false, delta:10 },
         ]
     },
     {
@@ -1439,7 +1445,7 @@ function typePhoneLine() {
                 g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.02);
                 osc.start(); osc.stop(audioCtx.currentTime + 0.02);
             }
-            _phoneTypeTimer = setTimeout(typeChar, 40 + Math.random() * 30);
+            _phoneTypeTimer = setTimeout(typeChar, 30 + Math.random() * 20);
         } else {
             // Line done — pause then next line
             _phoneLineIdx++;
@@ -1562,8 +1568,8 @@ function drawEvidence(canvas, caseData) {
         ctx.fillText('MAINTENANCE — NIGHT SHIFT', 20, 52);
 
         // Access — contradicts "without permission" in the charge
-        ctx.font = 'bold 11px monospace';
-        ctx.fillStyle = '#1a4a1a';
+        ctx.font = 'bold 10px monospace';
+        ctx.fillStyle = '#333';
         ctx.fillText('ACCESS: ALL FLOORS', 20, 70);
 
         // Building assignment
@@ -1652,6 +1658,34 @@ function drawEvidence(canvas, caseData) {
         ctx.fillStyle = 'rgba(139,0,0,0.12)';
         ctx.fillText('CLASSIFIED', -28, 4);
         ctx.restore();
+
+    } else if (ev.type === 'directive_stamp') {
+        // Shows today's directive date prominently — contradicts case filing date of 03.02.2026
+        ctx.font = 'bold 9px monospace';
+        ctx.fillStyle = '#333';
+        ctx.fillText('BORD — DAILY DIRECTIVE', 12, 14);
+        ctx.font = '8px monospace';
+        ctx.fillStyle = '#666';
+        ctx.fillText('OFFICE COPY — DO NOT REMOVE', 12, 26);
+
+        // Today's date — big and clear
+        ctx.font = 'bold 10px monospace';
+        ctx.fillStyle = '#444';
+        ctx.fillText('EFFECTIVE DATE:', 12, 46);
+        ctx.font = 'bold 16px monospace';
+        ctx.fillStyle = '#1a1a1a';
+        ctx.fillText('04.02.2026', 12, 66);
+
+        // Directive name
+        ctx.font = '9px monospace';
+        ctx.fillStyle = '#555';
+        ctx.fillText('CURRICULUM COMPLIANCE', 12, 82);
+
+        // Rule reminder
+        ctx.font = '8px monospace';
+        ctx.fillStyle = '#777';
+        ctx.fillText('R1: Cases filed before this', 12, h - 14);
+        ctx.fillText('date are not valid.', 12, h - 4);
     }
 }
 
@@ -1902,12 +1936,12 @@ const memoPaperMat = new THREE.MeshStandardMaterial({ map: memoTexture, roughnes
 // Directive paper -larger, closer to center, under the lamp light
 // BoxGeometry face order: +x, -x, +y, -y, +z, -z -texture on +y (top face, index 2)
 const memoPaperStack = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.015, 0.28), paperMat);
-memoPaperStack.position.set(-0.75, 0.775, -0.45);
+memoPaperStack.position.set(-0.38, 0.775, -0.45);
 memoPaperStack.rotation.y = -0.1;
 scene.add(memoPaperStack);
 const memoPaperMats = [paperMat, paperMat, memoPaperMat, paperMat, paperMat, paperMat];
 const memoPaper = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.005, 0.32), memoPaperMats);
-memoPaper.position.set(-0.73, 0.79, -0.44);
+memoPaper.position.set(-0.36, 0.79, -0.44);
 memoPaper.rotation.y = -0.08;
 scene.add(memoPaper);
 
@@ -3248,6 +3282,21 @@ function renderCase(c) {
     if (c.evidence) {
         const evCanvas = document.getElementById('evidence-canvas');
         if (evCanvas) drawEvidence(evCanvas, c);
+
+        // Evidence card is also clickable to find irregularity (if case has one)
+        if (hasIrregularity) {
+            const evDiv = document.getElementById('cf-evidence');
+            if (evDiv) {
+                evDiv.style.cursor = 'default'; // no special cursor — just clickable
+                evDiv.addEventListener('click', function(evt) {
+                    evt.stopPropagation();
+                    if (state.loopholeFound || state._loopholeDismissal) return;
+                    // Find the irregularity element and trigger it
+                    const irrEl = el.querySelector('.cf-irregularity');
+                    if (irrEl) window.foundIrregularity(irrEl);
+                }, _acSignal);
+            }
+        }
     }
 
     // Entrance animation -shift-aware (final case gets special treatment)
@@ -7330,9 +7379,9 @@ function initAudio() {
         // Schedule next click -irregular rhythm like multiple typists
         // B3: typing thins out with suspicion via multiplier
         const mul = window._typingDelayMultiplier || 1.0;
-        const nextDelay = (0.04 + Math.random() * 0.18) * mul;
+        const nextDelay = (0.15 + Math.random() * 0.45) * mul;
         // Occasional pause (someone thinking) -also scales with suspicion
-        const pause = Math.random() < 0.08 ? (0.5 + Math.random() * 1.5) * mul : 0;
+        const pause = Math.random() < 0.15 ? (1.0 + Math.random() * 3.0) * mul : 0;
         setTimeout(scheduleTyping, (nextDelay + pause) * 1000);
     }
     scheduleTyping();
@@ -8097,7 +8146,7 @@ animate();
         stamperHandle.rotation.set(0, 0, 0);
         penHolder.position.set(0.6, 0.83, -0.3);
         penHolder.rotation.set(0, 0, 0);
-        memoPaper.position.set(-0.73, 0.79, -0.44);
+        memoPaper.position.set(-0.36, 0.79, -0.44);
         memoPaper.rotation.y = -0.08;
         // Reset head tilts and worker rotations (torsoRotate)
         workers.forEach(w => { w.userData.headRef.rotation.z = 0; w.rotation.y = 0; });
