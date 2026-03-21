@@ -946,7 +946,7 @@ const shift1Cases = [
         id: "7494-A", date: "04.02.2026", classification: "Class A",
         recordNotes: "Original filing - District 9 referral",
         name: "Maria Okonkwo", occupation: "Primary Educator, District 9",
-        allegation: "Distributing banned teaching materials (Class B: Historical)",
+        allegation: "Distributing banned teaching materials to students",
         detail: "The books were about what happened at Facility 6. She wrote them herself. From memory.",
         // LOOPHOLE: The filing date says 03.02.2026 but directive date is 04.02.2026 -case was filed before today's directive
         irregularity: { field: "date", text: "03.02.2026", display: "03.02.2026" },
@@ -1369,12 +1369,12 @@ function triggerPhoneCall(absIdx) {
         overlay.style.pointerEvents = 'auto';
         playPhoneRing();
 
-        // Auto-dismiss if not answered in 10 seconds
+        // Auto-dismiss if not answered in 15 seconds
         _phoneRingTimer = setTimeout(() => {
             if (state.phoneRinging) {
                 dismissPhoneCall();
             }
-        }, 10000);
+        }, 15000);
     }, call.delay);
 }
 
@@ -1565,7 +1565,7 @@ function drawEvidence(canvas, caseData) {
         // Role
         ctx.font = '9px monospace';
         ctx.fillStyle = '#555';
-        ctx.fillText('MAINTENANCE — NIGHT SHIFT', 20, 52);
+        ctx.fillText('NIGHT JANITOR — BORD ANNEX B', 20, 52);
 
         // Access — contradicts "without permission" in the charge
         ctx.font = 'bold 10px monospace';
