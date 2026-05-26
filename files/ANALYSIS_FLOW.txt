@@ -1,0 +1,50 @@
+BORD ANALYSIS: GAME FLOW, FEEDBACK, PLAYER UNDERSTANDING
+==========================================================
+
+1. BUREAU MANUAL PROBLEMS
+- Never properly taught. Intro says "Consult" but never says press TAB
+- Tab on case file has no visual emphasis - looks identical to "Case File" tab
+- Manual describes rules but NEVER teaches the click mechanic
+- First loophole (Okonkwo date) requires cross-referencing 2D UI with 3D desk paper
+  The directive date is ONLY on the 3D memo, not in the manual. Hardest loophole first.
+
+2. LOOPHOLE DIFFICULTY RATINGS
+  Case 2  (Okonkwo date):    HARD   - cross-media reference, 3-step inference
+  Case 4  (Brandt suffix):   MEDIUM - regulation SEC-1 is clear
+  Case 6  (Wojcik janitor):  EASY   - most discoverable
+  Case 9  (Osei signature):  MEDIUM - clear logic, slightly unintuitive click target
+  Case 12 (Kader offenses):  MEDIUM - [MISSING] tags are visible
+  Case 14 (Your file suffix): MEDIUM - emotional distraction factor
+
+3. DIRECTIVE LABEL PROBLEM
+  "REVENUE ENFORCEMENT" sounds like an order to PUNISH
+  Player reads "enforce" and thinks they should condemn
+  But regulations under it actually enable mercy
+  Directive names steer toward evil - opposite of mechanical purpose
+
+4. FEEDBACK AFTER CHOICES
+  Mercy: ominous (lamp dims, typing stops, "Noted.") - makes mercy FEEL dangerous
+  Evil: cold approval ("Your compliance is noted.") - makes evil feel safe
+  Correct loophole: ONLY unambiguous positive feedback (green VOID, warm chord)
+  Wrong loophole: clear negative (red flash, dissonant buzz, +15 suspicion)
+
+  Player cannot tell if mercy vs evil is "right" - this is intentional
+  But the ambiguity means first-time players have no idea what's happening
+
+5. SUSPICION IS INVISIBLE
+  Player never sees a number or meter
+  Evil REDUCES suspicion (counterintuitive - player assumes evil = dangerous)
+  Threshold messages help but are brief (2.5s) and easy to miss mid-case
+  Player who never presses SPACE misses most suspicion feedback
+  Look hint is nearly invisible: 11px, 25% opacity white
+
+6. PACING
+  Shift 1 (5 cases): Good escalation, alternates loophole/non-loophole
+  Shift 2 (6 cases): Slight stall - Cases 9-10 dip after Henrik Voss reveal
+  Shift 3 (7 cases): Longest shift, fatigue risk. Cases 16-17 feel thin
+
+7. NEWSPAPERS
+  Good reactive storytelling - 3 of 5 Shift 1 cases get coverage
+  Evil headlines use sanitized Bureau language ("smooth transition for detained minors")
+  Missing: Brandt, Dr. Nasir (Shift 1), Wojcik, Osei, Dimitri (Shift 2) get no coverage
+  No newspaper after Shift 3 - most impactful choices get no newspaper feedback
