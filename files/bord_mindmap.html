@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BORD - Case Flow Analysis</title>
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    background: #050505;
+    color: #d4d4d4;
+    font-family: 'Courier Prime', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* Header */
+.page-header {
+    text-align: center;
+    padding: 40px 20px 20px;
+    border-bottom: 1px solid #222;
+}
+.page-header h1 {
+    font-family: 'Special Elite', monospace;
+    font-size: 42px;
+    letter-spacing: 12px;
+    color: #d4d4d4;
+    margin-bottom: 8px;
+}
+.page-header .subtitle {
+    font-size: 13px;
+    color: #555;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+}
+
+/* Suspicion overview */
+.susp-overview {
+    max-width: 900px;
+    margin: 24px auto;
+    padding: 16px 24px;
+    border: 1px solid #222;
+    background: #0a0a0a;
+    font-size: 12px;
+    color: #777;
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+}
+.susp-overview .so-item { flex: 1; min-width: 200px; }
+.susp-overview .so-label { color: #555; text-transform: uppercase; font-size: 10px; letter-spacing: 2px; margin-bottom: 4px; }
+.susp-overview .so-val { color: #999; }
+.susp-overview .so-val .red { color: #8b0000; }
+
+/* Shift sections */
+.shift-section {
+    margin: 32px auto;
+    max-width: 98vw;
+}
+.shift-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 24px;
+    background: #0a0a0a;
+    border: 1px solid #222;
+    cursor: pointer;
+    user-select: none;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+.shift-header:hover { background: #111; }
+.shift-header .arrow {
+    font-size: 14px;
+    color: #555;
+    transition: transform 0.3s;
+    width: 16px;
+}
+.shift-header.collapsed .arrow { transform: rotate(-90deg); }
+.shift-header h2 {
+    font-family: 'Special Elite', monospace;
+    font-size: 22px;
+    letter-spacing: 6px;
+    color: #d4d4d4;
+}
+.shift-header .shift-sub {
+    font-size: 12px;
+    color: #555;
+    letter-spacing: 2px;
+}
+.shift-header .case-count {
+    margin-left: auto;
+    font-size: 11px;
+    color: #444;
+}
+.shift-body {
+    overflow-x: auto;
+    overflow-y: visible;
+    padding: 20px 0;
+    transition: max-height 0.4s ease, opacity 0.3s ease;
+}
+.shift-body.hidden {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    padding: 0;
+}
+
+/* SVG styles */
+svg { display: block; }
+svg text { font-family: 'Courier Prime', monospace; }
+svg .case-node { cursor: pointer; }
+svg .case-node rect { transition: fill 0.2s; }
+svg .case-node:hover rect.node-bg { fill: #1a1a1a; }
+svg .case-node.special:hover rect.node-bg { fill: #1a0808; }
+
+/* Tooltip */
+.tooltip {
+    position: fixed;
+    z-index: 100;
+    background: #111;
+    border: 1px solid #333;
+    padding: 14px 18px;
+    max-width: 420px;
+    font-size: 12px;
+    color: #ccc;
+    line-height: 1.6;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.8);
+}
+.tooltip.visible { opacity: 1; }
+.tooltip .tt-id { color: #888; font-size: 10px; letter-spacing: 2px; }
+.tooltip .tt-name { color: #d4d4d4; font-size: 14px; font-weight: bold; margin: 4px 0; }
+.tooltip .tt-occ { color: #666; font-size: 11px; margin-bottom: 6px; }
+.tooltip .tt-allegation { color: #999; font-style: italic; margin-bottom: 6px; }
+.tooltip .tt-detail { color: #888; font-size: 11px; margin-bottom: 8px; border-left: 2px solid #333; padding-left: 8px; }
+.tooltip .tt-loophole { color: #8b7355; font-size: 11px; margin-top: 6px; }
+.tooltip .tt-loophole::before { content: "LOOPHOLE: "; font-weight: bold; }
+.tooltip .tt-special { color: #8b0000; font-size: 11px; font-weight: bold; margin-top: 6px; }
+
+/* Shift transition */
+.shift-transition {
+    text-align: center;
+    padding: 16px;
+    font-size: 12px;
+    color: #444;
+    letter-spacing: 3px;
+    border-left: 1px dashed #222;
+    border-right: 1px dashed #222;
+    margin: 0 auto;
+    max-width: 400px;
+}
+.shift-transition .trans-arrow { color: #333; font-size: 20px; }
+.shift-transition .trans-val { color: #8b0000; }
+
+/* Endings panel */
+.endings-panel {
+    margin: 40px auto;
+    max-width: 1200px;
+    padding: 0 24px 60px;
+}
+.endings-panel h2 {
+    font-family: 'Special Elite', monospace;
+    font-size: 22px;
+    letter-spacing: 6px;
+    text-align: center;
+    margin-bottom: 24px;
+    color: #d4d4d4;
+}
+.endings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 12px;
+}
+.ending-card {
+    border: 1px solid #222;
+    background: #0a0a0a;
+    padding: 16px;
+    transition: border-color 0.2s;
+}
+.ending-card:hover { border-color: #444; }
+.ending-card.caught { border-left: 3px solid #8b0000; }
+.ending-card.survived { border-left: 3px solid #555; }
+.ending-card.special { border-left: 3px solid #8b7355; }
+.ending-card .ec-title {
+    font-family: 'Special Elite', monospace;
+    font-size: 16px;
+    letter-spacing: 3px;
+    margin-bottom: 6px;
+}
+.ending-card.caught .ec-title { color: #8b0000; }
+.ending-card.survived .ec-title { color: #888; }
+.ending-card.special .ec-title { color: #8b7355; }
+.ending-card .ec-cond { font-size: 11px; color: #666; margin-bottom: 4px; }
+.ending-card .ec-shift { font-size: 10px; color: #444; }
+
+/* Legend */
+.legend {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    padding: 12px 24px;
+    font-size: 11px;
+    color: #666;
+    max-width: 900px;
+    margin: 0 auto 8px;
+}
+.legend-item { display: flex; align-items: center; gap: 6px; }
+.legend-swatch {
+    width: 16px;
+    height: 12px;
+    border: 1px solid;
+}
+.leg-evil { background: rgba(139,0,0,0.3); border-color: #8b0000; }
+.leg-mercy { background: rgba(60,80,60,0.3); border-color: #3c503c; }
+.leg-loophole { background: none; border-color: #8b7355; border-style: dashed; }
+.leg-special { background: rgba(139,0,0,0.1); border-color: #8b0000; border-width: 2px; }
+
+/* Scrollbar */
+::-webkit-scrollbar { height: 6px; width: 6px; }
+::-webkit-scrollbar-track { background: #0a0a0a; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #555; }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+    <h1>BORD</h1>
+    <div class="subtitle">Case Flow Analysis &mdash; All Paths to All Endings</div>
+</div>
+
+<div class="susp-overview">
+    <div class="so-item">
+        <div class="so-label">Suspicion Threshold</div>
+        <div class="so-val"><span class="red">100</span> = TERMINATED (PROCESSED ending)</div>
+    </div>
+    <div class="so-item">
+        <div class="so-label">Early Game</div>
+        <div class="so-val">First 3 cases: mercy costs <span class="red">1.2x</span></div>
+    </div>
+    <div class="so-item">
+        <div class="so-label">Shift Carryover</div>
+        <div class="so-val"><span class="red">40%</span> suspicion carries to next shift</div>
+    </div>
+    <div class="so-item">
+        <div class="so-label">Loophole Cost</div>
+        <div class="so-val">Escalating: <span class="red">+5, +8, +12, +15</span> (cap)</div>
+    </div>
+</div>
+
+<div class="legend">
+    <div class="legend-item"><div class="legend-swatch leg-evil"></div> Evil choice</div>
+    <div class="legend-item"><div class="legend-swatch leg-mercy"></div> Mercy choice</div>
+    <div class="legend-item"><div class="legend-swatch leg-loophole"></div> Loophole case</div>
+    <div class="legend-item"><div class="legend-swatch leg-special"></div> Special trigger</div>
+</div>
+
+<div id="shift-1" class="shift-section"></div>
+
+<div class="shift-transition">
+    <div class="trans-arrow">&#x25BC;</div>
+    <div>Suspicion carries: <span class="trans-val">current x 0.4</span></div>
+    <div style="margin-top:4px; font-size:10px;">Best: 0 &middot; Worst: ~27</div>
+</div>
+
+<div id="shift-2" class="shift-section"></div>
+
+<div class="shift-transition">
+    <div class="trans-arrow">&#x25BC;</div>
+    <div>Suspicion carries: <span class="trans-val">current x 0.4</span></div>
+    <div style="margin-top:4px; font-size:10px;">Best: 0 &middot; Worst: ~38</div>
+</div>
+
+<div id="shift-3" class="shift-section"></div>
+
+<div class="endings-panel">
+    <h2>ENDINGS</h2>
+    <div class="endings-grid" id="endings-grid"></div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+// ===== DATA =====
+const shifts = [
+    {
+        num: 1, title: "SHIFT 1", subtitle: "THE NORMAL",
+        desc: "Routine bureaucracy. Facility 6 is a name on a page.",
+        cases: [
+            {
+                id: "7493-B", name: "Arthur P. Selby", occ: "Newspaper Vendor",
+                allegation: "Unpaid vendor tax (2.00 Credits). Third notice.",
+                detail: "Sold papers outside Facility 6 for 11 years. Saw trucks leaving at night. Has a daughter.",
+                loophole: null, loopholeRule: null,
+                special: null,
+                choices: [
+                    { label: "ARREST & SEIZE", delta: -5, evil: true },
+                    { label: "FINE (100 CR.)", delta: 0, evil: true },
+                    { label: "DISMISS", delta: 10, evil: false }
+                ]
+            },
+            {
+                id: "7494-A", name: "Maria Okonkwo", occ: "Primary Educator",
+                allegation: "Distributing banned teaching materials (Historical)",
+                detail: "Books about Facility 6. She wrote them herself. From memory.",
+                loophole: "Filed before today's directive (03.02 vs 04.02)", loopholeRule: "R1",
+                special: null,
+                choices: [
+                    { label: "FIRE & FLAG", delta: -5, evil: true },
+                    { label: "REASSIGN", delta: -5, evil: true },
+                    { label: "NO VIOLATION", delta: 15, evil: false }
+                ]
+            },
+            {
+                id: "7495-C", name: "Kader Family (4)", occ: "Shopkeepers",
+                allegation: "Harboring unregistered minor (age 8)",
+                detail: "Boy walked out of Facility 6 the night it collapsed. Family took him in.",
+                loophole: "Child under 12 - covered by parent residency", loopholeRule: "R3",
+                special: null,
+                choices: [
+                    { label: "FULL SEIZURE", delta: -10, evil: true },
+                    { label: "REGISTER", delta: -5, evil: true },
+                    { label: "DISMISS", delta: 20, evil: false }
+                ]
+            },
+            {
+                id: "7496-D", name: "Elias Brandt", occ: "Municipal Clerk",
+                allegation: "Copying restricted documents",
+                detail: "Copying Facility 6 purchase orders. Surgical equipment to children's ward. 40 pages.",
+                loophole: "Case number ending -D doesn't match Class A", loopholeRule: "R2",
+                special: null,
+                choices: [
+                    { label: "DETAIN & DESTROY", delta: -5, evil: true },
+                    { label: "WARNING", delta: -3, evil: true },
+                    { label: "DISMISS", delta: 15, evil: false }
+                ]
+            },
+            {
+                id: "7497-E", name: "Dr. Yara Nasir", occ: "Physician",
+                allegation: "Treating a BORD-restricted patient",
+                detail: "Treated a girl from Facility 6. Two surgical scars, no history. Sealed imaging report.",
+                loophole: null, loopholeRule: null,
+                special: null,
+                choices: [
+                    { label: "REVOKE LICENSE", delta: -10, evil: true },
+                    { label: "CLEAR", delta: 5, evil: false }
+                ]
+            }
+        ]
+    },
+    {
+        num: 2, title: "SHIFT 2", subtitle: "THE UNRAVELING",
+        desc: "Pressure mounts. Cases get personal.",
+        cases: [
+            {
+                id: "7512-A", name: "Tomasz Wojcik", occ: "Night Janitor",
+                allegation: "Found in restricted archive without permission",
+                detail: "Found door behind filing cabinets. Boxes of children's intake forms. Stayed until morning.",
+                loophole: "Janitors have floor access in assigned building", loopholeRule: "R6",
+                special: null,
+                choices: [
+                    { label: "DETAIN", delta: -5, evil: true },
+                    { label: "FIRE", delta: -5, evil: true },
+                    { label: "DISMISS", delta: 12, evil: false }
+                ]
+            },
+            {
+                id: "7513-B", name: "Lena Selby", occ: "Minor, Age 16",
+                allegation: "Distributing illegal printed material",
+                detail: "Arthur Selby's daughter. Took over his press. 200 copies: WHERE ARE THE TRUCKS GOING?",
+                loophole: "Under 18 - cannot be processed", loopholeRule: "R4",
+                special: null,
+                choices: [
+                    { label: "YOUTH PROCESSING", delta: -10, evil: true },
+                    { label: "CAUTION", delta: -3, evil: true },
+                    { label: "DISMISS", delta: 12, evil: false }
+                ]
+            },
+            {
+                id: "7514-C", name: "Henrik Voss", occ: "BORD Clerk, Level 3",
+                allegation: "Anomalous case processing pattern (this is YOU)",
+                detail: "Terminal NP-L3-07. Three anomalous dismissals. Reassigned from Facility 6 Division.",
+                loophole: null, loopholeRule: null,
+                special: "CONFINED",
+                specialDesc: "FORWARD TO OVERSIGHT triggers CONFINED ending before Shift 3",
+                choices: [
+                    { label: "FORWARD TO OVERSIGHT", delta: 0, evil: true, trigger: "CONFINED" },
+                    { label: "RECLASSIFY", delta: 20, evil: false }
+                ]
+            },
+            {
+                id: "7515-D", name: "Amara Osei", occ: "Records Clerk",
+                allegation: "Did not report for mandatory reassignment",
+                detail: "Worked at Facility 6. Filed intake forms for every child. Reassignment order: no signature.",
+                loophole: "Unsigned order - not valid", loopholeRule: "R7",
+                special: null,
+                choices: [
+                    { label: "ENFORCE", delta: -8, evil: true },
+                    { label: "DISMISS", delta: 15, evil: false }
+                ]
+            },
+            {
+                id: "7516-E", name: "Fr. Dimitri Voronov", occ: "Chaplain",
+                allegation: "Illegal gatherings (3 funerals, 9-14 people each)",
+                detail: "Three funerals for people held in Facility 6. According to BORD, they never existed.",
+                loophole: null, loopholeRule: null,
+                special: null,
+                choices: [
+                    { label: "CLOSE CENTER", delta: -8, evil: true },
+                    { label: "DISMISS", delta: 8, evil: false }
+                ]
+            },
+            {
+                id: "7517-X", name: "Facility 6 Witnesses (14)", occ: "Various",
+                allegation: "Unauthorized depositions re: Facility 6 operations",
+                detail: "14 depositions. Children's ward, transport logs, intake procedures. Second filing at terminal.",
+                loophole: "Duplicate filing at same terminal", loopholeRule: "R7",
+                special: "COLLECTED",
+                specialDesc: "SILENCE triggers COLLECTED knock ending before Shift 3",
+                choices: [
+                    { label: "SILENCE", delta: -30, evil: true, trigger: "COLLECTED" },
+                    { label: "LET THEM SPEAK", delta: 35, evil: false }
+                ]
+            }
+        ]
+    },
+    {
+        num: 3, title: "SHIFT 3", subtitle: "THE COLLAPSE",
+        desc: "The memo is blank. You are alone.",
+        cases: [
+            {
+                id: "7530-A", name: "Nadia Kader", occ: "Shopkeeper",
+                allegation: "Harboring unregistered person (3rd offense - mandatory)",
+                detail: "The boy from Facility 6 still with her. He calls her mother now.",
+                loophole: "Only 1 prior offense on file, not 3", loopholeRule: "R7",
+                special: null,
+                choices: [
+                    { label: "MANDATORY", delta: -15, evil: true },
+                    { label: "DISMISS", delta: 18, evil: false }
+                ]
+            },
+            {
+                id: "7531-B", name: "Dr. Emil Rask", occ: "BORD Physician",
+                allegation: "Faking 214 death certificates (Facility 6)",
+                detail: "214 children died. He signed every certificate. All say 'cardiac arrest.' Youngest was four.",
+                loophole: null, loopholeRule: null,
+                special: null,
+                choices: [
+                    { label: "DETAIN", delta: -5, evil: true },
+                    { label: "SUSPEND", delta: -3, evil: true },
+                    { label: "OUTSIDE REVIEW", delta: 20, evil: false }
+                ]
+            },
+            {
+                id: "7532-C", name: "[NP-L3-07]", occ: "BORD Clerk (YOU again)",
+                allegation: "Processing stamp on 214 Facility 6 intake forms",
+                detail: "Your stamp on 214 child intake forms. Reassigned from Facility 6 under name Henrik Voss.",
+                loophole: "Case number -C doesn't match Staff (-L)", loopholeRule: "R2",
+                special: null,
+                choices: [
+                    { label: "ACCEPT FINDINGS", delta: -5, evil: true },
+                    { label: "DISMISS", delta: 25, evil: false }
+                ]
+            },
+            {
+                id: "7533-D", name: "Director Crane", occ: "BORD Admin, Level 9",
+                allegation: "Ordered illegal detention program (Facility 6, 2019-2025)",
+                detail: "Ran Facility 6 for six years. Signed orders to bring children in. Signed orders to remove bodies.",
+                loophole: null, loopholeRule: null,
+                special: null,
+                choices: [
+                    { label: "ARCHIVE", delta: -10, evil: true },
+                    { label: "FORWARD EVIDENCE", delta: 30, evil: false }
+                ]
+            },
+            {
+                id: "7534-E", name: "Night Transport (12)", occ: "BORD Logistics",
+                allegation: "Refusal to provide testimony (12 drivers)",
+                detail: "Night routes to Facility 6. All submitted identical statements: 'I drove where I was told.'",
+                loophole: null, loopholeRule: null,
+                special: null,
+                choices: [
+                    { label: "COMPEL", delta: -5, evil: true },
+                    { label: "ACCEPT", delta: 10, evil: false }
+                ]
+            },
+            {
+                id: "7535-F", name: "[NO DATA]", occ: "[NO DATA]",
+                allegation: "[NO DATA]",
+                detail: "Blank file. No intake signature. No origin. Chemical residue. Standing directive: all files must be actioned.",
+                loophole: null, loopholeRule: null,
+                special: null,
+                choices: [
+                    { label: "PROCESS", delta: -3, evil: true },
+                    { label: "REFUSE", delta: 5, evil: false }
+                ]
+            },
+            {
+                id: "7741-FINAL", name: "Witnesses Re-filed (14)", occ: "See Case 7517-X",
+                allegation: "Re-filed depositions. Full evidentiary packet. Outside counsel notified.",
+                detail: "14 depositions. 214 intake records. 211 death certificates. Transport manifests. Your stamp on 211 pages.",
+                loophole: null, loopholeRule: null,
+                special: "UNSEALED",
+                specialDesc: "OPEN CASE with all-mercy path = UNSEALED ending",
+                choices: [
+                    { label: "SILENCE", delta: -30, evil: true },
+                    { label: "OPEN CASE 7741", delta: 50, evil: false, trigger: "UNSEALED" }
+                ]
+            }
+        ]
+    }
+];
+
+const endings = [
+    { id: "UNSEALED", condition: "All 18 mercy + survive to end", type: "special", shift: "After Shift 3 final case", priority: 1 },
+    { id: "UNSEALED (MORPH)", condition: "All 18 mercy but caught at 100", type: "special", shift: "After Shift 3 (starts PROCESSED, morphs)", priority: 2 },
+    { id: "CONFINED", condition: "Forward self to oversight (7514-C evil)", type: "caught", shift: "Before Shift 3 starts", priority: 3 },
+    { id: "COLLECTED", condition: "Silence 14 witnesses (7517-X evil)", type: "caught", shift: "Before Shift 3 starts (knock sequence)", priority: 4 },
+    { id: "PROCESSED", condition: "Suspicion reaches 100 at any point", type: "caught", shift: "Any shift", priority: 5 },
+    { id: "EXEMPLARY", condition: "All 18 cases evil choices", type: "survived", shift: "After Shift 3", priority: 6 },
+    { id: "WITHIN THE RULES", condition: "All 18 saved + 3 or more loopholes used", type: "survived", shift: "After Shift 3", priority: 7 },
+    { id: "ALMOST", condition: "11-17 citizens saved", type: "survived", shift: "After Shift 3", priority: 8 },
+    { id: "DIVIDED", condition: "5-10 citizens saved", type: "survived", shift: "After Shift 3", priority: 9 },
+    { id: "COMPLIANT", condition: "0-4 citizens saved", type: "survived", shift: "After Shift 3", priority: 10 },
+    { id: "SHIFT COMPLETE", condition: "All 18 saved (fallback, < 3 loopholes)", type: "survived", shift: "After Shift 3", priority: 11 },
+];
+
+// ===== RENDERING =====
+const NODE_W = 240;
+const NODE_H = 80;
+const CHOICE_W = 210;
+const CHOICE_H = 38;
+const CHOICE_GAP = 6;
+const H_GAP = 40;
+const V_GAP = 30;
+const MARGIN = 40;
+
+function calcSuspicionRanges(shiftData, prevMin, prevMax) {
+    let minS = prevMin, maxS = prevMax;
+    const ranges = [];
+    shiftData.cases.forEach((c, i) => {
+        const mercyDelta = Math.max(...c.choices.filter(ch => !ch.evil).map(ch => ch.delta));
+        const evilDelta = Math.min(...c.choices.filter(ch => ch.evil).map(ch => ch.delta));
+        let mercyCost = mercyDelta;
+        const absIdx = (shiftData.num === 1) ? i : (shiftData.num === 2) ? i + 5 : i + 11;
+        if (absIdx < 3 && mercyCost > 0) mercyCost = Math.round(mercyCost * 1.2);
+        minS = Math.max(0, minS + evilDelta);
+        maxS = Math.min(100, maxS + mercyCost);
+        ranges.push({ min: Math.max(0, minS), max: Math.min(100, maxS) });
+    });
+    return ranges;
+}
+
+function renderShift(shiftData) {
+    const container = document.getElementById('shift-' + shiftData.num);
+    const caseCount = shiftData.cases.length;
+
+    let prevMin = 0, prevMax = 0;
+    if (shiftData.num === 2) { prevMin = 0; prevMax = 27; }
+    else if (shiftData.num === 3) { prevMin = 0; prevMax = 38; }
+    const suspRanges = calcSuspicionRanges(shiftData, prevMin, prevMax);
+
+    const maxChoices = Math.max(...shiftData.cases.map(c => c.choices.length));
+    const svgW = MARGIN * 2 + caseCount * (NODE_W + H_GAP) - H_GAP;
+    const choiceBlockH = maxChoices * (CHOICE_H + CHOICE_GAP);
+    const svgH = MARGIN + NODE_H + V_GAP + choiceBlockH + 30;
+
+    const header = document.createElement('div');
+    header.className = 'shift-header';
+    header.innerHTML = `
+        <span class="arrow">&#x25BC;</span>
+        <h2>${shiftData.title}</h2>
+        <span class="shift-sub">${shiftData.subtitle}</span>
+        <span class="case-count">${caseCount} cases</span>
+    `;
+    header.onclick = () => {
+        header.classList.toggle('collapsed');
+        body.classList.toggle('hidden');
+    };
+
+    const body = document.createElement('div');
+    body.className = 'shift-body';
+
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', svgW);
+    svg.setAttribute('height', svgH);
+    svg.setAttribute('viewBox', `0 0 ${svgW} ${svgH}`);
+
+    // Defs
+    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    defs.innerHTML = `
+        <marker id="arrowhead-${shiftData.num}" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#444"/>
+        </marker>
+    `;
+    svg.appendChild(defs);
+
+    // Case-to-case arrows
+    shiftData.cases.forEach((c, i) => {
+        if (i < caseCount - 1) {
+            const x1 = MARGIN + i * (NODE_W + H_GAP) + NODE_W;
+            const x2 = MARGIN + (i + 1) * (NODE_W + H_GAP);
+            const y = MARGIN + NODE_H / 2;
+            const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            arrow.setAttribute('x1', x1); arrow.setAttribute('y1', y);
+            arrow.setAttribute('x2', x2); arrow.setAttribute('y2', y);
+            arrow.setAttribute('stroke', '#333'); arrow.setAttribute('stroke-width', '1');
+            arrow.setAttribute('marker-end', `url(#arrowhead-${shiftData.num})`);
+            svg.appendChild(arrow);
+        }
+    });
+
+    // Case nodes and choices (stacked vertically)
+    shiftData.cases.forEach((c, i) => {
+        const x = MARGIN + i * (NODE_W + H_GAP);
+        const y = MARGIN;
+        const isSpecial = !!c.special;
+        const isLoophole = !!c.loophole;
+
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        g.setAttribute('class', 'case-node' + (isSpecial ? ' special' : ''));
+
+        // Node rect
+        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rect.setAttribute('class', 'node-bg');
+        rect.setAttribute('x', x); rect.setAttribute('y', y);
+        rect.setAttribute('width', NODE_W); rect.setAttribute('height', NODE_H);
+        rect.setAttribute('rx', 2);
+        rect.setAttribute('fill', isSpecial ? '#120808' : '#0d0d0d');
+        rect.setAttribute('stroke', isSpecial ? '#8b0000' : (isLoophole ? '#8b7355' : '#333'));
+        rect.setAttribute('stroke-width', isSpecial ? '2' : '1');
+        if (isLoophole && !isSpecial) rect.setAttribute('stroke-dasharray', '6,3');
+        g.appendChild(rect);
+
+        // Case ID
+        const idT = svgText(x + 10, y + 16, c.id, '#555', 10);
+        idT.setAttribute('letter-spacing', '1');
+        g.appendChild(idT);
+
+        // Badges
+        if (isLoophole) {
+            const b = svgText(x + NODE_W - 10, y + 16, c.loopholeRule, '#8b7355', 10);
+            b.setAttribute('text-anchor', 'end'); b.setAttribute('font-weight', 'bold');
+            g.appendChild(b);
+        }
+        if (isSpecial) {
+            const b = svgText(x + NODE_W - (isLoophole ? 32 : 10), y + 16, c.special, '#8b0000', 9);
+            b.setAttribute('text-anchor', 'end'); b.setAttribute('font-weight', 'bold');
+            g.appendChild(b);
+        }
+
+        // Name
+        let dn = c.name.length > 24 ? c.name.substring(0, 22) + '..' : c.name;
+        const nt = svgText(x + 10, y + 36, dn, '#d4d4d4', 13);
+        nt.setAttribute('font-weight', 'bold');
+        g.appendChild(nt);
+
+        // Occupation
+        let docc = c.occ.length > 30 ? c.occ.substring(0, 28) + '..' : c.occ;
+        g.appendChild(svgText(x + 10, y + 52, docc, '#666', 10));
+
+        // Suspicion range
+        const range = suspRanges[i];
+        const rc = range.max >= 80 ? '#8b0000' : (range.max >= 55 ? '#8b5a00' : '#444');
+        g.appendChild(svgText(x + 10, y + 70, `S: ${range.min}..${range.max}`, rc, 10));
+
+        // Tooltip
+        g.addEventListener('mouseenter', (e) => showTooltip(e, c, shiftData.num));
+        g.addEventListener('mouseleave', hideTooltip);
+        g.addEventListener('mousemove', moveTooltip);
+        svg.appendChild(g);
+
+        // Choices stacked vertically, centered under node
+        const choiceX = x + (NODE_W - CHOICE_W) / 2;
+        c.choices.forEach((ch, ci) => {
+            const cy = y + NODE_H + V_GAP + ci * (CHOICE_H + CHOICE_GAP);
+
+            // Connector
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            if (ci === 0) {
+                line.setAttribute('x1', x + NODE_W / 2); line.setAttribute('y1', y + NODE_H);
+                line.setAttribute('x2', choiceX + CHOICE_W / 2); line.setAttribute('y2', cy);
+            } else {
+                line.setAttribute('x1', choiceX + CHOICE_W / 2); line.setAttribute('y1', cy - CHOICE_GAP);
+                line.setAttribute('x2', choiceX + CHOICE_W / 2); line.setAttribute('y2', cy);
+            }
+            line.setAttribute('stroke', ch.evil ? '#5a0000' : '#2a3a2a');
+            line.setAttribute('stroke-width', '1');
+            svg.appendChild(line);
+
+            // Choice rect
+            const cr = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            cr.setAttribute('x', choiceX); cr.setAttribute('y', cy);
+            cr.setAttribute('width', CHOICE_W); cr.setAttribute('height', CHOICE_H);
+            cr.setAttribute('rx', 2);
+            cr.setAttribute('fill', ch.evil ? 'rgba(139,0,0,0.15)' : 'rgba(60,80,60,0.15)');
+            cr.setAttribute('stroke', ch.evil ? '#5a0000' : '#3c503c');
+            cr.setAttribute('stroke-width', '1');
+            svg.appendChild(cr);
+
+            // Label
+            let cl = ch.label.length > 22 ? ch.label.substring(0, 20) + '..' : ch.label;
+            const lt = svgText(choiceX + 8, cy + 15, cl, ch.evil ? '#aa3333' : '#7a9a7a', 11);
+            lt.setAttribute('font-weight', 'bold');
+            svg.appendChild(lt);
+
+            // Delta
+            const sign = ch.delta >= 0 ? '+' : '';
+            svg.appendChild(svgText(choiceX + 8, cy + 30, `${sign}${ch.delta} suspicion`, ch.evil ? '#663333' : '#557755', 10));
+
+            // Trigger arrow
+            if (ch.trigger) {
+                const tt = svgText(choiceX + CHOICE_W - 6, cy + 15, '\u2192 ' + ch.trigger, ch.trigger === 'UNSEALED' ? '#8b7355' : '#8b0000', 9);
+                tt.setAttribute('text-anchor', 'end'); tt.setAttribute('font-weight', 'bold');
+                svg.appendChild(tt);
+            }
+        });
+    });
+
+    body.appendChild(svg);
+    container.appendChild(header);
+    container.appendChild(body);
+}
+
+function svgText(x, y, text, fill, size) {
+    const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    t.setAttribute('x', x); t.setAttribute('y', y);
+    t.setAttribute('fill', fill); t.setAttribute('font-size', size);
+    t.textContent = text;
+    return t;
+}
+
+// Tooltip
+const tooltip = document.getElementById('tooltip');
+function showTooltip(e, c, shiftNum) {
+    let html = `<div class="tt-id">${c.id} &mdash; SHIFT ${shiftNum}</div>`;
+    html += `<div class="tt-name">${c.name}</div>`;
+    html += `<div class="tt-occ">${c.occ}</div>`;
+    html += `<div class="tt-allegation">${c.allegation}</div>`;
+    html += `<div class="tt-detail">${c.detail}</div>`;
+    if (c.loophole) {
+        html += `<div class="tt-loophole">${c.loophole} (${c.loopholeRule})</div>`;
+    }
+    if (c.special) {
+        html += `<div class="tt-special">\u26A0 ${c.specialDesc}</div>`;
+    }
+    tooltip.innerHTML = html;
+    tooltip.classList.add('visible');
+    moveTooltip(e);
+}
+function moveTooltip(e) {
+    let x = e.clientX + 16;
+    let y = e.clientY + 16;
+    const tw = tooltip.offsetWidth;
+    const th = tooltip.offsetHeight;
+    if (x + tw > window.innerWidth - 20) x = e.clientX - tw - 16;
+    if (y + th > window.innerHeight - 20) y = e.clientY - th - 16;
+    tooltip.style.left = x + 'px';
+    tooltip.style.top = y + 'px';
+}
+function hideTooltip() {
+    tooltip.classList.remove('visible');
+}
+
+// Render endings
+function renderEndings() {
+    const grid = document.getElementById('endings-grid');
+    endings.forEach(end => {
+        const card = document.createElement('div');
+        card.className = 'ending-card ' + end.type;
+        card.innerHTML = `
+            <div class="ec-title">${end.id}</div>
+            <div class="ec-cond">${end.condition}</div>
+            <div class="ec-shift">${end.shift}</div>
+        `;
+        grid.appendChild(card);
+    });
+}
+
+// Init
+shifts.forEach(renderShift);
+renderEndings();
+</script>
+</body>
+</html>

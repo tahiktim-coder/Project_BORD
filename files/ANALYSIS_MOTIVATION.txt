@@ -1,0 +1,43 @@
+BORD ANALYSIS: PLAYER MOTIVATION & "WHY TONIGHT?"
+===================================================
+
+CORE PROBLEM: If the player has been compliant for years, why change tonight?
+
+ANSWER: THE CASES CHANGED, NOT YOU.
+
+You've been here for years stamping routine paperwork - tax forms, residency filings,
+budget requisitions. You never saw what was behind the paper. F6 was just a name on
+a form. Tonight, for the first time, the F6 closure cases landed on your desk.
+
+WHY THIS WORKS:
+- "Why tonight?" answered: these cases are new
+- Stamp in Case 4 works: you DID stamp F6 intake forms, as routine paperwork
+- Case 14 (214 forms) works: you stamped children into a facility without knowing
+- Case 8 (Henrik Voss) works: Bureau catches you hesitating on F6 cases specifically
+- Aligns with Hannah Arendt - bureaucracies compartmentalize
+
+PROPOSED INTRO:
+  "Night Processing. Same desk."
+  "Facility 6 was demolished last month. The cases from that closure arrived tonight."
+  "You are Case Adjudicator, Level 3. Process them like any other."
+  "Begin."
+
+WHY EACH LINE:
+- Line 1: universe + you (routine, weariness)
+- Line 2: WHY TONIGHT - the critical missing piece
+- Line 3: who you are + instruction (and a lie - these are NOT like any other)
+- Line 4: start
+
+WHY OTHER FRAMINGS FAIL:
+- First night: destroys stamp/complicity arc (Cases 4, 11, 14 all break)
+- Already merciful: Henrik Voss says "current batch" - deviations are from tonight
+- No backstory: game already commits to a past through Cases 4, 11, 14
+- "Third year": creates the plot hole the user identified
+
+THE PLAYER ARC UNDER THIS FRAMING:
+- Shift 1: "I stamped WHAT?" - seeing F6 people for the first time
+- Shift 2: "They see me seeing" - Bureau notices your hesitation
+- Shift 3: "My stamp, my hands, my choice" - the mirror shatters
+
+The player character is not suddenly becoming good.
+They are suddenly becoming informed.
