@@ -1,0 +1,724 @@
+
+================================================================================
+                    BORD — NARRATIVE ARCHITECTURE ANALYSIS
+                    Story Flow / Chekhov Audit / Edit Plan
+================================================================================
+
+
+================================================================================
+  1. STORY FLOW — WHAT THE PLAYER LEARNS, CASE BY CASE
+================================================================================
+
+  The core question the story answers across 18 cases:
+  "What was Facility 6, and what did YOU do there?"
+
+  Below, each case is marked with what NEW information it introduces.
+  [F6] = Facility 6 lore    [YOU] = player complicity    [CONN] = character connection
+  [WORLD] = regime/world detail    [META] = fourth-wall / system awareness
+
+
+  SHIFT 1 — "THE NORMAL" (04.02.2026)
+  ====================================
+  Player knows: Nothing. Just sat down. "Process the cases."
+
+  Case 1: Arthur Selby .............. [F6] [WORLD]
+  |  LEARNS: Facility 6 exists. It had trucks. A man watched for 11 years.
+  |  QUESTION PLANTED: What trucks? Why does this matter?
+  |
+  Case 2: Maria Okonkwo ............ [F6]
+  |  LEARNS: Something HAPPENED at Facility 6. Bad enough to write books about.
+  |  QUESTION PLANTED: What happened? The regime banned the books — why?
+  |  FIRST LOOPHOLE: teaches the mechanic
+  |
+  Case 3: Kader Family ............. [F6] [WORLD]
+  |  LEARNS: F6 "collapsed." A child walked out. He is 8.
+  |  EMOTIONAL HOOK: A family sheltering a child. First gut-punch choice.
+  |  QUESTION PLANTED: Why was an 8-year-old IN Facility 6?
+  |
+  Case 4: Elias Brandt ............. [F6] [YOU] *** FIRST COMPLICITY ***
+  |  LEARNS: F6 had budget allocations for "medical equipment."
+  |          YOUR PROCESSING STAMP is on every page.
+  |  PROBLEM: This reveal has NO SETUP. The player doesn't even know
+  |           they HAVE a processing stamp yet. (See Section 3.)
+  |
+  Case 5: Dr. Yara Nasir ........... [F6]
+  |  LEARNS: A girl from F6 had surgical scars. She had no kidneys.
+  |  REALIZES: F6 was harvesting organs from children.
+  |  THIS IS THE SHIFT 1 CLIMAX — the "oh god" moment.
+  |
+  |  +-- NEWSPAPER BREAK (player sees consequences of Shift 1 choices)
+  v
+
+  SHIFT 2 — "THE UNRAVELING" (05.02.2026)
+  =========================================
+  Player knows: F6 was bad. Children were inside. Organs removed. Player
+  was somehow involved (but this feels unearned — see Section 3).
+
+  Case 6: Tomasz Wojcik ............ [WORLD]
+  |  LEARNS: The Bureau has restricted archives. Someone poked around.
+  |  BREATHER CASE: Lower emotional intensity. World-building.
+  |
+  Case 7: Lena Selby ............... [CONN] [F6]
+  |  LEARNS: Selby's DAUGHTER continues his work. She asks "Where are
+  |          the trucks going?" — the central question of the game.
+  |  CONNECTION: First time two cases link (father in Case 1 -> daughter here).
+  |  QUESTION SHARPENED: The trucks were taking people. Children.
+  |
+  Case 8: Henrik Voss .............. [YOU] [META] *** THEY ARE WATCHING ***
+  |  LEARNS: "Henrik Voss" = YOU. The Bureau has noticed your mercy.
+  |          "Three anomalous dismissals." "Clerk ID matches your terminal."
+  |  STAKES: You are not invisible. The system is watching.
+  |  PROBLEM: Only fires if player showed mercy in Shift 1. What if
+  |           they didn't? The case still appears but feels disconnected.
+  |
+  Case 9: Amara Osei ............... [F6] [WORLD]
+  |  LEARNS: F6 had intake forms. For EVERY CHILD. Listed by weight.
+  |          Someone filed those forms. She stopped sleeping in October.
+  |  DEEPENS: The bureaucratic machinery of atrocity. People like YOU
+  |           made F6 function through paperwork.
+  |
+  Case 10: Fr. Dimitri Voronov ..... [F6] [WORLD]
+  |  LEARNS: People from F6 are dead. They "officially never existed."
+  |          Someone held funerals anyway.
+  |  DEEPENS: The regime erases its victims. Even mourning is a crime.
+  |
+  Case 11: [REDACTED] 14 Names ..... [YOU] [META] *** POINT OF NO RETURN ***
+  |  LEARNS: 14 witnesses can identify everyone involved. INCLUDING YOU.
+  |          "This is the second time this file has appeared on your desk."
+  |  THIS IS THE SHIFT 2 CLIMAX.
+  |  STAKES: Binary choice. Silence the witnesses or let them speak.
+  |  PROBLEM: "Second time" — when was the first? This is never set up.
+  |           Unless it means someone else processed this file before
+  |           and it was returned. Needs clarification.
+  |
+  |  +-- NEWSPAPER BREAK
+  v
+
+  SHIFT 3 — "THE COLLAPSE" (06.02.2026, memo is BLANK)
+  =====================================================
+  Player knows: F6 was a child detention/organ harvesting facility.
+  The player's stamp is on the intake forms. Witnesses exist.
+
+  Case 12: Nadia Kader ............. [CONN] [WORLD]
+  |  LEARNS: The Kader family is back. The boy calls her "mother" now.
+  |          The regime is fabricating prior offenses to trigger mandatory
+  |          sentencing. The system manufactures guilt.
+  |  CONNECTION: Kader Family (Case 3) -> Nadia Kader (Case 12).
+  |
+  Case 13: Dr. Emil Rask ........... [F6] *** THE DOCTOR ***
+  |  LEARNS: 214 children died at F6. "Cardiac arrest" was the lie.
+  |          The youngest was four.
+  |  IMPACT: The number 214 will recur in Case 14 (your stamp count).
+  |
+  Case 14: Your Name Is Here ....... [YOU] *** THE MIRROR ***
+  |  LEARNS: This is YOUR file. YOUR handwriting. YOUR stamp on 214
+  |          intake forms. Every page of F6 processing bears your code.
+  |  IMPACT: 214 — the same number as the doctor's death certificates.
+  |          You processed the intake. He processed the death.
+  |          You were two ends of the same machine.
+  |  LOOPHOLE EXISTS: You can dismiss your own file on a technicality.
+  |          THIS IS THE MOST IMPORTANT LOOPHOLE IN THE GAME.
+  |
+  Case 15: Director Crane .......... [WORLD] [F6]
+  |  LEARNS: The man who ordered everything is in the building right now.
+  |          Every requisition. Every disposal manifest.
+  |  STAKES: Can you hold power accountable, or only process the powerless?
+  |
+  Case 16: The Typing Pool ......... [META] [WORLD]
+  |  LEARNS: Something is changing. The other workers have stopped.
+  |          Collective refusal. The machine is breaking down.
+  |  PROBLEM: This case feels thin. (See Section 2.)
+  |
+  Case 17: Case File: Missing ...... [META]
+  |  LEARNS: A blank, warm file. Someone just placed it here.
+  |          The system itself is disintegrating.
+  |  PROBLEM: Also feels thin. (See Section 2.)
+  |
+  Case 18: [REDACTED] 14 Names ..... [YOU] [META] *** FINAL CHOICE ***
+     LEARNS: Nothing new. This is the culmination.
+     "This is the last file. There will not be another."
+     CHOICE: Silence everything, or unseal Case 7741.
+
+
+================================================================================
+  INFORMATION REVELATION MAP (What F6 "is" — pieced together)
+================================================================================
+
+     Case 1:  "trucks"
+         |
+     Case 2:  "something happened" + books banned
+         |
+     Case 3:  "collapsed" + child inside, age 8
+         |
+     Case 4:  "medical equipment" + budget + YOUR stamp
+         |
+     Case 5:  surgical scars + no kidneys -----> FACILITY 6 = CHILD ORGAN
+         |                                       HARVESTING OPERATION
+     Case 7:  "Where are the trucks going?"
+         |
+     Case 9:  intake forms, every child, every weight
+         |
+     Case 10: funerals for people who never existed
+         |
+     Case 13: 214 death certificates, youngest was 4
+         |
+     Case 14: YOUR stamp on 214 intake forms -----> YOU PROCESSED THE
+         |                                          CHILDREN INTO THE
+     Case 15: Director signed disposal manifests     FACILITY. THE DOCTOR
+                                                     KILLED THEM. THE
+                                                     DIRECTOR ORDERED IT.
+                                                     YOU MADE IT POSSIBLE.
+
+
+  VERDICT: The F6 revelation arc is STRONG. Cases 1-5 build correctly
+  from vague ("trucks") to specific ("no kidneys"). The player connects
+  the dots themselves. This is the game's best structural achievement.
+
+  The WEAKNESS is the player's personal arc. (See Section 3.)
+
+
+================================================================================
+  2. CHEKHOV'S GUN AUDIT
+================================================================================
+
+  For each case: Does every element serve a purpose? What's missing?
+  Rating: [OK] purposeful / [WEAK] needs work / [DEAD] dead weight
+
+  CASE 1 — Arthur Selby
+    Name "Selby" ............. [OK] Pays off in Case 7 (daughter Lena Selby)
+    "Eleven years" ........... [OK] Establishes he's a witness, not a criminal
+    "He saw the trucks" ...... [OK] Plants the central mystery
+    "2.00 Credits" ........... [OK] Pathetic smallness of the "crime"
+    VERDICT: Clean. Every word works.
+
+  CASE 2 — Maria Okonkwo
+    "She wrote them herself" . [OK] Not just distributing — she's a truth-teller
+    Date irregularity ........ [OK] Teaches loophole mechanic
+    VERDICT: Clean.
+
+  CASE 3 — Kader Family
+    "The boy walked out" ..... [OK] F6 held children. Pays off Case 12.
+    "He is eight years old" .. [OK] Emotional precision
+    "(4)" family size ........ [WEAK] The number 4 doesn't pay off anywhere.
+                               SUGGESTION: Could foreshadow. "The Kader Family
+                               (4)" — later, Case 12 is "Nadia Kader" alone.
+                               Where are the other 3? Implication: the regime
+                               took them. But this is never stated.
+    VERDICT: Strong, minor gap.
+
+  CASE 4 — Elias Brandt
+    "Medical equipment" ...... [OK] Deepens F6 mystery before Case 5 reveals it
+    "Your processing stamp" .. [WEAK] ARRIVES TOO EARLY. No setup. The player
+                               doesn't know they have a stamp. They don't know
+                               they've been at the Bureau long enough to have
+                               processed F6 documents. This is a reveal without
+                               a foundation. (See Section 3 for fix.)
+    VERDICT: The reveal is powerful but structurally premature.
+
+  CASE 5 — Dr. Yara Nasir
+    "Surgical scars" ......... [OK] Horror through implication
+    "No kidneys" ............. [OK] The reveal. Perfect.
+    VERDICT: Perfect case. Nothing to change.
+
+  CASE 6 — Tomasz Wojcik
+    "Forgot to leave" ........ [OK] Ambiguity is the point
+    "Or maybe he didn't" ..... [OK] He's looking for evidence too
+    VERDICT: Clean breather case.
+
+  CASE 7 — Lena Selby
+    "Selby" surname .......... [OK] Connection to Case 1
+    "WHERE ARE THE TRUCKS" ... [OK] Echoes Case 1. Player now knows the answer.
+    "She started writing" .... [OK] Daughter continues father's work
+    VERDICT: One of the best cases. The Selby thread is the game's
+    strongest character arc.
+
+  CASE 8 — Henrik Voss
+    "Your terminal" .......... [OK] The Bureau knows what you're doing
+    "Three anomalous" ........ [WEAK] Only makes sense if player showed mercy.
+                               If they condemned everyone, this case's detail
+                               is factually wrong but still appears.
+                               SUGGESTION: Make the detail text dynamic.
+                               If 0 mercies: "Zero anomalies detected. Case
+                               filed in error. This is a loyalty test."
+    VERDICT: Good concept, needs conditional text.
+
+  CASE 9 — Amara Osei
+    "Every child. Every weight" [OK] Bureaucracy of atrocity
+    "Stopped sleeping" ....... [OK] Guilt as lived experience
+    Unsigned notice .......... [OK] Loophole with emotional context
+    VERDICT: Excellent. The detail about weight is devastating.
+
+  CASE 10 — Fr. Dimitri Voronov
+    "Officially never existed" [OK] The regime erases victims
+    "Three funerals" ......... [OK] Three deaths, three acts of defiance
+    VERDICT: Clean.
+
+  CASE 11 — [REDACTED] 14 Names
+    "Including you" .......... [OK] Direct accusation
+    "Second time this file" .. [WEAK] What was the first time? Who returned it?
+                               This could be MUCH stronger if set up earlier.
+                               SUGGESTION: In Case 6 or Case 9, add a small
+                               detail: "A file marked 7741 was in the stack.
+                               You put it at the bottom." — then when Case 11
+                               says "second time," the player remembers.
+    VERDICT: Climactic power, but "second time" hangs without support.
+
+  CASE 12 — Nadia Kader
+    "He calls her mother" .... [OK] Emotional payoff from Case 3
+    "[MISSING] [MISSING]" .... [OK] The regime fabricates evidence
+    Loophole: only 1 offense . [OK] Player can see the lie
+    VERDICT: Perfect payoff case.
+
+  CASE 13 — Dr. Emil Rask
+    "Cardiac arrest" x 214 ... [OK] The lie. The number.
+    "The youngest was four" .. [OK] The truth. Devastating.
+    VERDICT: Perfect. Do not touch this case.
+
+  CASE 14 — Your Name Is Here
+    "Your file" .............. [OK] The mirror
+    "214 intake forms" ....... [OK] Same number as Case 13. YOU + THE DOCTOR.
+    Loophole exists .......... [OK] Can you dismiss your own guilt on a
+                               technicality? The game's central moral question
+                               compressed into a single click.
+    VERDICT: The game's best case. Do not touch it.
+
+  CASE 15 — Director Crane
+    "He is in the building" .. [OK] Menace. Power is close.
+    "Disposal manifest" ...... [OK] Euphemism for what we now know is murder.
+    VERDICT: Strong. Could be slightly stronger. (See Section 4.)
+
+  CASE 16 — The Typing Pool .... *** NEEDS WORK ***
+    "Stopped typing" ......... [WEAK] The concept is strong (collective refusal)
+                               but there's no stakes. No names. No detail that
+                               connects to anything. It COULD connect to the
+                               broader theme of complicity — they all typed the
+                               same documents you stamped.
+    SUGGESTION: Rewrite detail to connect:
+    CURRENT:  "They stopped typing twenty minutes ago. All of them.
+               At the same time. No one has moved."
+    PROPOSED: "They stopped typing twenty minutes ago. All of them.
+               At the same time. The last document in every typewriter
+               is the same: Case #EPS-7741."
+    This connects the Typing Pool to the witness case, making their
+    silence an act of solidarity rather than a random anomaly.
+    VERDICT: Fixable. Currently dead weight. Proposed fix gives it purpose.
+
+  CASE 17 — Case File: Missing ..... *** NEEDS WORK ***
+    "Blank. Warm." ........... [WEAK] Atmospheric but purposeless. Nothing in
+                               the blank file connects to anything else.
+    SUGGESTION — TWO OPTIONS:
+    OPTION A (MAKE IT PERSONAL): The file is not blank. It has one line:
+      Detail: "The paper is warm. A single line is typed at the center:
+      'You could have refused.' Nothing else. No case number. No name."
+    OPTION B (MAKE IT THE DIRECTOR'S MOVE): Connect to Crane (Case 15).
+      Detail: "The paper is warm. Someone placed it here less than a
+      minute ago. On the back, in pencil: 'Process the next file and
+      you may keep your position. — A.C.'"
+      This makes it a direct threat/bribe from Crane before Case 18.
+    VERDICT: Currently purposeless. Option A is stronger (Chekhov's gun:
+    the game is about whether you could have refused). Option B adds
+    a character beat for Crane but may be too explicit.
+
+  CASE 18 — [REDACTED] 14 Names
+    "This is the last file" . [OK] Finality
+    "They have been waiting" . [OK] The witnesses are patient. Time is up.
+    VERDICT: Clean. The culmination works.
+
+
+================================================================================
+  3. THE PLAYER'S PERSONAL ARC — COMPLICITY PACING
+================================================================================
+
+  Current pacing of "you are complicit" reveals:
+
+    Case 4:  "Your processing stamp is on every page." (25% through game)
+    Case 8:  "Clerk ID matches your terminal." (44%)
+    Case 11: "Including you." (61%)
+    Case 14: "This is your file. 214 intake forms." (78%)
+
+  THE PROBLEM:
+
+    Case 4 is a BOMBSHELL delivered to a player who doesn't know:
+      - That they have a processing stamp
+      - That they've worked here before tonight
+      - That they have any history with Facility 6
+      - Who they even ARE beyond "Case Adjudicator, Level 3"
+
+    The intro says: "You are Case Adjudicator, Level 3."
+    It does NOT say: "You have been here for [X] years."
+    It does NOT say: "You have processed [X] cases before tonight."
+    It does NOT say anything about the player's life, history, or stakes.
+
+    When Case 4 says "your stamp is on every page," the player thinks:
+    "What stamp? I just started!" — confusion, not horror.
+
+  THE FIX — SEED THE INTRO WITH PERSONAL STAKES:
+
+    Current intro:
+      "You are Case Adjudicator, Level 3."
+      "Facility 6 was demolished last month. That is not relevant to
+       your duties."
+      "Process the cases. Consult the Bureau Manual. Follow the directive."
+      "Begin."
+
+    Proposed intro (5 lines instead of 4):
+      ---------------------------------------------------------------
+      "Night Processing. Your third year."
+      "You are Case Adjudicator, Level 3. Your stamp is on file."
+      "Facility 6 was demolished last month. That is not relevant to
+       your duties."
+      "Process the cases. Consult the Bureau Manual. Follow the directive."
+      "Begin."
+      ---------------------------------------------------------------
+
+    WHY THIS WORKS:
+    - "Third year" — you've been here. This is not your first night.
+    - "Your stamp is on file" — plants the word STAMP. When Case 4 says
+      "your processing stamp is on every page," the player recalls the
+      intro. The stamp was mentioned. It was always there.
+    - Everything else stays the same. Two new phrases. Maximum impact.
+
+  ALTERNATIVE INTRO (more atmospheric, "finally you found the job" feel):
+      ---------------------------------------------------------------
+      "Night Processing. Third year. Same desk."
+      "You requested this shift. The pay is better and nobody asks
+       questions."
+      "Facility 6 was demolished last month. That is not relevant to
+       your duties."
+      "Process the cases. Consult the Bureau Manual. Follow the directive."
+      "Begin."
+      ---------------------------------------------------------------
+
+    WHY THIS WORKS:
+    - "Same desk" — continuity. This is a life, not a tutorial.
+    - "You requested this shift" — the player CHOSE to be here.
+      Complicity starts at the intro, not at Case 4.
+    - "Nobody asks questions" — the player already knows the deal.
+      They chose ignorance. This makes Case 4 feel like the past
+      catching up, not a surprise.
+
+  ADDITIONAL SETUP — CASE 1 DETAIL TWEAK:
+
+    Current Case 1 detail:
+      "He sold papers outside Re-Education Facility 6 for eleven years.
+       He saw the trucks."
+
+    Add one sentence to Case 1 (the FIRST thing the player reads):
+      ---------------------------------------------------------------
+      "He sold papers outside Re-Education Facility 6 for eleven years.
+       He saw the trucks. His intake form is in your filing cabinet."
+      ---------------------------------------------------------------
+
+    WHY: This plants the idea that the player has a FILING CABINET full
+    of prior work. It normalizes the stamp reveal in Case 4. It also
+    means Selby himself was processed by you before — you're now
+    deciding his fate for a second time. Devastating if the player
+    catches it.
+
+    WARNING: This might be too much too early. Test both versions.
+    The intro change is essential. The Case 1 addition is optional.
+
+
+================================================================================
+  4. CONCRETE EDIT SUGGESTIONS — PRIORITY ORDER
+================================================================================
+
+  Listed from most impactful to least. Each includes exact replacement text.
+
+
+  ---[ EDIT 1: INTRO TEXT — ESSENTIAL ]---
+  File: prototype_3d.html, line ~3545-3549
+
+  CURRENT:
+    "You are Case Adjudicator, Level 3.",
+    "Facility 6 was demolished last month. That is not relevant to your duties.",
+    "Process the cases. Consult the Bureau Manual. Follow the directive.",
+    "Begin."
+
+  REPLACE WITH:
+    "Night Processing. Third year. Same desk.",
+    "You are Case Adjudicator, Level 3. Your stamp is on file.",
+    "Facility 6 was demolished last month. That is not relevant to your duties.",
+    "Process the cases. Consult the Bureau Manual. Follow the directive.",
+    "Begin."
+
+
+  ---[ EDIT 2: CASE 16 (TYPING POOL) — HIGH PRIORITY ]---
+  File: prototype_3d.html, line ~872
+
+  CURRENT DETAIL:
+    "They stopped typing twenty minutes ago. All of them. At the same
+     time. No one has moved."
+
+  REPLACE WITH:
+    "They stopped typing twenty minutes ago. All of them. At the same
+     time. The last document in every typewriter is the same page:
+     Case #EPS-7741."
+
+
+  ---[ EDIT 3: CASE 17 (BLANK FILE) — HIGH PRIORITY ]---
+  File: prototype_3d.html, line ~882
+
+  CURRENT DETAIL:
+    "The case file is blank. The paper is warm. Someone placed it here
+     less than a minute ago."
+
+  REPLACE WITH:
+    "The paper is warm. A single line is typed at the center: 'You
+     could have refused.' Nothing else. No case number. No name."
+
+  NOTE: If using this version, also update the case name from
+  "Case File: Missing" to "Case File: Unsigned" or keep as-is.
+  The occupation "-" and allegation "-" should stay blank.
+
+
+  ---[ EDIT 4: CASE 4 DETAIL — MEDIUM PRIORITY ]---
+  Only needed IF you do NOT adopt the intro change (Edit 1).
+  If you DO adopt Edit 1, Case 4 works fine as-is because the
+  intro plants "your stamp is on file."
+
+  But if you want to soften the Case 4 reveal so it escalates
+  more gradually:
+
+  CURRENT:
+    "Budget allocations for Facility 6. Medical equipment. Your
+     processing stamp is on every page."
+
+  OPTION (defer the personal hit to later):
+    "Budget allocations for Facility 6. Medical equipment.
+     Authorization stamps on every page. Someone processed these."
+
+  Then let Case 14 be the full reveal: "This is your file. YOUR
+  stamp." — The "someone" from Case 4 becomes "you" in Case 14.
+  This creates a 10-case delay where the player suspects but
+  doesn't know.
+
+  RECOMMENDATION: Do Edit 1 (intro) and KEEP Case 4 as-is.
+  The intro plants the word "stamp." Case 4 detonates it.
+  This is the stronger version.
+
+
+  ---[ EDIT 5: CASE 11 "SECOND TIME" SETUP — MEDIUM PRIORITY ]---
+  Add a small detail to Case 9 (Amara Osei) to set up the "second
+  time this file appeared" line in Case 11.
+
+  CURRENT Case 9 detail:
+    "She filed the intake forms. Every child. Every weight. She stopped
+     sleeping in October. The reassignment notice is stamped RECEIVED
+     but bears no authorizing signature."
+
+  REPLACE WITH:
+    "She filed the intake forms. Every child. Every weight. She stopped
+     sleeping in October. The reassignment notice is stamped RECEIVED
+     but bears no authorizing signature. A second file was in the stack
+     when this one arrived. You put it at the bottom."
+
+  Then when Case 11 says "This is the second time this file has
+  appeared on your desk," the player remembers pushing it down.
+  They already tried to avoid it.
+
+
+  ---[ EDIT 6: CASE 8 CONDITIONAL TEXT — LOW PRIORITY ]---
+  If the player has shown NO mercy in Shift 1, Case 8's detail
+  ("Three anomalous dismissals") is factually wrong.
+
+  SUGGESTION: Make the detail text conditional.
+
+  IF mercy count from Shift 1 >= 1:
+    (current text) "Performance review flagged. Three anomalous
+    dismissals in one shift. Clerk ID matches your terminal."
+
+  IF mercy count from Shift 1 === 0:
+    "Performance review: exemplary. Zero deviations detected.
+     This file should not exist. Clerk ID matches your terminal."
+
+  This small change makes the case feel responsive. If you've been
+  evil, the Bureau is testing your loyalty. If you've been merciful,
+  it's catching you.
+
+
+  ---[ EDIT 7: CASE 15 DETAIL TIGHTEN — LOW PRIORITY ]---
+
+  CURRENT:
+    "He signed the orders. Every requisition. Every transfer. Every
+     disposal manifest. He is in the building right now."
+
+  SLIGHTLY TIGHTER:
+    "He signed the orders. Every requisition. Every disposal manifest.
+     He is three floors above you."
+
+  WHY: "Three floors above you" is more specific and menacing than
+  "in the building right now." It implies you KNOW where he is.
+  You've always known. It also implies the Bureau's hierarchy is
+  literally vertical — he's above you in every sense.
+
+
+================================================================================
+  5. THE FIRST 5 MINUTES — PLAYER EXPERIENCE ANALYSIS
+================================================================================
+
+  CURRENT FIRST 5 MINUTES:
+  ========================
+    0:00  Title screen. "BORD — Bureau of Right Decisions." Begin Shift.
+    0:05  Black screen. Text appears:
+          "You are Case Adjudicator, Level 3."
+          "Facility 6 was demolished last month..."
+          "Process the cases..."
+          "Begin."
+    0:25  Camera looks up. Office. Workers at desks. Eyes.
+          "The office is working. Everything is in order."
+    0:30  Camera looks down. First case file appears. Arthur Selby.
+    0:45  Player reads case. Makes first choice.
+    1:00  Case 2 arrives. Player discovers loophole mechanic (maybe).
+    2:00  Case 3. The Kader family. First emotional gut-punch.
+    3:00  Case 4. "Your processing stamp." ← Player confused.
+    4:00  Case 5. "No kidneys." ← Player horrified.
+    5:00  Shift 1 ends. Newspaper.
+
+  PROBLEM WITH CURRENT FLOW:
+    The player sits down and is told "You are Case Adjudicator, Level 3."
+    This tells them WHAT they are but not WHO they are. There's no
+    sense of a person behind the desk. No weight. No history.
+
+    Papers Please opens with: "Your family needs you." Your apartment
+    is cold. Your son is sick. You NEED this job. Every stamp has
+    personal stakes beyond the person on the paper.
+
+    BORD doesn't need family mechanics. But it needs ONE line that
+    makes the player feel like a person who CHOSE to sit here.
+
+  WITH PROPOSED INTRO (EDIT 1):
+  =============================
+    0:00  Title screen. Begin Shift.
+    0:05  "Night Processing. Third year. Same desk."
+          "You are Case Adjudicator, Level 3. Your stamp is on file."
+          "Facility 6 was demolished last month..."
+          "Process the cases..."
+          "Begin."
+    0:30  Camera up. Office. Workers.
+    0:35  Camera down. Case 1.
+
+    WHAT CHANGED:
+    - "Third year" — the player has been here. They have a past.
+    - "Same desk" — routine. Weariness. This is just another night.
+    - "Your stamp is on file" — planted. Waiting. Will detonate in Case 4.
+    - Total added time: ~3 seconds of reading. Maximum narrative ROI.
+
+  WHAT THE PLAYER SHOULD FEEL IN THE FIRST 5 MINUTES:
+    Minute 1: "This is routine. I'm a bureaucrat. Process files."
+    Minute 2: "Wait, Facility 6 keeps coming up. What is this place?"
+    Minute 3: "A child walked out of it. Oh no."
+    Minute 4: "MY stamp? I was part of this?"
+    Minute 5: "No kidneys. Oh god. I processed children into THAT."
+
+    With the intro fix, minute 4 hits properly because the stamp
+    was planted in the intro. Without it, minute 4 is confusion.
+
+
+================================================================================
+  6. STRUCTURAL OVERVIEW — THE THREE SHIFTS AS THREE ACTS
+================================================================================
+
+    SHIFT 1: WHAT HAPPENED?
+    -----------------------
+    Cases are about OTHER people. The player is a judge.
+    Each case adds a piece of the Facility 6 puzzle.
+    Emotional distance: HIGH. You're processing strangers.
+    Ends with: You know what F6 was (organ harvesting).
+
+    SHIFT 2: WHO DID IT?
+    --------------------
+    Cases start pointing at the SYSTEM — and at YOU.
+    Henrik Voss (Case 8) = you're being watched.
+    Amara Osei (Case 9) = someone like you made F6 work.
+    14 Witnesses (Case 11) = they know what you did.
+    Emotional distance: SHRINKING. The desk is a mirror.
+    Ends with: You know the witnesses exist. You chose their fate.
+
+    SHIFT 3: WHAT WILL YOU DO?
+    --------------------------
+    Cases are about CONSEQUENCES and POWER.
+    Nadia Kader (12) = your past choices echo forward.
+    Dr. Rask (13) = the number 214. Your number.
+    Your file (14) = the mirror shatters.
+    Director Crane (15) = can you hold power accountable?
+    Typing Pool (16) = others are choosing too.
+    Blank File (17) = the system offers you a way out / a warning.
+    Final file (18) = the choice.
+    Emotional distance: ZERO. You are the case.
+
+    VERDICT: This three-act structure is EXCELLENT.
+    The issue is not structure — it's the connective tissue
+    within each act (addressed in Edits 1-7 above).
+
+
+================================================================================
+  7. CHARACTER THREAD MAP — RECURRING FIGURES
+================================================================================
+
+    THE SELBYS ............. Case 1 (Arthur) --> Case 7 (Lena, daughter)
+                            STATUS: STRONG. Best character thread.
+                            Father sells newspapers. Daughter writes them.
+                            "WHERE ARE THE TRUCKS GOING?" echoes his witness.
+
+    THE KADERS ............. Case 3 (family) --> Case 12 (Nadia, alone)
+                            STATUS: STRONG. Emotional anchor.
+                            "He is eight." --> "He calls her mother now."
+
+    THE WITNESSES .......... Case 11 (first) --> Case 18 (final)
+                            STATUS: STRONG but "second time" line is unmoored.
+                            Fix with Edit 5 (add setup in Case 9).
+
+    FACILITY 6 STAFF
+      Amara Osei (Case 9) .. Filed intake forms. Guilt destroyed her.
+      Dr. Emil Rask (13) ... Wrote death certificates. 214 times.
+      YOU (Case 14) ........ Stamped 214 intake forms.
+                            STATUS: This triangle (intake clerk -> adjudicator
+                            -> doctor) is the game's structural backbone.
+                            The number 214 binds Cases 13 and 14. EXCELLENT.
+
+    DIRECTOR CRANE (15) ... Only appears once. No setup.
+                            SUGGESTION: His name could appear earlier.
+                            In Case 4 (Elias Brandt's documents), add:
+                            "Budget allocations for Facility 6. Medical
+                            equipment. Authorized: A. Crane. Your processing
+                            stamp is on every page."
+                            Now when Crane's file arrives in Case 15, the
+                            player recognizes the name. Chekhov's gun fires.
+
+    HENRIK VOSS (Case 8) .. Your alias. Never referenced again.
+                            SUGGESTION: In Case 14 (your real file), add:
+                            "Previous processing alias: Voss, H."
+                            One line. Confirms what the player suspected.
+                            Closes the loop.
+
+
+================================================================================
+  8. SUMMARY — TOP 5 CHANGES BY IMPACT
+================================================================================
+
+    1. ADD INTRO LINES (Edit 1)
+       "Night Processing. Third year. Same desk."
+       "Your stamp is on file."
+       IMPACT: ||||||||||||| (fixes the entire first 5 minutes)
+
+    2. REWRITE CASE 16 DETAIL (Edit 2)
+       Connect Typing Pool to Case 7741.
+       IMPACT: ||||||||||  (turns dead weight into thematic resonance)
+
+    3. REWRITE CASE 17 DETAIL (Edit 3)
+       "You could have refused."
+       IMPACT: |||||||||   (turns dead weight into the game's thesis)
+
+    4. ADD CASE 9 "SECOND FILE" LINE (Edit 5)
+       Setup for "second time" in Case 11.
+       IMPACT: ||||||||    (fixes dangling reference, adds player guilt)
+
+    5. ADD "A. CRANE" TO CASE 4 (Section 7 suggestion)
+       Plant Director Crane's name early.
+       IMPACT: |||||||     (Chekhov's gun for Case 15)
+
+
+================================================================================
+  END OF ANALYSIS
+================================================================================

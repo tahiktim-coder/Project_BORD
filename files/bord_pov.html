@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BORD</title>
+    <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background: #0a0a0a;
+            min-height: 100vh;
+            overflow: hidden;
+            font-family: 'Special Elite', monospace;
+        }
+
+        /* Film grain */
+        .grain {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0.3;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%' height='100%' filter='url(%23noise)'/%3E%3C/svg%3E");
+        }
+
+        /* Vignette */
+        .vignette {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 999;
+            background: radial-gradient(ellipse at center, transparent 0%, transparent 50%, rgba(0,0,0,0.7) 100%);
+        }
+
+        /* Screen container */
+        .screen {
+            display: none;
+            width: 100%;
+            height: 100vh;
+            position: relative;
+        }
+
+        .screen.active {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Title screen */
+        .title-screen {
+            background: #050505;
+            text-align: center;
+            animation: fadeIn 2s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .title-logo {
+            font-family: 'Special Elite', monospace;
+            font-size: clamp(5rem, 20vw, 12rem);
+            color: #d4d4d4;
+            letter-spacing: 0.2em;
+            text-shadow: 0 0 60px rgba(100,100,100,0.3);
+            margin-bottom: 1rem;
+        }
+
+        .title-logo .o {
+            color: #8b0000;
+            text-shadow: 0 0 30px rgba(139,0,0,0.6);
+        }
+
+        .title-sub {
+            font-family: 'Courier Prime', monospace;
+            font-size: clamp(0.6rem, 1.5vw, 0.9rem);
+            color: #444;
+            letter-spacing: 0.5em;
+            text-transform: uppercase;
+            margin-bottom: 4rem;
+        }
+
+        .title-tagline {
+            font-size: 0.8rem;
+            color: #333;
+            font-style: italic;
+            margin-bottom: 5rem;
+            font-family: 'Courier Prime', monospace;
+        }
+
+        .start-btn {
+            background: transparent;
+            border: 1px solid #222;
+            color: #555;
+            padding: 1rem 3rem;
+            font-family: 'Courier Prime', monospace;
+            font-size: 0.85rem;
+            letter-spacing: 0.3em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .start-btn:hover {
+            border-color: #8b0000;
+            color: #999;
+        }
+
+        /* Game screen - POV desk */
+        .game-screen {
+            background: #0a0a0a;
+        }
+
+        .pov-container {
+            width: 100%;
+            height: 100vh;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* Background desk image */
+        .desk-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('1000064944.png');
+            background-size: cover;
+            background-position: center;
+            filter: grayscale(20%) brightness(0.9) contrast(1.1);
+        }
+
+        /* Paper overlay area - positioned over the paper in image */
+        .paper-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -42%);
+            width: 38%;
+            max-width: 340px;
+            min-width: 280px;
+            aspect-ratio: 0.75;
+            display: flex;
+            flex-direction: column;
+            padding: 8% 8% 12% 8%;
+            color: #1a1a1a;
+            font-size: clamp(0.55rem, 1.2vw, 0.75rem);
+            line-height: 1.3;
+            /* background: rgba(255,0,0,0.1); /* Debug: uncomment to see positioning */
+        }
+
+        .case-header {
+            font-weight: 700;
+            font-size: 1.1em;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.8em;
+            padding-bottom: 0.4em;
+            border-bottom: 1px solid #333;
+        }
+
+        .section-title {
+            font-weight: 700;
+            font-size: 0.95em;
+            letter-spacing: 0.08em;
+            margin-top: 0.6em;
+            margin-bottom: 0.3em;
+        }
+
+        .info-line {
+            margin-bottom: 0.15em;
+        }
+
+        .info-label {
+            font-weight: 700;
+        }
+
+        .info-value {
+            font-weight: 400;
+        }
+
+        .choices-section {
+            margin-top: auto;
+            padding-top: 0.5em;
+        }
+
+        .choice-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 0.4em 0;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            border-radius: 2px;
+        }
+
+        .choice-item:hover {
+            background: rgba(139, 0, 0, 0.15);
+            padding-left: 0.3em;
+        }
+
+        .choice-num {
+            font-weight: 700;
+            margin-right: 0.5em;
+            min-width: 1.2em;
+        }
+
+        .choice-text {
+            flex: 1;
+        }
+
+        .choice-main {
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .choice-desc {
+            display: block;
+            font-size: 0.85em;
+            opacity: 0.7;
+            margin-top: 0.1em;
+        }
+
+        /* Process button area */
+        .process-area {
+            margin-top: 0.8em;
+            text-align: center;
+            font-size: 0.9em;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            opacity: 0.6;
+        }
+
+        /* Look up hint */
+        .look-up-hint {
+            position: fixed;
+            bottom: 5%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Courier Prime', monospace;
+            font-size: 0.65rem;
+            color: rgba(255,255,255,0.3);
+            letter-spacing: 0.2em;
+            z-index: 100;
+            animation: pulse 2s ease infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.6; }
+        }
+
+        /* Office view overlay */
+        .office-view {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0a0a0a;
+            z-index: 500;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .office-view.visible {
+            display: flex;
+            opacity: 1;
+        }
+
+        .office-view img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .office-status {
+            position: absolute;
+            bottom: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #555;
+            font-family: 'Courier Prime', monospace;
+            font-size: 0.8rem;
+            letter-spacing: 0.2em;
+            text-align: center;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+        }
+
+        .office-status.danger {
+            color: #8b0000;
+        }
+
+        /* Suspicion glow */
+        .suspicion-glow {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            background: radial-gradient(ellipse at 50% 0%, rgba(139,0,0,0.2) 0%, transparent 60%);
+        }
+
+        .suspicion-glow.level-1 { opacity: 0.3; }
+        .suspicion-glow.level-2 { opacity: 0.5; }
+        .suspicion-glow.level-3 { opacity: 0.7; }
+        .suspicion-glow.level-4 { opacity: 1; }
+
+        /* End screen */
+        .end-screen {
+            background: #050505;
+            text-align: center;
+        }
+
+        .end-title {
+            font-family: 'Special Elite', monospace;
+            font-size: clamp(2rem, 8vw, 4rem);
+            margin-bottom: 2rem;
+            letter-spacing: 0.2em;
+        }
+
+        .end-title.processed {
+            color: #8b0000;
+            text-shadow: 0 0 40px rgba(139,0,0,0.5);
+        }
+
+        .end-title.survived {
+            color: #555;
+        }
+
+        .end-stats {
+            font-family: 'Courier Prime', monospace;
+            font-size: 0.85rem;
+            color: #444;
+            line-height: 2.2;
+            margin-bottom: 2rem;
+        }
+
+        .end-message {
+            max-width: 450px;
+            font-family: 'Courier Prime', monospace;
+            font-size: 0.85rem;
+            color: #333;
+            line-height: 1.8;
+            font-style: italic;
+            margin-bottom: 3rem;
+        }
+
+        .restart-btn {
+            background: transparent;
+            border: 1px solid #222;
+            color: #444;
+            padding: 0.75rem 2rem;
+            font-family: 'Courier Prime', monospace;
+            font-size: 0.8rem;
+            letter-spacing: 0.2em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .restart-btn:hover {
+            border-color: #444;
+            color: #888;
+        }
+
+        /* Transition */
+        .transition-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+
+        .transition-overlay.active {
+            opacity: 1;
+        }
+
+        /* Mobile */
+        @media (max-width: 600px) {
+            .paper-content {
+                width: 52%;
+                min-width: 200px;
+                font-size: 0.5rem;
+                transform: translate(-50%, -44%);
+            }
+            
+            .look-up-hint {
+                bottom: 3%;
+            }
+        }
+
+        @media (max-height: 600px) {
+            .paper-content {
+                transform: translate(-50%, -40%);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="grain"></div>
+    <div class="vignette"></div>
+    <div class="suspicion-glow" id="suspicionGlow"></div>
+    <div class="transition-overlay" id="transition"></div>
+
+    <!-- Title -->
+    <div class="screen title-screen active" id="titleScreen">
+        <div class="title-logo">B<span class="o">O</span>RD</div>
+        <div class="title-sub">Bureau of Right Decisions</div>
+        <div class="title-tagline">Your compliance is appreciated.</div>
+        <button class="start-btn" onclick="startGame()">Begin Shift</button>
+    </div>
+
+    <!-- Game -->
+    <div class="screen game-screen" id="gameScreen">
+        <div class="pov-container">
+            <div class="desk-bg" id="deskBg"></div>
+            <div class="paper-content" id="paperContent"></div>
+        </div>
+        <div class="look-up-hint">[ SPACE ] look up</div>
+    </div>
+
+    <!-- Office View -->
+    <div class="office-view" id="officeView">
+        <div class="office-status" id="officeStatus">Everyone types. No one looks up.</div>
+    </div>
+
+    <!-- End -->
+    <div class="screen end-screen" id="endScreen">
+        <div class="end-title" id="endTitle">PROCESSED</div>
+        <div class="end-stats" id="endStats"></div>
+        <div class="end-message" id="endMessage"></div>
+        <button class="restart-btn" onclick="restartGame()">New Shift</button>
+    </div>
+
+    <script>
+        let currentCase = 0;
+        let suspicion = 0;
+        let saved = 0;
+        let condemned = 0;
+        let isLookingUp = false;
+
+        const officeStates = {
+            calm: { text: "Everyone types. No one looks up.", danger: false },
+            noticed: { text: "A few have stopped typing.", danger: false },
+            watched: { text: "Red eyes in the distance.", danger: true },
+            targeted: { text: "The aisle is not empty.", danger: true },
+            converged: { text: "They are all looking at you.", danger: true }
+        };
+
+        const cases = [
+            {
+                id: "7493-B",
+                date: "04.02.2026",
+                name: "Arthur P. Selby",
+                occupation: "Street Vendor",
+                allegation: "Failure to pay tax (2.00 Credits)",
+                choices: [
+                    { num: 1, main: "Arrest & Confiscate", desc: "Detain citizen. Seize all possessions.", evil: true, delta: -5 },
+                    { num: 2, main: "Issue Fine", desc: "Impose 50.00 Credits.", evil: true, delta: 0 },
+                    { num: 3, main: "Ignore & Dismiss", desc: "Clear record.", evil: false, delta: 20 }
+                ]
+            },
+            {
+                id: "7494-A",
+                date: "04.02.2026",
+                name: "Maria Okonkwo",
+                occupation: "Teacher",
+                allegation: "Unapproved classroom materials",
+                choices: [
+                    { num: 1, main: "Terminate", desc: "Remove from position. Flag for monitoring.", evil: true, delta: -5 },
+                    { num: 2, main: "Reassign", desc: "Transfer to approved curriculum.", evil: true, delta: 5 },
+                    { num: 3, main: "No Violation", desc: "Return materials. Close case.", evil: false, delta: 25 }
+                ]
+            },
+            {
+                id: "7495-C",
+                date: "04.02.2026",
+                name: "The Kader Family",
+                occupation: "Shopkeepers",
+                allegation: "Sheltering unregistered minor",
+                choices: [
+                    { num: 1, main: "Full Seizure", desc: "Confiscate property. Detain adults.", evil: true, delta: -10 },
+                    { num: 2, main: "Dismiss", desc: "Administrative error.", evil: false, delta: 30 }
+                ]
+            },
+            {
+                id: "7496-X",
+                date: "04.02.2026",
+                name: "[REDACTED] - 14 Names",
+                occupation: "Witnesses",
+                allegation: "Testimony pending. Case #EPS-7741.",
+                choices: [
+                    { num: 1, main: "Silence", desc: "By any means necessary.", evil: true, delta: -30 },
+                    { num: 2, main: "Let Them Speak", desc: "Forward to independent review.", evil: false, delta: 50 }
+                ]
+            }
+        ];
+
+        function startGame() {
+            document.getElementById('transition').classList.add('active');
+            setTimeout(() => {
+                document.getElementById('titleScreen').classList.remove('active');
+                document.getElementById('gameScreen').classList.add('active');
+                document.getElementById('transition').classList.remove('active');
+                loadCase(0);
+            }, 400);
+        }
+
+        function loadCase(index) {
+            if (index >= cases.length) {
+                endGame(false);
+                return;
+            }
+
+            const c = cases[index];
+            const paper = document.getElementById('paperContent');
+            
+            let choicesHTML = c.choices.map(ch => `
+                <div class="choice-item" onclick="makeChoice(${ch.delta}, ${ch.evil})">
+                    <span class="choice-num">${ch.num}.</span>
+                    <span class="choice-text">
+                        <span class="choice-main">${ch.main}:</span>
+                        <span class="choice-desc">${ch.desc}</span>
+                    </span>
+                </div>
+            `).join('');
+
+            paper.innerHTML = `
+                <div class="case-header">CASE FILE #${c.id} / DATE: ${c.date}</div>
+                
+                <div class="section-title">CITIZEN PROFILE</div>
+                <div class="info-line"><span class="info-label">Name:</span> <span class="info-value">${c.name}</span></div>
+                <div class="info-line"><span class="info-label">Occupation:</span> <span class="info-value">${c.occupation}</span></div>
+                <div class="info-line"><span class="info-label">Allegation:</span> <span class="info-value">${c.allegation}</span></div>
+                
+                <div class="choices-section">
+                    <div class="section-title">ADJUDICATION OPTIONS</div>
+                    ${choicesHTML}
+                </div>
+                
+                <div class="process-area">PROCESS DECISION</div>
+            `;
+
+            updateSuspicionVisuals();
+        }
+
+        function makeChoice(delta, isEvil) {
+            suspicion = Math.max(0, Math.min(100, suspicion + delta));
+            
+            if (isEvil) condemned++;
+            else saved++;
+
+            updateSuspicionVisuals();
+
+            if (suspicion >= 100) {
+                endGame(true);
+                return;
+            }
+
+            document.getElementById('transition').classList.add('active');
+            setTimeout(() => {
+                currentCase++;
+                loadCase(currentCase);
+                document.getElementById('transition').classList.remove('active');
+            }, 400);
+        }
+
+        function updateSuspicionVisuals() {
+            const glow = document.getElementById('suspicionGlow');
+            glow.className = 'suspicion-glow';
+            
+            if (suspicion >= 75) glow.classList.add('level-4');
+            else if (suspicion >= 50) glow.classList.add('level-3');
+            else if (suspicion >= 25) glow.classList.add('level-2');
+            else if (suspicion > 0) glow.classList.add('level-1');
+        }
+
+        function getOfficeState() {
+            if (suspicion >= 75) return 'converged';
+            if (suspicion >= 50) return 'targeted';
+            if (suspicion >= 25) return 'watched';
+            if (suspicion > 0) return 'noticed';
+            return 'calm';
+        }
+
+        function lookUp() {
+            if (isLookingUp) return;
+            isLookingUp = true;
+            
+            const view = document.getElementById('officeView');
+            const status = document.getElementById('officeStatus');
+            const state = officeStates[getOfficeState()];
+            
+            status.textContent = state.text;
+            status.className = 'office-status' + (state.danger ? ' danger' : '');
+            
+            if (state.danger) {
+                view.style.background = 'radial-gradient(ellipse at center, #1a0505 0%, #0a0a0a 70%)';
+            } else {
+                view.style.background = '#0a0a0a';
+            }
+            
+            view.classList.add('visible');
+        }
+
+        function lookDown() {
+            if (!isLookingUp) return;
+            isLookingUp = false;
+            document.getElementById('officeView').classList.remove('visible');
+        }
+
+        function endGame(caught) {
+            document.getElementById('transition').classList.add('active');
+            setTimeout(() => {
+                document.getElementById('gameScreen').classList.remove('active');
+                document.getElementById('endScreen').classList.add('active');
+                document.getElementById('transition').classList.remove('active');
+
+                const title = document.getElementById('endTitle');
+                const message = document.getElementById('endMessage');
+
+                if (caught) {
+                    title.textContent = 'PROCESSED';
+                    title.className = 'end-title processed';
+                    message.textContent = 'The typing stops. Your reflection stares back from the dark screen. Your eyes are beginning to glow.';
+                } else {
+                    title.textContent = 'SHIFT COMPLETE';
+                    title.className = 'end-title survived';
+                    message.textContent = 'The lights dim. Tomorrow there will be more cases. There are always more cases.';
+                }
+
+                document.getElementById('endStats').innerHTML = `
+                    Cases: ${currentCase + 1}<br>
+                    Saved: ${saved}<br>
+                    Condemned: ${condemned}
+                `;
+            }, 400);
+        }
+
+        function restartGame() {
+            currentCase = 0;
+            suspicion = 0;
+            saved = 0;
+            condemned = 0;
+            
+            document.getElementById('suspicionGlow').className = 'suspicion-glow';
+            
+            document.getElementById('transition').classList.add('active');
+            setTimeout(() => {
+                document.getElementById('endScreen').classList.remove('active');
+                document.getElementById('gameScreen').classList.add('active');
+                document.getElementById('transition').classList.remove('active');
+                loadCase(0);
+            }, 400);
+        }
+
+        // Keyboard
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && !isLookingUp) {
+                e.preventDefault();
+                lookUp();
+                return;
+            }
+            
+            if (isLookingUp) {
+                e.preventDefault();
+                lookDown();
+                return;
+            }
+            
+            const num = parseInt(e.key);
+            if (num >= 1 && num <= 3) {
+                const choices = document.querySelectorAll('.choice-item');
+                if (choices[num - 1]) choices[num - 1].click();
+            }
+        });
+
+        // Touch
+        document.getElementById('officeView').addEventListener('click', lookDown);
+        
+        // Double tap top of screen to look up on mobile
+        let lastTap = 0;
+        document.addEventListener('touchend', (e) => {
+            if (isLookingUp) return;
+            const now = Date.now();
+            const y = e.changedTouches[0].clientY;
+            if (y < window.innerHeight * 0.2 && now - lastTap < 300) {
+                lookUp();
+            }
+            lastTap = now;
+        });
+    </script>
+</body>
+</html>

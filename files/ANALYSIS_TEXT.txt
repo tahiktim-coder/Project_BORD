@@ -1,0 +1,81 @@
+BORD ANALYSIS: TEXT AUDIT - EVERY PLAYER-VISIBLE WORD
+======================================================
+
+RULE: "If something is here, it should give info on story, universe,
+       or tell the player how to act." No decorative BS.
+
+SUMMARY: 16 of 18 cases are perfectly tight. Manual is well-designed
+(one dead regulation). Newspapers are all responsive. 12 items flagged.
+
+=== HIGH PRIORITY (factual/mechanical) ===
+
+1. Case 8 "Three anomalous dismissals" is static
+   Wrong if player condemned everyone in Shift 1
+   FIX: "Processing patterns outside standard deviation. Clerk ID matches your terminal."
+   LINE: 761
+
+2. INT-1 regulation is dead weight
+   "Computer records override human observations" - no case uses this
+   FIX: Cut, or replace with "Processing error reports require corroboration
+   from two independent terminals."
+   LINE: 957
+
+3. Dead code: unreachable fallthrough ending
+   "You processed them all. Some lived. Some didn't."
+   All conditions are covered by other branches. Remove.
+   LINE: ~3647
+
+=== MEDIUM PRIORITY (text quality) ===
+
+4. Calm lookUp text "The office breathes. Keys click like teeth."
+   Most AI-sounding line in the game. Simile breaks observational voice.
+   FIX: "Everyone is typing."
+   LINE: ~1932
+
+5. Case 9 (Osei) "She stopped sleeping in October."
+   Decorative empathy text. Not actionable. Tells instead of shows.
+   Interrupts flow between narrative setup and loophole clue.
+   FIX: Cut it. Detail becomes: "She filed the intake forms. Every child.
+   Every weight. The reassignment notice is stamped RECEIVED but bears
+   no authorizing signature."
+   LINE: 771
+
+6. Case 6 (Wojcik) "Or maybe he didn't forget."
+   Coy literary wink. Player decides based on loophole, not intent.
+   FIX: "He cleaned that floor for nine years. Last week, he stayed."
+   LINE: 730
+
+7. ALMOST ending "almost every loophole found"
+   Assumes loophole usage that may not have happened.
+   FIX: "So close. Almost every life saved. But the ones you missed -
+   they remember too."
+   LINE: ~3645
+
+=== LOW PRIORITY (minor trims) ===
+
+8. UNSEALED ending: "Fourteen voices. Fourteen names that will not disappear."
+   Redundant. Cut "Fourteen voices."
+
+9. PROCESSED ending: "The typing stops. The last key falls silent."
+   Redundant. Cut "The typing stops."
+
+10. Desk memo "Non-compliance will be noted." - redundant with intro/title
+
+11. Desk memo "CLASSIFIED" stamp - decorative fiction break (daily memo isn't classified)
+
+12. Case footer "CLASSIFICATION: RESTRICTED" on every case - never changes, never matters
+    FIX: Just "FILE [ID]"
+
+=== WHAT'S PERFECT (DO NOT TOUCH) ===
+
+- Title screen (all text)
+- All choice text across all 18 cases
+- All newspaper headlines (responsive, consequential)
+- Cases 1, 2, 3, 4, 5, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18 detail text
+- Bureau Manual: REV-1/2, CUR-1/2, RES-1/2, SEC-1/2, MED-1/2, PER-1/2,
+  YTH-1/2, INT-2, WRK-1/2, ASM-1/2, WIT-1/2, GEN-1/2/3/4, GP-1, GP-2
+- All mercy echo text ("Noted." / "They noticed." / silence)
+- All evil feedback text (all three shifts)
+- All loophole mechanic text
+- EXEMPLARY ending (every word works)
+- SHIFT COMPLETE endings (both)

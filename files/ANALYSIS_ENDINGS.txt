@@ -1,0 +1,78 @@
+BORD ANALYSIS: ENDINGS, OUTCOMES, CONSEQUENCES
+================================================
+
+1. ALL ENDINGS
+
+  UNSEALED (all 18 saved): Lights return, eyes OFF, "It sounds like testimony"
+    - CURRENTLY UNREACHABLE (see section below)
+    - Most elaborate sequence: only time anything REVERSES in the game
+    - breakoutPath overrides caught - even if suspicion hit 100 on final case
+
+  PROCESSED (suspicion >= 100): 2s silence, death tone, all eyes on, title slam
+    - Can cut player off mid-shift - genuinely threatening
+    - Feels earned: suspicion only rises from deliberate mercy choices
+
+  EXEMPLARY (all 18 condemned): 800ms, nothing. "A nicer lamp."
+    - STRONGEST ending design. The flatness IS the horror.
+    - The machine does not celebrate you. You were never a threat.
+
+  SHIFT COMPLETE (1-4 saved): 11s shutdown, lights die, drone swell
+  SHIFT COMPLETE (5-10 saved): IDENTICAL staging, different text
+  ALMOST (11-17 saved): IDENTICAL staging, different text
+    - These three feel the same. Only message differs.
+
+2. CRITICAL: UNSEALED IS MATHEMATICALLY IMPOSSIBLE
+
+  Full mercy with ALL 6 loopholes:
+    Shift 1: +10 +5 +20 +5 +15 = 55. After 40% reset: 22
+    Shift 2 from 22: +5 +15 +20 +5 +12 +35 = 114. DEAD at case 11.
+
+  The Witnesses case (+35 delta) kills you every time.
+  Even with perfect loophole play, you hit 100 during Shift 2.
+
+  FIX OPTIONS:
+  a) Wire up WIT-2 as loophole on Witnesses case (already in manual!)
+     "If the same case file appears on the same adjudicator's desk more than once,
+      that is a procedural irregularity." + case says "second time this file appeared"
+     Would drop from +35 to +5. Total becomes 84. Survivable.
+  b) Reduce Witnesses delta from +35 to +20
+  c) Change shift carryover from 40% to 25%
+
+3. REACTIVE CASES (what DOESN'T react but should)
+
+  Case 8 (Henrik Voss): "Three anomalous dismissals" is HARDCODED
+    - Wrong if player condemned everyone in Shift 1
+    - Should be dynamic based on actual mercy count
+
+  Case 12 (Nadia Kader): Does NOT check Case 3 (Kader Family)
+    - If you seized the family and sent the boy to intake in Case 3,
+      Nadia still appears free in Case 12 with same text
+
+  Case 18 (Final Witnesses): Does NOT check Case 11
+    - If you chose SILENCE/Protocol 9 in Case 11,
+      Case 18 still says "They are still here. They have been waiting."
+
+4. LOOPHOLES vs NORMAL MERCY
+
+  Loophole: +5 suspicion, green VOID stamp, warm chord, office doesn't react
+  Normal mercy: +10 to +50 suspicion, no stamp, ominous feedback, typing stops
+
+  Loopholes save 10-20 suspicion per use. With current math, even all 6
+  aren't enough for UNSEALED. They help survive longer in mixed-path play.
+
+5. EVIL PATH EXPERIENCE
+
+  - No eyes ever activate (suspicion stays at 0)
+  - Stamp hold time grows: 200ms early to 2000ms in Shift 3
+  - Stamp reverb grows: 0.3s to 2.5s (room sounds emptier)
+  - Red corruption tint accumulates after case 8 (evil streak multiplier)
+  - Feedback degrades: "Your compliance is noted" -> "Continue" -> "." -> ""
+  - EXEMPLARY ending: 800ms, no ceremony. Devastating through emptiness.
+
+6. WHAT'S MISSING
+
+  - Approach figure has NO PAYOFF when it reaches z=-2
+  - Standard endings (D, E, F) need differentiated staging
+  - No "saved exactly 1" special ending
+  - Failed loophole attempts are never referenced again
+  - No cross-case gameplay effects (saving someone doesn't change later cases)
