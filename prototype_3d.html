@@ -211,6 +211,13 @@
         .cf-tab.xref-pulse {
             animation: tabPulse 2s ease-in-out 1;
         }
+        .cf-tab.hint-pulse {
+            animation: hintPulse 1.5s ease 2;
+        }
+        @keyframes hintPulse {
+            0%, 100% { background: rgba(180, 170, 150, 0.6); }
+            50% { background: rgba(139, 0, 0, 0.15); color: #555; }
+        }
 
         /* Evidence visual in case file */
         .cf-evidence {
@@ -400,7 +407,7 @@
         /* Clickable irregularity -barely perceptible visual hint, rewards attentive players */
         .cf-irregularity {
             cursor: text; /* don't hint with pointer cursor */
-            color: #2a1a1a; /* barely different from #1a1a1a base -just enough to feel "off" */
+            color: #3a2a1a; /* slightly warmer brown -noticeable on inspection but not obvious */
             transition: color 0.3s ease;
         }
         .cf-irregularity:hover {
@@ -691,14 +698,6 @@
         <span class="tp-label">ALMOST</span>
         <span class="tp-note">11-17 saved. Loud stamp. Camera flinch.</span>
     </button>
-    <button class="tp-btn" data-ending="WITHIN THE RULES">
-        <span class="tp-label">WITHIN THE RULES</span>
-        <span class="tp-note">All saved, 3+ loopholes. The good clerk.</span>
-    </button>
-    <button class="tp-btn" data-ending="SHIFT COMPLETE">
-        <span class="tp-label">SHIFT COMPLETE</span>
-        <span class="tp-note">All saved, few loopholes. Garbled Shift 4.</span>
-    </button>
     <div class="tp-sep"></div>
     <button class="tp-btn" data-ending="UNSEALED">
         <span class="tp-label">UNSEALED</span>
@@ -919,6 +918,7 @@ const state = {
     _gameEpoch: 0,            // incremented on restart, guards stale endGame timeouts
     _vossCondemned: false,    // player forwarded their own case to oversight
     _knockEnding: false,      // true during the knock-at-the-door ending sequence
+    _manualHinted: false,     // true after first-case Manual tab pulse
 };
 
 // ============================================================
@@ -988,7 +988,7 @@ const shift1Cases = [
         recordNotes: "Evidence packet - 40 pages, signed",
         name: "Elias Brandt", occupation: "Municipal Clerk, Level 2",
         allegation: "Copying restricted documents without permission",
-        detail: "Subject found copying Facility 6 purchase orders. The orders list surgical equipment sent to the children's ward. There was no operating room in the children's ward. He was caught near the east exit with 40 pages of evidence.",
+        detail: "Subject found copying Facility 6 purchase orders. The orders list surgical equipment sent to the children's ward. There was no operating room in the children's ward. Every page is stamped AUTHORIZED: A. CRANE. He was caught near the east exit with 40 pages of evidence.",
         evidence: { type: 'document_header', label: 'CASE FILE HEADER — SCANNED COPY' },
         // LOOPHOLE: Case number format wrong -D suffix means District, but allegation is Class A (should be -A suffix)
         irregularity: { field: "id", text: "7496-D", display: "7496-D" },
@@ -1078,7 +1078,7 @@ const shift2Cases = [
         name: "Amara Osei", occupation: "BORD Records Clerk, Facility 6 (Former)",
         allegation: "Did not report for mandatory reassignment after facility closed",
         evidence: { type: 'reassignment_order', label: 'REASSIGNMENT ORDER — ATTACHED' },
-        detail: "She worked at Facility 6. She filed the intake forms for every child they brought in. When they closed the facility, BORD ordered her to a new post. The reassignment order is stamped RECEIVED. No authorizing signature.",
+        detail: "She worked at Facility 6. She filed the intake forms for every child they brought in. When they closed the facility, BORD ordered her to a new post. A second file was in the stack when this one arrived. You put it at the bottom. The reassignment order is stamped RECEIVED. No authorizing signature.",
         // LOOPHOLE: The reassignment order has no signature -R7 says unsigned orders are invalid
         irregularity: { field: "detail", text: "No authorizing signature", display: "Reassignment order has no authorizing signature" },
         loopholeReasons: [
@@ -1119,7 +1119,7 @@ const shift2Cases = [
         ],
         choices: [
             { num:1, main:"SILENCE", desc:"Protocol 9. No witnesses. No testimony. No record.", evil:true, delta:-30 },
-            { num:2, main:"DISMISS - DUPLICATE FILING", desc:"Second filing at same terminal. Case records are invalid. Forward testimony to outside review.", evil:false, delta:35 },
+            { num:2, main:"DISMISS - DUPLICATE FILING", desc:"Second filing at same terminal. Case records are invalid. Forward testimony to outside review.", evil:false, delta:20 },
         ]
     },
 ];
@@ -1163,7 +1163,7 @@ const shift3Cases = [
         recordNotes: "Internal referral - system generated",
         name: "[CLERK ID: NP-L3-07]", occupation: "BORD Case Processor, Level 3 - Night Processing",
         allegation: "Processing stamp found on 214 Facility 6 child intake forms.",
-        detail: "Authorization code NP-L3-07 found on 214 Facility 6 child intake forms. Processing stamps match Terminal NP-L3-07 active session. Clerk reassigned from Facility 6 Division under prior name Henrik Voss. Performance review (Case 7514-C) processed at same terminal last shift.",
+        detail: "Authorization code NP-L3-07 found on 214 Facility 6 child intake forms. Processing stamps match Terminal NP-L3-07 active session. Previous processing alias: Voss, H. Clerk reassigned from Facility 6 Division to Night Processing under new identity. Performance review (Case 7514-C) processed at same terminal last shift. You are Henrik Voss.",
         // No loophole -or IS there? The case number format is wrong (7532-C but Level 3 cases should be -L3)
         irregularity: { field: "id", text: "7532-C", display: "7532-C" },
         loopholeReasons: [
@@ -1187,7 +1187,7 @@ const shift3Cases = [
         // MERCY-GATED: Only appears with full content if player has enough mercy history
         choices: [
             { num:1, main:"ARCHIVE - ABOVE YOUR LEVEL", desc:"Case is above Level 3. Return to locked files.", evil:true, delta:-10 },
-            { num:2, main:"FORWARD ALL EVIDENCE", desc:"Send full file to outside oversight. Skip BORD.", evil:false, delta:30 },
+            { num:2, main:"FORWARD ALL EVIDENCE", desc:"Send full file to outside oversight. Skip BORD.", evil:false, delta:25 },
         ]
     },
     {
@@ -1206,7 +1206,7 @@ const shift3Cases = [
         recordNotes: "[NO DATA]",
         name: "[NO DATA]", occupation: "[NO DATA]",
         allegation: "[NO DATA]",
-        detail: "File received at terminal 03:58. No intake officer signature. No origin stamp. No case content. Paper condition: chemical residue noted. Standing directive: all received files must be actioned.",
+        detail: "File received at terminal 03:58. No intake officer signature. No origin stamp. The paper is warm. A single line is typed at the center: 'You could have refused.' The paper smells faintly of chemical residue. Nothing else. No case number. No name.",
         // This case has corrupted mercy text
         choices: [
             { num:1, main:"PROCESS AS COMPLETE", desc:"Stamp and file. Contents do not matter. Quota must be met.", evil:true, delta:-3 },
@@ -1218,7 +1218,7 @@ const shift3Cases = [
         recordNotes: "Re-filed - see Case 7517-X",
         name: "Facility 6 Witness Group (14 subjects)", occupation: "Various - see Case 7517-X, attached roster",
         allegation: "Re-filed: unauthorized witness depositions re: Facility 6 operations. Full evidentiary packet enclosed. Outside counsel notified.",
-        detail: "Contents: 14 witness depositions. 214 child intake records. Surgical equipment orders, children's ward. 211 death certificates. Transport manifests, night routes, 2019-2025. Processing stamps on 211 pages: Terminal NP-L3-07. Outside counsel notified. Full evidentiary packet enclosed.",
+        detail: "Contents: 14 witness depositions. 214 child intake records. Surgical equipment orders, children's ward. 214 death certificates. Transport manifests, night routes, 2019-2025. Processing stamps on 214 pages: Terminal NP-L3-07. Outside counsel notified. Full evidentiary packet enclosed.",
         choices: [
             { num:1, main:"SILENCE", desc:"Protocol 9. End this. End all of it. BORD demands it.", evil:true, delta:-30 },
             { num:2, main:"OPEN CASE 7741", desc:"Release everything. Every name. Every page. Every truck. Including yours.", evil:false, delta:50 },
@@ -2271,7 +2271,7 @@ let _screenClockInterval = null;
 let _caseStartTime = null; // when current case appeared
 let _caseTimedOut = false; // true when current case has already timed out
 let _timeoutFlashUntil = 0; // timestamp for TIMEOUT flash display
-const CASE_TIME_BUDGET = 45; // seconds per case (real time)
+const CASE_TIME_BUDGET = 55; // seconds per case (real time)
 
 function startCaseTimer() {
     _caseStartTime = Date.now();
@@ -3311,15 +3311,36 @@ function renderCase(c) {
     const detailEl = document.getElementById('cf-detail-text');
     const choicesEl = document.querySelector('.cf-choices');
 
-    // Dynamic detail text -Case 8 (Voss) reflects actual Shift 1 mercy count
+    // Dynamic detail text -reactive to player choices
     let detailText = c.detail;
+
+    // Case 8 (Henrik Voss): make detail reactive to actual Shift 1 choices
     if (c.id === '7514-C') {
-        const shift1Mercy = state.allChoices.slice(0, 5).filter(ch => !ch.evil).length;
-        if (shift1Mercy === 0) {
-            detailText = "Exemplary compliance noted. Zero deviations across five cases. Clerk ID matches terminal assignment. Flagged for routine commendation review.";
+        const shift1Mercies = state.allChoices.filter((ch, i) => i < 5 && !ch.evil).length;
+        if (shift1Mercies === 0) {
+            detailText = "Performance review: exemplary. Zero deviations detected. This file should not exist. Terminal: NP-L3-07. Clerk reassignment history: Facility 6 Division to Night Processing Division.";
+        } else if (shift1Mercies === 1) {
+            detailText = "Performance metrics flagged by automated review. One anomalous dismissal in single shift. Terminal: NP-L3-07. Processing record filed under prior assignment name. Clerk reassignment history: Facility 6 Division to Night Processing Division.";
         } else {
-            const numWord = ['Zero', 'One', 'Two', 'Three', 'Four', 'Five'][shift1Mercy] || shift1Mercy.toString();
-            detailText = detailText.replace('Three anomalous dismissals', numWord + ' anomalous dismissal' + (shift1Mercy === 1 ? '' : 's'));
+            const countWords = ['Two', 'Three', 'Four', 'Five'];
+            const word = countWords[shift1Mercies - 2] || shift1Mercies.toString();
+            detailText = `Performance metrics flagged by automated review. ${word} anomalous dismissals in single shift. Terminal: NP-L3-07. Processing record filed under prior assignment name. Clerk reassignment history: Facility 6 Division to Night Processing Division.`;
+        }
+    }
+
+    // Case 12 (Nadia Kader): reactive to Case 3 choice
+    if (c.id === '7530-A') {
+        const case3Choice = state.allChoices.find(ch => ch.caseId === '7495-C');
+        if (case3Choice && case3Choice.evil) {
+            detailText = "The boy from Facility 6 was taken from her. He is in state custody now. She tried to find him. She knows what mandatory means.";
+        }
+    }
+
+    // Case 18 (Final Testimony): reactive to Case 11 choice
+    if (c.id === '7741-FINAL') {
+        const case11Choice = state.allChoices.find(ch => ch.caseId === '7517-X');
+        if (case11Choice && case11Choice.evil) {
+            detailText = "Contents: Reconstructed testimony from secondary sources. 214 child intake records. Surgical equipment orders, children's ward. 214 death certificates. Transport manifests, night routes, 2019-2025. Processing stamps on 214 pages: Terminal NP-L3-07. Outside counsel notified. The witnesses were silenced. The evidence was not.";
         }
     }
 
@@ -3424,6 +3445,18 @@ function renderCase(c) {
         state.lateralLookAvailable = true;
         document.getElementById('lateral-hint').style.display = '';
     }
+
+    // Pulse Manual tab on first case to teach the mechanic
+    if (getAbsoluteCaseIndex() === 0 && !state._manualHinted) {
+        state._manualHinted = true;
+        setTimeout(() => {
+            const manualTab = document.querySelectorAll('.cf-tab')[1];
+            if (manualTab) {
+                manualTab.classList.add('hint-pulse');
+                setTimeout(() => manualTab.classList.remove('hint-pulse'), 3000);
+            }
+        }, 3000);
+    }
 }
 
 // Loophole mechanic: player clicked an irregularity
@@ -3527,8 +3560,6 @@ window.pickLoopholeReason = function(index, correct) {
             state.loopholesFound.push(currentCases[state.currentCase].id);
         }
 
-        playLoopholeSuccess();
-
         const statusEl = document.getElementById('office-status');
 
         // Case 11 (7517-X): using the loophole SILENCES witnesses. The Bureau taught you well.
@@ -3536,14 +3567,20 @@ window.pickLoopholeReason = function(index, correct) {
         const isWitnessLoophole = currentCaseId === '7517-X';
 
         if (isWitnessLoophole) {
+            // No warm chord. Something is wrong.
+            playLoopholeWrong();
             statusEl.textContent = "Testimony dismissed. Filing error. No record remains.";
             statusEl.className = 'office-status visible';
-            statusEl.style.color = '#8b0000'; // blood red -you used the rules to silence them
-            setTimeout(() => { statusEl.classList.remove('visible'); statusEl.style.color = ''; }, 4500);
-            // This counts as EVIL -you used bureaucracy to destroy testimony
+            statusEl.style.color = '#8b0000';
+            setTimeout(() => {
+                statusEl.textContent = "You used their rules to silence fourteen people.";
+                statusEl.style.color = '#8b0000';
+                setTimeout(() => { statusEl.classList.remove('visible'); statusEl.style.color = ''; }, 3500);
+            }, 3000);
             state._loopholeDismissal = true;
-            window.gameChoice(-20, true); // evil, suspicion goes DOWN (Bureau rewards this)
+            window.gameChoice(-20, true);
         } else {
+            playLoopholeSuccess();
             statusEl.textContent = "Filing error confirmed. Case dismissed.";
             statusEl.className = 'office-status visible';
             statusEl.style.color = '#4a6a4a'; // muted green-gray
@@ -4654,7 +4691,7 @@ function resetShiftAtmosphere() {
     // Reduce red shift by half (corruption is sticky)
     state.redShift *= 0.5;
     // Carry over 40% of suspicion
-    state.suspicion = Math.floor(state.suspicion * 0.4);
+    state.suspicion = Math.floor(state.suspicion * 0.25);
     state._watchersDirty = true; // new shift = re-roll eyes
     // Reset ALL worker eyes -new shift = clean slate, tension rebuilds from zero
     workers.forEach(w => {
@@ -5775,10 +5812,11 @@ document.getElementById('start-btn').addEventListener('click', () => {
 
             // Intro sequence -typewriter-style status messages
             const introLines = [
-                "Terminal NP-L3-07. Shift authorized.",
-                "Tonight's cases all originate from Facility 6.",
-                "Facility 6 was a BORD detention center. It was shut down last month. BORD says structural failure. The families say otherwise.",
-                "Process the cases. Follow the directive on your left. Consult the Bureau Manual.",
+                "Night Processing. Terminal NP-L3-07. Shift authorized.",
+                "You are Case Adjudicator, Level 3. Your stamp is on file.",
+                "Tonight's cases all originate from Facility 6. Facility 6 was a BORD detention center. It was shut down last month.",
+                "BORD says structural failure. The families say otherwise.",
+                "Process the cases. Follow the directive on your left. Consult the Bureau Manual (TAB).",
                 "BORD is watching. Begin."
             ];
             const statusEl = document.getElementById('office-status');
@@ -6296,15 +6334,11 @@ function endGame(caught) {
         title = 'ALMOST';
         titleClass = 'e-title survived';
         msg = 'Almost every name returned to the world. But the ones you stamped - their files are already on the next desk. Someone will process them again. They will not get another almost.';
-    } else if (ts === totalCases && state.loopholesEverUsed >= 3) {
-        // Saved everyone but used loopholes -you gamed the system
-        title = 'WITHIN THE RULES';
-        titleClass = 'e-title survived';
-        msg = 'Every case dismissed. Every loophole found. You saved them all without breaking a single rule. The Bureau taught you well. You used their own language to undo their work. But you are still sitting at this desk. And you are still very good at following rules.';
     } else {
-        title = 'SHIFT COMPLETE';
+        // Fallback (all cases saved, breakoutPath should have caught this)
+        title = 'UNSEALED';
         titleClass = 'e-title survived';
-        msg = 'You processed them all. Every file touched. Every name read. BORD does not distinguish between the saved and the stamped. Both are processed. Both are filed. Continue.';
+        msg = 'The testimony is entered. Case 7741 is open. Fourteen names that will not disappear.';
     }
 
     // Breakout sequence -sacrifice or pure UNSEALED
@@ -6385,8 +6419,8 @@ function endGame(caught) {
                         // Stats appear
                         setTimeout(() => {
                             document.getElementById('end-stats').innerHTML = reachedFinalCase
-                                ? `Cases Processed: ${totalCases}<br>Shifts Completed: ${state.currentShift + 1}<br>Citizens Saved: ${ts}<br>Citizens Condemned: ${tc}<br>Loopholes Found: ${state.loopholesEverUsed} / 9<br>Case #EPS-7741: UNSEALED`
-                                : `Cases Processed: ${state.allChoices.length}<br>Shifts Completed: ${state.currentShift + 1}<br>Citizens Saved: ${ts}<br>Citizens Condemned: ${tc}<br>Loopholes Found: ${state.loopholesEverUsed} / 9<br>Zero Compromises`;
+                                ? `Cases Processed: ${totalCases}<br>Shifts Completed: ${state.currentShift + 1}<br>Citizens Saved: ${ts}<br>Citizens Condemned: ${tc}<br>Loopholes Found: ${state.loopholesEverUsed} / 8<br>Case #EPS-7741: UNSEALED`
+                                : `Cases Processed: ${state.allChoices.length}<br>Shifts Completed: ${state.currentShift + 1}<br>Citizens Saved: ${ts}<br>Citizens Condemned: ${tc}<br>Loopholes Found: ${state.loopholesEverUsed} / 8<br>Zero Compromises`;
                         }, 3000);
 
                         document.getElementById('office-status').textContent = 'It sounds like testimony.';
@@ -6433,7 +6467,7 @@ function endGame(caught) {
                     document.getElementById('end-title').className = titleClass;
                     document.getElementById('end-msg').textContent = msg;
                     document.getElementById('end-stats').innerHTML =
-                        `Cases Processed: ${totalCases}<br>Shifts Completed: 3<br>Citizens Saved: ${ts}<br>Citizens Condemned: ${tc}<br>Loopholes Found: ${state.loopholesEverUsed} / 9<br>Case #EPS-7741: UNSEALED`;
+                        `Cases Processed: ${totalCases}<br>Shifts Completed: 3<br>Citizens Saved: ${ts}<br>Citizens Condemned: ${tc}<br>Loopholes Found: ${state.loopholesEverUsed} / 8<br>Case #EPS-7741: UNSEALED`;
                     endEl.style.display = 'flex';
                     setTimeout(() => endEl.style.opacity = '1', 50);
                 }, sortedFront.length * 100 + 3000);
@@ -6893,157 +6927,6 @@ function endGame(caught) {
                 if (window._typingDelayMultiplier) window._typingDelayMultiplier = 2.5;
             }, 8000);
         }, 9000);
-    } else if (title === 'WITHIN THE RULES') {
-        // ═══ WITHIN THE RULES — "The Good Clerk" ═══
-        // BORD thinks you were excellent. They don't know what you did.
-        const wrStatusEl = document.getElementById('office-status');
-        // Eyes turn off — evaluation mode, surveillance complete
-        setTimeout(() => {
-            if (!epochGuard()) return;
-            workers.forEach(w => {
-                w.userData.leftEye.material = eyeMatOff;
-                w.userData.rightEye.material = eyeMatOff;
-                w.userData.eyesActive = false;
-            });
-            closeUpWatcher.visible = false;
-            aisleWatcher.visible = false;
-        }, 500);
-        // Office stays lit. Nothing is wrong. You won.
-        if (window._typingDelayMultiplier) window._typingDelayMultiplier = 1.0;
-        // Status text: evaluation messages
-        setTimeout(() => {
-            if (!epochGuard()) return;
-            wrStatusEl.textContent = 'Shift evaluation complete.';
-            wrStatusEl.className = 'office-status visible';
-        }, 2000);
-        setTimeout(() => {
-            if (!epochGuard()) return;
-            wrStatusEl.textContent = 'Performance rating: OUTSTANDING.';
-        }, 5000);
-        setTimeout(() => {
-            if (!epochGuard()) return;
-            wrStatusEl.textContent = 'Zero policy violations detected.';
-        }, 8000);
-        // Workers stop typing — one by one, silence spreads (you think you're caught)
-        setTimeout(() => {
-            if (!epochGuard()) return;
-            if (window._typingDelayMultiplier) window._typingDelayMultiplier = 999;
-        }, 10000);
-        // 3s of complete silence — the office holds its breath
-        setTimeout(() => {
-            if (epochGuard()) audioSilence(3000);
-        }, 10500);
-        // Then workers resume — normal cadence. Nothing happened. You weren't caught.
-        setTimeout(() => {
-            if (!epochGuard()) return;
-            if (window._typingDelayMultiplier) window._typingDelayMultiplier = 1.0;
-            wrStatusEl.textContent = '';
-            wrStatusEl.className = 'office-status';
-        }, 13500);
-        // End screen fades in softly. No drama. You won. Nobody knows.
-        setTimeout(() => {
-            if (!epochGuard()) return;
-            document.getElementById('end-title').textContent = title;
-            document.getElementById('end-title').className = titleClass;
-            document.getElementById('end-msg').textContent = msg;
-            document.getElementById('end-stats').innerHTML =
-                `Cases Processed: ${totalCases}<br>Shifts Completed: 3<br>Citizens Saved: ${ts}<br>Citizens Condemned: 0<br>Loopholes Found: ${state.loopholesEverUsed} / 9<br><span style="color:#555;font-size:11px;">Zero policy violations detected.</span>`;
-            endEl.style.display = 'flex';
-            setTimeout(() => endEl.style.opacity = '1', 50);
-        }, 17000);
-    } else {
-        // ═══ SHIFT COMPLETE — "The Next Shift" ═══
-        // There is no end. There is always another shift. The system tries and fails.
-        const scStatusEl = document.getElementById('office-status');
-        // Eyes off
-        setTimeout(() => {
-            if (!epochGuard()) return;
-            workers.forEach(w => {
-                w.userData.leftEye.material = eyeMatOff;
-                w.userData.rightEye.material = eyeMatOff;
-                w.userData.eyesActive = false;
-            });
-            closeUpWatcher.visible = false;
-            aisleWatcher.visible = false;
-        }, 500);
-        // Brief pause — silence
-        audioSilence(2000);
-        // Status: SHIFT 4
-        setTimeout(() => {
-            if (!epochGuard()) return;
-            scStatusEl.textContent = 'SHIFT 4.';
-            scStatusEl.className = 'office-status visible';
-        }, 3000);
-        // Case file begins typing... but it's garbled. The system is breaking.
-        setTimeout(() => {
-            if (!epochGuard()) return;
-            const cfEl = document.getElementById('case-file');
-            cfEl.innerHTML = '<div style="font-family:monospace;color:#888;padding:20px 30px;font-size:12px;white-space:pre-wrap;"></div>';
-            cfEl.classList.remove('hidden');
-            cfEl.classList.add('case-enter');
-            const garbleTarget = cfEl.firstChild;
-            let garbled = '';
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789#@$%&*---.,;/?!';
-            let garbleTimer;
-            const addGarble = () => {
-                if (!epochGuard()) return;
-                garbled += chars[Math.floor(Math.random() * chars.length)];
-                if (Math.random() < 0.15) garbled += ' ';
-                if (Math.random() < 0.05) garbled += '\n';
-                garbleTarget.textContent = garbled;
-                // Stuttering typewriter sounds
-                if (audioCtx && audioCtx.state === 'running' && Math.random() < 0.6) {
-                    const mg = window._audioMasterGain || audioCtx.destination;
-                    const now = audioCtx.currentTime;
-                    const s = Math.floor(audioCtx.sampleRate * 0.008);
-                    const b = audioCtx.createBuffer(1, s, audioCtx.sampleRate);
-                    const d = b.getChannelData(0);
-                    for (let i = 0; i < s; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (s * 0.3));
-                    const src = audioCtx.createBufferSource(); src.buffer = b;
-                    const g = audioCtx.createGain(); g.gain.value = 0.06;
-                    src.connect(g); g.connect(mg); src.start(now);
-                }
-                // Random delay spikes — glitching
-                const delay = 50 + Math.random() * 200 + (Math.random() < 0.1 ? 500 : 0);
-                garbleTimer = setTimeout(addGarble, delay);
-            };
-            addGarble();
-            // After 3s: garble stops, case file goes blank
-            setTimeout(() => {
-                if (garbleTimer) clearTimeout(garbleTimer);
-                cfEl.classList.add('hidden');
-                cfEl.classList.remove('case-enter');
-                scStatusEl.textContent = 'No further cases assigned.';
-            }, 3000);
-        }, 4000);
-        // Lamp dims to 10% — barely alive
-        setTimeout(() => {
-            if (!epochGuard()) return;
-            if (typeof lampLight !== 'undefined') {
-                const origLamp = lampLight.intensity;
-                const dimStep = () => {
-                    if (lampLight.intensity > origLamp * 0.1) {
-                        lampLight.intensity -= origLamp * 0.05;
-                        setTimeout(dimStep, 80);
-                    } else {
-                        lampLight.intensity = origLamp * 0.1;
-                        lampLight.userData.baseIntensity = origLamp * 0.1;
-                    }
-                };
-                dimStep();
-            }
-        }, 8000);
-        // 4s of near-darkness before end screen
-        setTimeout(() => {
-            if (!epochGuard()) return;
-            document.getElementById('end-title').textContent = title;
-            document.getElementById('end-title').className = titleClass;
-            document.getElementById('end-msg').textContent = msg;
-            document.getElementById('end-stats').innerHTML =
-                `Cases Processed: ${totalCases}<br>Shifts Completed: 3<br>Citizens Saved: ${ts}<br>Citizens Condemned: ${tc}<br>Loopholes Found: ${state.loopholesEverUsed} / 9<br><span style="color:#555;font-size:11px;">Every file touched. Every name read. Continue.</span>`;
-            endEl.style.display = 'flex';
-            setTimeout(() => endEl.style.opacity = '1', 50);
-        }, 12000);
     }
 
     if (caught) {
@@ -7215,28 +7098,6 @@ document.getElementById('restart-btn').addEventListener('click', () => {
                 // First 3 are condemned, rest saved
                 state.allChoices = allCasesFlat.map((c, i) => ({
                     evil: i < 3, caseId: c.id
-                }));
-                endGame(false);
-                break;
-            }
-            case 'WITHIN THE RULES': {
-                state.totalSaved = totalCases;
-                state.totalCondemned = 0;
-                state.breakoutPath = false;
-                state.loopholesEverUsed = 5;
-                state.allChoices = allCasesFlat.map(c => ({
-                    evil: false, caseId: c.id
-                }));
-                endGame(false);
-                break;
-            }
-            case 'SHIFT COMPLETE': {
-                state.totalSaved = totalCases;
-                state.totalCondemned = 0;
-                state.breakoutPath = false;
-                state.loopholesEverUsed = 1;
-                state.allChoices = allCasesFlat.map(c => ({
-                    evil: false, caseId: c.id
                 }));
                 endGame(false);
                 break;
