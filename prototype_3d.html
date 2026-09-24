@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BORD - 3D Prototype</title>
-    <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Courier+Prime:wght@400;700&family=Russo+One&family=Oswald:wght@400;600&family=Archivo:wght@600;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #000; overflow: hidden; font-family: 'Courier Prime', monospace; }
@@ -237,25 +237,71 @@
             margin-bottom: 4px;
         }
 
-        /* Title screen */
+        /* Title screen: a constructivist propaganda poster pasted up in the office itself.
+           Behind it, #title-room holds one real frame of the room from the chair (lamp-lit
+           desk, terminal glow, dark office; eyes off), thrown out of focus and dimmed; ::after lays
+           the lamp spill, plaster/film grain and vignette over that.
+           The poster (720x1100 units: 720x960 art + a tear-off slip) is drawn on a canvas;
+           the only live DOM control is the transparent BEGIN SHIFT button over the slip. */
         #title-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #050505; z-index: 100; display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
+            background-color: #060505; z-index: 100; display: flex;
+            align-items: center; justify-content: center; overflow: hidden;
             transition: opacity 1.5s ease;
         }
-        #title-screen.fade-out { opacity: 0; pointer-events: none; }
-        #title-static {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            opacity: 0.12;
+        #title-room {
+            position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%;
+            display: block; pointer-events: none;
+            filter: blur(4px) brightness(0.62) sepia(0.25);
+            transform: scale(1.03); /* hides the blur's soft outer edge */
+            opacity: 0; transition: opacity 2.2s ease;
         }
-        .t-content { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; }
-        .t-logo { font-family:'Special Elite',monospace; font-size: 10rem; color:#d4d4d4; letter-spacing:0.2em;
-            text-shadow: 0 0 80px rgba(100,100,100,0.4), 0 0 120px rgba(60,60,60,0.2); }
-        .t-logo .o { color:#8b0000; text-shadow: 0 0 40px rgba(139,0,0,0.7), 0 0 80px rgba(139,0,0,0.3); }
-        .t-sub { font-size:0.9rem; color:#555; letter-spacing:0.5em; text-transform:uppercase; margin-bottom:3rem; }
-        .t-tag { font-size:0.8rem; color:#3a3a3a; font-style:italic; margin-bottom:2.5rem; }
-        .t-controls { font-size:0.65rem; color:#333; letter-spacing:0.15em; margin-bottom:3rem; }
+        #title-room.ready { opacity: 1; }
+        #title-screen::after {
+            content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+            background-image:
+                var(--tp-wall, none),
+                radial-gradient(ellipse 62% 78% at 50% 40%, rgba(236,226,204,0.10) 0%, rgba(236,226,204,0.04) 48%, rgba(236,226,204,0) 78%),
+                radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0) 42%, rgba(0,0,0,0.78) 100%);
+        }
+        #title-screen.fade-out { opacity: 0; pointer-events: none; }
+        #title-poster {
+            position: relative; z-index: 1;
+            width: min(calc((100vh - 56px) * 0.654545), calc(100vw - 32px));
+            height: min(calc(100vh - 56px), calc((100vw - 32px) * 1.527778));
+            box-shadow: 0 34px 80px rgba(0,0,0,0.9), 0 8px 22px rgba(0,0,0,0.7), 0 0 0 1px rgba(236,226,204,0.07);
+            opacity: 0; transition: opacity 1.4s ease;
+        }
+        #title-poster.ready { opacity: 1; }
+        #title-poster-canvas { display: block; width: 100%; height: 100%; }
+        /* Tape: paper-tone body with a sheen along its length and a torn short edge at each
+           end; the drop shadow sits on the holder so the clip-path does not cut it off. */
+        .tposter-tape {
+            position: absolute; top: -1.3%; width: 15%; height: 3.2%; pointer-events: none;
+            filter: drop-shadow(0 1px 1px rgba(0,0,0,0.3));
+        }
+        .tposter-tape::before {
+            content: ''; position: absolute; inset: 0; opacity: 0.2;
+            background-image:
+                var(--tp-wall, none),
+                linear-gradient(180deg, #d8ccb0 0%, #f4ecda 28%, #e2d6ba 52%, #c9bb9a 100%);
+            background-size: 90px 90px, 100% 100%;
+            clip-path: polygon(2% 0%, 98% 0%, 100% 14%, 97% 30%, 99.5% 47%, 97.5% 66%, 100% 83%, 98% 100%,
+                2% 100%, 0% 86%, 2.5% 70%, 0.5% 52%, 3% 34%, 0% 17%);
+        }
+        .tposter-tape.l { left: -3%; transform: rotate(-9deg); }
+        .tposter-tape.r { right: -3%; transform: rotate(7deg); }
+        .t-sr {
+            position: absolute; width: 1px; height: 1px; overflow: hidden;
+            clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
+        }
+        .poster-begin {
+            position: absolute; left: 0; top: 87.8%; width: 100%; height: 12.2%;
+            background: transparent; border: 0; color: transparent; font-size: 1px;
+            cursor: pointer; -webkit-tap-highlight-color: transparent;
+        }
+        .poster-begin:focus { outline: none; }
+        .poster-begin:focus-visible { outline: 2px solid #c62a1f; outline-offset: -6px; }
         .t-btn { background:transparent; border:1px solid #333; color:#666; padding:1rem 3rem;
             font-family:'Courier Prime',monospace; font-size:0.85rem; letter-spacing:0.3em;
             cursor:pointer; transition:all 0.3s ease; text-transform:uppercase; }
@@ -712,6 +758,15 @@
             100% { transform: translate(80px,90px); }
         }
         #look-hint { color: rgba(255,255,255,.6); }
+
+        /* Cold open: motion-design intro drawn on one canvas above the scene.
+           Shown black under the fading title, then plays, then fades to reveal the room. */
+        #cold-open {
+            position: fixed; inset: 0; width: 100%; height: 100%;
+            z-index: 95; display: none; background: #060607;
+            opacity: 1; transition: opacity .9s ease; cursor: default;
+        }
+        #cold-open.gone { opacity: 0; pointer-events: none; }
     </style>
 </head>
 <body>
@@ -737,14 +792,22 @@
     <div class="phone-dismiss" id="phone-dismiss"></div>
 </div>
 
+<canvas id="cold-open" aria-hidden="true"></canvas>
+<div id="cold-open-sr" class="t-sr" aria-live="polite"></div>
+
 <div id="title-screen">
-    <canvas id="title-static"></canvas>
-    <div class="t-content">
-        <div class="t-logo">B<span class="o">O</span>RD</div>
-        <div class="t-sub">Bureau of Right Decisions</div>
-        <div class="t-tag">Your compliance is appreciated.</div>
-        <div class="t-controls">SPACE - look up&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;1/2/3 - choose&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;CLICK + HOLD - stamp</div>
-        <button class="t-btn" id="start-btn">Begin Shift</button>
+    <canvas id="title-room" aria-hidden="true"></canvas>
+    <div id="title-poster">
+        <canvas id="title-poster-canvas" aria-hidden="true"></canvas>
+        <span class="tposter-tape l" aria-hidden="true"></span>
+        <span class="tposter-tape r" aria-hidden="true"></span>
+        <div class="t-sr">
+            <h1>BORD</h1>
+            <p>Bureau of Right Decisions</p>
+            <p>Your compliance is appreciated.</p>
+            <p>SPACE - look up | 1/2/3 - choose | CLICK + HOLD - stamp</p>
+        </div>
+        <button class="poster-begin" id="start-btn" type="button">Begin Shift</button>
     </div>
 </div>
 
@@ -929,6 +992,7 @@ const state = {
     gameOver: false,
     breathCycle: 0,
     titleFading: false,
+    coldOpenOpaque: false,     // true while the opaque cold-open canvas hides the room
     // Event system -one-shot scares triggered by specific choices
     pendingEvents: [],         // event IDs queued for next lookUp(s)
     firedEvents: new Set(),    // events already triggered (never repeat)
@@ -2890,36 +2954,946 @@ const noirPass = new ShaderPass(noirShader);
 composer.addPass(noirPass);
 
 // ============================================================
-// TITLE SCREEN ANIMATED STATIC
+// TITLE SCREEN — constructivist propaganda poster on the office wall
+// Faithful port of the owner's "For BORD" poster reference (720x960 art),
+// extended with a tear-off slip (BEGIN SHIFT + stamp box) to 720x1100 units.
 // ============================================================
-const titleCanvas = document.getElementById('title-static');
-const titleCtx = titleCanvas.getContext('2d');
-let titleAnimId = null;
-
-function resizeTitleCanvas() {
-    titleCanvas.width = Math.max(1, Math.floor(window.innerWidth / 4));
-    titleCanvas.height = Math.max(1, Math.floor(window.innerHeight / 4));
+let titleAnimId = null;          // rAF id of the poster loop
+let titlePosterTeardown = null;  // detaches the poster's window/fonts/resize listeners
+// Called by the start logic once the title is hidden: stops the loop and drops every listener
+function stopTitlePoster() {
+    if (titleAnimId) cancelAnimationFrame(titleAnimId);
+    titleAnimId = null;
+    if (titlePosterTeardown) { titlePosterTeardown(); titlePosterTeardown = null; }
 }
-resizeTitleCanvas();
 
-function animateTitleStatic() {
-    const w = titleCanvas.width;
-    const h = titleCanvas.height;
-    const imageData = titleCtx.createImageData(w, h);
-    const data = imageData.data;
-    const scanY = Math.random() < 0.04 ? Math.floor(Math.random() * h) : -1;
-    for (let y = 0; y < h; y++) {
-        const isScan = Math.abs(y - scanY) < 2;
-        for (let x = 0; x < w; x++) {
-            const idx = (y * w + x) * 4;
-            const v = isScan ? 100 + Math.random() * 80 : Math.random() * 45;
-            data[idx] = v; data[idx+1] = v; data[idx+2] = v; data[idx+3] = 255;
+const TP = {
+    LW: 720, LH: 1100, ART_H: 960, SLIP_Y: 966,
+    PAPER: '#ece2cc', RED: '#c62a1f', BLK: '#171413',
+    RAY_MUL: 'rgb(231,223,202)', // multiplied over paper gives the reference ray tan #d6c6a2
+    EX: 540, EY: 470, ER: 140,
+    BOX: { x: 552, y: 982, w: 138, h: 104 },
+    // tear-off slip baselines (header, BEGIN SHIFT, its rule, controls) and the controls line
+    SLIP: { hdrY: 994, beginY: 1046, ruleY: 1055, ctlY: 1085,
+        CONTROLS: 'SPACE — look up  ·  1 / 2 / 3 — choose  ·  CLICK + HOLD — stamp' },
+    RUSSO: '"Russo One", "Arial Black", sans-serif',
+    OSW: 'Oswald, "Arial Narrow", sans-serif',
+    SLAM_HOLD_MS: 650,
+    CLERK: [[.30,1],[.26,.86],[.24,.7],[.2,.58],[.2,.44],[.26,.33],[.28,.24],[.44,.17],[.62,.16],[.7,.22],[.74,.29],[.94,.27],[.93,.31],[.74,.34],[.75,.4],[.79,.47],[.77,.5],[.83,.57],[.86,.61],[.8,.63],[.81,.67],[.79,.69],[.8,.72],[.76,.76],[.7,.8],[.62,.82],[.6,.88],[.72,.92],[.92,.98],[.95,1]],
+    sat: u => u < 0 ? 0 : u > 1 ? 1 : u,
+    mix: (a, b, u) => a + (b - a) * u,
+    easeOut: u => 1 - Math.pow(1 - (u < 0 ? 0 : u > 1 ? 1 : u), 3),
+    rng: seed => () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; },
+    off: (w, h) => { const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h)); return c; },
+    spacing: (c, v) => { if ('letterSpacing' in c) c.letterSpacing = v; }
+};
+
+function tpStarPath(c, cx, cy, R, r) {
+    c.beginPath();
+    for (let i = 0; i < 10; i++) {
+        const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r : R;
+        c.lineTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr);
+    }
+    c.closePath();
+}
+
+// Clerk silhouette mask + distance-to-edge field (fixed 110x154 grid, computed once)
+function tpClerkField() {
+    const MW = 110, MH = 154, m = TP.off(MW, MH), mx = m.getContext('2d');
+    mx.fillStyle = '#fff'; mx.beginPath();
+    TP.CLERK.forEach((p, i) => i ? mx.lineTo(p[0] * MW, p[1] * MH) : mx.moveTo(p[0] * MW, p[1] * MH));
+    mx.closePath(); mx.fill();
+    const src = mx.getImageData(0, 0, MW, MH).data, M = new Uint8Array(MW * MH);
+    for (let i = 0; i < MW * MH; i++) M[i] = src[i * 4 + 3] > 127 ? 1 : 0;
+    const D = new Float32Array(MW * MH).fill(1e9), q = [], N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+    const outside = (x, y) => x < 0 || y < 0 || x >= MW || y >= MH || !M[y * MW + x];
+    for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
+        const i = y * MW + x;
+        if (M[i] && N4.some(([dx, dy]) => outside(x + dx, y + dy))) { D[i] = 0; q.push(i); }
+    }
+    for (let h = 0; h < q.length; h++) {
+        const i = q[h], x = i % MW, y = (i / MW) | 0;
+        for (const [dx, dy] of N4) {
+            const xx = x + dx, yy = y + dy;
+            if (xx < 0 || yy < 0 || xx >= MW || yy >= MH) continue;
+            const j = yy * MW + xx;
+            if (M[j] && D[j] > D[i] + 1) { D[j] = D[i] + 1; q.push(j); }
         }
     }
-    titleCtx.putImageData(imageData, 0, 0);
-    titleAnimId = requestAnimationFrame(animateTitleStatic);
+    return { M, D, MW, MH };
 }
-animateTitleStatic();
+
+// 45-degree dot screen, darker toward the left, with the red star on the chest
+function tpHalftone(c, F) {
+    const bx = 20, by = 500, bw = 330, bh = 460, sp = 7, ca = Math.cos(Math.PI / 4), sa = Math.sin(Math.PI / 4);
+    c.fillStyle = TP.BLK;
+    for (let v = -bh; v < bw + bh; v += sp) for (let u = -bh; u < bw + bh; u += sp) {
+        const x = bx + bw / 2 + (u - bw / 2) * ca - (v - bw / 2) * sa;
+        const y = by + bh / 2 + (u - bw / 2) * sa + (v - bw / 2) * ca;
+        if (x < bx || y < by || x >= bx + bw || y >= by + bh) continue;
+        const i = (((y - by) / bh * F.MH) | 0) * F.MW + (((x - bx) / bw * F.MW) | 0);
+        if (!F.M[i]) continue;
+        const nx = (x - bx) / bw, ny = (y - by) / bh;
+        const dk = TP.sat(Math.max(.3, .4 + .42 * (1 - nx) + .16 * ny - .12 * Math.exp(-Math.abs(F.D[i] - 5) / 2.5)));
+        const r = 3.9 * Math.sqrt(dk);
+        if (r < .4) continue;
+        c.beginPath(); c.arc(x, y, r, 0, 6.283); c.fill();
+    }
+    c.fillStyle = TP.RED; tpStarPath(c, bx + .6 * bw, by + .225 * bh, 13, 5.5); c.fill();
+}
+
+// Aged paper: grain, sepia vignette, darker handled edges
+function tpPaintPaper(c) {
+    const { LW, LH } = TP, R = TP.rng(77);
+    c.fillStyle = TP.PAPER; c.fillRect(0, 0, LW, LH);
+    for (let i = 0; i < 18000; i++) { c.fillStyle = `rgba(80,60,30,${R() * .07})`; c.fillRect(R() * LW, R() * LH, 1.2, 1.2); }
+    const vg = c.createRadialGradient(360, 480, 300, 360, 480, 720);
+    vg.addColorStop(0, 'rgba(140,110,60,0)'); vg.addColorStop(1, 'rgba(140,110,60,.28)');
+    c.fillStyle = vg; c.fillRect(0, 0, LW, LH);
+    const edge = (x0, y0, x1, y1, rx, ry, rw, rh) => {
+        const eg = c.createLinearGradient(x0, y0, x1, y1);
+        eg.addColorStop(0, 'rgba(110,85,45,.22)'); eg.addColorStop(1, 'rgba(110,85,45,0)');
+        c.fillStyle = eg; c.fillRect(rx, ry, rw, rh);
+    };
+    edge(0, 0, 7, 0, 0, 0, 7, LH); edge(LW, 0, LW - 7, 0, LW - 7, 0, 7, LH);
+    edge(0, 0, 0, 7, 0, 0, LW, 7); edge(0, LH, 0, LH - 7, 0, LH - 7, LW, 7);
+}
+
+// Red diagonal band (printed out of register at draw time), clipped to the art
+function tpPaintBand(c) {
+    c.save(); c.beginPath(); c.rect(0, 0, TP.LW, TP.ART_H - 2); c.clip();
+    c.fillStyle = TP.RED; c.beginPath();
+    c.moveTo(-9, 1021); c.lineTo(611, 531); c.lineTo(515, 409); c.lineTo(-105, 899);
+    c.closePath(); c.fill(); c.restore();
+}
+
+function tpPaintHeadlines(c) {
+    const { BLK, RED, RUSSO, OSW } = TP;
+    c.fillStyle = BLK; c.font = `118px ${RUSSO}`; c.fillText('Ваша', 34, 164);
+    c.font = `80px ${RUSSO}`; c.fillText('покорность', 36, 256);
+    c.fillRect(40, 278, 392, 12);
+    c.font = `600 27px ${OSW}`; c.fillText('Your compliance is appreciated', 42, 326);
+    c.font = `104px ${RUSSO}`; c.textAlign = 'right'; c.fillText('ценится', 700, 862);
+    c.fillStyle = RED; c.fillRect(420, 878, 280, 10);
+    c.fillStyle = BLK; c.font = `600 17px ${OSW}`; c.fillText('Bureau of Right Decisions. Form 7-Б', 700, 934);
+    c.textAlign = 'left';
+}
+
+// BORD masthead, top right: black letters, red O, rule, division line
+function tpPaintWordmark(c) {
+    c.font = `78px ${TP.RUSSO}`;
+    const parts = [['B', TP.BLK], ['O', TP.RED], ['R', TP.BLK], ['D', TP.BLK]];
+    const widths = parts.map(([ch]) => c.measureText(ch).width);
+    const total = widths.reduce((a, b) => a + b, 0);
+    let x = 700 - total;
+    parts.forEach(([ch, col], i) => { c.fillStyle = col; c.fillText(ch, x, 100); x += widths[i]; });
+    c.fillStyle = TP.BLK; c.fillRect(700 - total, 114, total, 5);
+    c.font = `600 14px ${TP.OSW}`; TP.spacing(c, '2.4px'); c.textAlign = 'right';
+    c.fillText('NIGHT PROCESSING DIVISION', 702, 139);
+    c.textAlign = 'left'; TP.spacing(c, '0px');
+}
+
+// Shrink a font until the text fits maxW; returns the measured width
+function tpFit(c, text, px, family, maxW) {
+    let size = px;
+    c.font = `${family.weight || ''} ${size}px ${family.name}`;
+    while (c.measureText(text).width > maxW && size > 6) { size -= 1; c.font = `${family.weight || ''} ${size}px ${family.name}`; }
+    return c.measureText(text).width;
+}
+
+// Tear-off slip: perforation, BEGIN SHIFT, controls line, stamp box. Returns BEGIN SHIFT width.
+// Sized so the controls line reads at ~12-13 CSS px on a 768 px tall screen.
+function tpPaintSlip(c) {
+    const { BLK, BOX, SLIP_Y, LW, SLIP } = TP;
+    const textW = BOX.x - 36 - 12; // everything left of the stamp box
+    c.fillStyle = 'rgba(23,20,19,.55)';
+    for (let x = 8; x < LW; x += 9) { c.beginPath(); c.arc(x, SLIP_Y, 1.7, 0, 6.283); c.fill(); }
+    c.fillStyle = BLK; TP.spacing(c, '1.6px');
+    tpFit(c, 'ОТРЫВНОЙ ТАЛОН  ·  DETACHABLE SLIP  ·  FORM 7-Б/2', 14, { name: TP.OSW, weight: 600 }, textW);
+    c.fillText('ОТРЫВНОЙ ТАЛОН  ·  DETACHABLE SLIP  ·  FORM 7-Б/2', 36, SLIP.hdrY);
+    TP.spacing(c, '0px');
+    const beginW = tpFit(c, 'BEGIN SHIFT', 58, { name: TP.RUSSO }, textW);
+    c.fillText('BEGIN SHIFT', 34, SLIP.beginY);
+    c.fillRect(36, SLIP.ruleY, beginW, 2);
+    TP.spacing(c, '0.5px'); c.globalAlpha = .9;
+    tpFit(c, SLIP.CONTROLS, 20, { name: TP.OSW, weight: 400 }, textW);
+    c.fillText(SLIP.CONTROLS, 36, SLIP.ctlY);
+    c.globalAlpha = 1; TP.spacing(c, '0px');
+    c.lineWidth = 2; c.strokeStyle = BLK; c.strokeRect(BOX.x, BOX.y, BOX.w, BOX.h);
+    TP.spacing(c, '1.5px');
+    tpFit(c, 'ПЕЧАТЬ · STAMP', 13, { name: TP.OSW, weight: 600 }, BOX.w - 16);
+    c.fillText('ПЕЧАТЬ · STAMP', BOX.x + 8, BOX.y + 19);
+    c.textAlign = 'right'; c.fillText('М.П.', BOX.x + BOX.w - 7, BOX.y + BOX.h - 9);
+    c.textAlign = 'left'; TP.spacing(c, '0px');
+    return beginW;
+}
+
+// Round red "Одобрено / БПР-7" stamp with worn ink (160x160 units)
+function tpPaintStamp(c) {
+    const R = TP.rng(78), RED = TP.RED;
+    c.strokeStyle = RED; c.fillStyle = RED;
+    c.lineWidth = 5; c.beginPath(); c.arc(80, 80, 70, 0, 6.283); c.stroke();
+    c.lineWidth = 2; c.beginPath(); c.arc(80, 80, 58, 0, 6.283); c.stroke();
+    c.font = `25px ${TP.RUSSO}`; c.textAlign = 'center'; c.fillText('Одобрено', 80, 90);
+    tpStarPath(c, 80, 52, 10, 4); c.fill();
+    c.font = `600 12px ${TP.OSW}`; c.fillText('БПР-7', 80, 118);
+    c.textAlign = 'left';
+    c.globalCompositeOperation = 'destination-out';
+    for (let i = 0; i < 900; i++) { c.fillStyle = `rgba(0,0,0,${R() * .7})`; c.fillRect(R() * 160, R() * 160, R() * 2.5, R() * 2.5); }
+    c.globalCompositeOperation = 'source-over';
+}
+
+// Lamp falloff so the lit poster still belongs to the dark room (multiplied last)
+function tpPaintLight(c) {
+    const lg = c.createRadialGradient(360, 430, 160, 360, 430, 860);
+    lg.addColorStop(0, '#ffffff'); lg.addColorStop(1, 'rgb(182,174,162)');
+    c.fillStyle = lg; c.fillRect(0, 0, TP.LW, TP.LH);
+}
+
+// Plaster / film grain tile, exposed as --tp-wall for the room overlay and the tape
+function tpPaintWall(screenEl) {
+    const tile = TP.off(160, 160), c = tile.getContext('2d'), R = TP.rng(11);
+    for (let i = 0; i < 2600; i++) {
+        c.fillStyle = R() > .5 ? `rgba(236,226,204,${R() * .09})` : `rgba(0,0,0,${R() * .5})`;
+        c.fillRect((R() * 160) | 0, (R() * 160) | 0, 1, 1);
+    }
+    try { screenEl.style.setProperty('--tp-wall', `url(${tile.toDataURL()})`); } catch (e) { /* plain wall is fine */ }
+}
+
+// Resolves once Russo One + Oswald (incl. Cyrillic subsets) are usable, or after ~3.5 s
+async function tpWaitForFonts() {
+    if (!document.fonts || !document.fonts.load) return;
+    const specs = [
+        ['118px "Russo One"', 'Ваша покорность ценится Одобрено BORD BEGIN SHIFT'],
+        ['600 27px Oswald', 'Your compliance Bureau Form 7-Б БПР ОТРЫВНОЙ ПЕЧАТЬ'],
+        ['400 14px Oswald', 'SPACE look up choose stamp']
+    ];
+    const deadline = performance.now() + 3500;
+    while (performance.now() < deadline) {
+        try {
+            const res = await Promise.all(specs.map(([f, s]) => document.fonts.load(f, s)));
+            if (res.every(r => r && r.length > 0)) return;
+        } catch (e) { /* retry until deadline */ }
+        await new Promise(r => setTimeout(r, 200));
+    }
+}
+
+function initTitlePoster() {
+    const screenEl = document.getElementById('title-screen');
+    const posterEl = document.getElementById('title-poster');
+    const cv = document.getElementById('title-poster-canvas');
+    const btn = document.getElementById('start-btn');
+    if (!screenEl || !posterEl || !cv || !btn) return;
+    const g = cv.getContext('2d');
+    const DPR = Math.min(2, window.devicePixelRatio || 1);
+    const reduceMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    const field = tpClerkField();
+    const S = { k: 1, ready: false, fonts: false, dirty: true, L: null, beginW: 400,
+        hover: 0, hoverTarget: 0, lookX: 0, lookY: 0, lookTX: 0, lookTY: 0, slamAt: -1, lastT: 0 };
+
+    function build() {
+        const cssW = cv.clientWidth, cssH = cv.clientHeight;
+        if (cssW < 2 || cssH < 2) return false;
+        const W = Math.max(1, Math.round(cssW * DPR)), H = Math.max(1, Math.round(W * TP.LH / TP.LW));
+        if (cv.width !== W) cv.width = W;
+        if (cv.height !== H) cv.height = H;
+        const k = W / TP.LW;
+        const mk = (w, h) => { const c = TP.off(w, h), x = c.getContext('2d'); x.setTransform(k, 0, 0, k, 0, 0); return [c, x]; };
+        const [back, bk] = mk(W, H), [band, bd] = mk(W, H), [front, fr] = mk(W, H), [light, lt] = mk(W, H), [stamp, st] = mk(160 * k, 160 * k);
+        tpPaintPaper(bk); tpPaintBand(bd);
+        tpHalftone(fr, field); tpPaintHeadlines(fr); tpPaintWordmark(fr);
+        S.beginW = tpPaintSlip(fr);
+        tpPaintStamp(st); tpPaintLight(lt);
+        S.k = k; S.L = { back, band, front, light, stamp };
+        return true;
+    }
+
+    function drawRays(t) {
+        const { EX, EY } = TP;
+        g.save(); g.beginPath(); g.rect(0, 0, TP.LW, TP.ART_H); g.clip();
+        g.globalCompositeOperation = 'multiply'; g.fillStyle = TP.RAY_MUL;
+        const rot = reduceMotion ? 0 : t * .05;
+        g.beginPath();
+        for (let i = 0; i < 18; i++) {
+            const a = rot + i / 18 * 6.283;
+            g.moveTo(EX, EY); g.arc(EX, EY, 1300, a, a + 6.283 / 36); g.closePath();
+        }
+        g.fill(); g.restore();
+    }
+
+    function drawEye(t) {
+        const { EX, EY, ER, BLK, RED, PAPER } = TP;
+        const dot = (x, y, r) => { g.beginPath(); g.arc(x, y, r, 0, 6.283); g.fill(); };
+        g.fillStyle = BLK; dot(EX, EY, ER);
+        // Reduced motion: the iris holds still (no drift, no pointer lean, no blink)
+        const bp = (t % 6) / 6, blink = !reduceMotion && bp > .94 ? Math.sin((bp - .94) / .06 * Math.PI) : 0;
+        const ix = reduceMotion ? -18 : -18 + Math.sin(t * .6) * 12 + S.lookX;
+        const iy = reduceMotion ? 12 : 12 + Math.cos(t * .5) * 6 + S.lookY;
+        g.save(); g.translate(EX, EY);
+        g.beginPath(); g.moveTo(-104, 0); g.quadraticCurveTo(0, -74, 104, 0); g.quadraticCurveTo(0, 74, -104, 0); g.closePath();
+        g.save(); g.clip();
+        g.fillStyle = PAPER; g.fillRect(-110, -80, 220, 160);
+        g.fillStyle = RED; dot(ix, iy, 38);
+        g.fillStyle = BLK; dot(ix, iy, 16);
+        g.fillStyle = PAPER; dot(ix + 10, iy - 12, 5);
+        if (blink > 0) {
+            g.fillStyle = BLK;
+            g.fillRect(-110, -80, 220, 160 * blink * .5);
+            g.fillRect(-110, 80 - 160 * blink * .5, 220, 160 * blink * .5);
+        }
+        g.restore(); g.strokeStyle = PAPER; g.lineWidth = 3; g.stroke(); g.restore();
+    }
+
+    // Stamp impression: slam from 1.8x to 1x over 0.13 s, tiny settle jitter (no screen shake)
+    function drawStamp(x, y, rot, scale, alpha, jitter) {
+        g.save();
+        g.translate(x + (Math.random() - .5) * jitter, y + (Math.random() - .5) * jitter);
+        g.rotate(rot); g.scale(scale, scale);
+        g.globalAlpha = alpha; g.globalCompositeOperation = 'multiply';
+        g.drawImage(S.L.stamp, -80, -80, 160, 160);
+        g.restore();
+    }
+
+    function drawStamps(t) {
+        const P = t % 7;
+        if (reduceMotion) drawStamp(560, 760, -.26, 1, .92, 0);
+        else if (P > 1 && P < 6.8) {
+            const u = TP.sat((P - 1) / .13), sc = TP.mix(1.8, 1, TP.easeOut(u));
+            const a = P > 6.3 ? 1 - (P - 6.3) / .5 : 1, sh = u < 1 ? 0 : Math.max(0, 1 - (P - 1.13) / .3) * 3;
+            drawStamp(560, 760, -.26, sc, a * (u < 1 ? u : 1) * .92, sh);
+        }
+        if (S.slamAt >= 0) {
+            const el = Math.max(0, t - S.slamAt), u = TP.sat(el / .13), B = TP.BOX;
+            const sh = u < 1 ? 0 : Math.max(0, 1 - (el - .13) / .3) * 3;
+            drawStamp(B.x + B.w / 2, B.y + B.h / 2, -.12, TP.mix(1.8, 1, TP.easeOut(u)) * .72, (u < 1 ? u : 1) * .95, sh);
+        }
+    }
+
+    // Hover/focus: a red rule prints under BEGIN SHIFT and the stamp box turns red
+    function drawHover() {
+        const h = TP.easeOut(S.hover);
+        if (h < .01) return;
+        const B = TP.BOX;
+        g.save();
+        g.fillStyle = TP.RED; g.globalCompositeOperation = 'multiply';
+        g.fillRect(36, TP.SLIP.ruleY - 2, S.beginW * h, 6);
+        g.globalCompositeOperation = 'source-over'; g.globalAlpha = h * .9;
+        g.strokeStyle = TP.RED; g.lineWidth = 2; g.strokeRect(B.x, B.y, B.w, B.h);
+        g.restore();
+    }
+
+    function render(t, dt) {
+        const k = S.k, L = S.L;
+        S.hover += (S.hoverTarget - S.hover) * Math.min(1, dt * 8);
+        S.lookX += (S.lookTX - S.lookX) * Math.min(1, dt * 2.5);
+        S.lookY += (S.lookTY - S.lookY) * Math.min(1, dt * 2.5);
+        g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
+        g.drawImage(L.back, 0, 0);
+        g.setTransform(k, 0, 0, k, 0, 0); drawRays(t);
+        g.setTransform(1, 0, 0, 1, 0, 0);
+        g.globalCompositeOperation = 'multiply'; g.drawImage(L.band, 3 * k, 2 * k);
+        g.globalCompositeOperation = 'source-over';
+        g.setTransform(k, 0, 0, k, 0, 0); drawEye(t);
+        g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(L.front, 0, 0);
+        g.setTransform(k, 0, 0, k, 0, 0); drawHover(); drawStamps(t);
+        g.setTransform(1, 0, 0, 1, 0, 0);
+        g.globalCompositeOperation = 'multiply'; g.drawImage(L.light, 0, 0);
+        g.globalCompositeOperation = 'source-over';
+    }
+
+    // stopTitlePoster() normally tears down; every listener still checks this as a backstop
+    const isGone = () => screenEl.style.display === 'none';
+    function teardown() {
+        window.removeEventListener('pointermove', onPointerMove);
+        if (ro) ro.disconnect();
+        else window.removeEventListener('resize', markDirty);
+        if (document.fonts && document.fonts.removeEventListener) document.fonts.removeEventListener('loadingdone', onFontsDone);
+    }
+
+    function frame(ts) {
+        titleAnimId = null;
+        if (isGone()) { teardown(); return; } // title is gone
+        const t = ts / 1000, dt = Math.min(.1, Math.max(0, t - S.lastT));
+        S.lastT = t;
+        if (S.fonts && S.dirty) {
+            S.ready = build() || S.ready;
+            S.dirty = !S.ready || cv.clientWidth < 2;
+            if (S.ready) posterEl.classList.add('ready');
+        }
+        if (S.ready && cv.clientWidth >= 2) render(t, dt);
+        titleAnimId = requestAnimationFrame(frame);
+    }
+
+    function onPointerMove(e) {
+        if (isGone()) { teardown(); return; }
+        const r = cv.getBoundingClientRect();
+        if (r.width < 2 || r.height < 2) return;
+        const ex = r.left + TP.EX / TP.LW * r.width, ey = r.top + TP.EY / TP.LH * r.height;
+        S.lookTX = Math.max(-1, Math.min(1, (e.clientX - ex) / (r.width * .6))) * 14;
+        S.lookTY = Math.max(-1, Math.min(1, (e.clientY - ey) / (r.height * .35))) * 8;
+    }
+
+    function markDirty() { if (isGone()) teardown(); else S.dirty = true; }
+    function onFontsDone() { if (S.fonts) S.dirty = true; }
+
+    function stampThud() {
+        initAudio(); // idempotent; the start logic calls it again unchanged
+        if (!audioCtx) return;
+        const ready = audioCtx.state === 'running' ? Promise.resolve() : audioCtx.resume();
+        Promise.resolve(ready).then(() => setTimeout(playStampSound, 100)).catch(() => {});
+    }
+
+    // BEGIN SHIFT: slam the approval stamp into the slip's box, then hand the click
+    // through to the existing start listeners unchanged.
+    let passThrough = false;
+    screenEl.addEventListener('click', e => {
+        if (passThrough || !btn.contains(e.target)) return;
+        e.stopPropagation(); e.preventDefault();
+        if (S.slamAt >= 0) return;
+        S.slamAt = S.lastT; S.hoverTarget = 1;
+        stampThud();
+        setTimeout(() => {
+            passThrough = true;
+            try { btn.click(); } finally { passThrough = false; }
+        }, TP.SLAM_HOLD_MS);
+    }, true);
+    btn.addEventListener('mouseenter', () => { S.hoverTarget = 1; });
+    btn.addEventListener('mouseleave', () => { if (S.slamAt < 0) S.hoverTarget = 0; });
+    btn.addEventListener('focus', () => { S.hoverTarget = 1; });
+    btn.addEventListener('blur', () => { if (S.slamAt < 0) S.hoverTarget = 0; });
+    window.addEventListener('pointermove', onPointerMove);
+
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(markDirty) : null;
+    if (ro) ro.observe(cv); else window.addEventListener('resize', markDirty);
+    if (document.fonts && document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', onFontsDone);
+
+    tpPaintWall(screenEl);
+    tpWaitForFonts().then(() => { S.fonts = true; S.dirty = true; });
+    titlePosterTeardown = teardown;
+    titleAnimId = requestAnimationFrame(frame);
+}
+initTitlePoster();
+
+// ============================================================
+// COLD OPEN — motion-design intro, ported from the owner's reg('kt') reference.
+// One full-screen canvas above the scene: words rising through masks, a red
+// redaction sweep, a mono line that types itself, a glitch cut, a title whose
+// letters drop in with a red + grey ghost, a red rule, a tightening subtitle,
+// dust, grain, vignette and a slight push-in (never a shake).
+// Palette: black, paper-cream and red only.
+// ============================================================
+const CO = {
+    BASE_W: 960, BASE_H: 540,       // composition space, always fully visible, centred
+    MAX_TEXT_W: 826,                // 0.86 of the composition width
+    MAX_DPR: 1.5,
+    INK: '#060607',
+    CREAM: '236,228,210',           // rgb triplet for rgba()
+    RED: '#b3121c',
+    GHOST_RED: 'rgba(200,24,34,.6)',
+    GHOST_GREY: 'rgba(150,146,140,.45)',
+    SANS: 'Archivo, "Helvetica Neue", Arial, sans-serif',
+    SERIF: '"Instrument Serif", Georgia, serif',
+    MONO: '"Courier Prime", "Courier New", monospace',
+    FONT_SPECS: ['600 58px Archivo', '800 70px Archivo', '150px "Instrument Serif"', 'italic 30px "Instrument Serif"', '16px "Courier Prime"'],
+    FONT_WAIT_MS: 1200,
+    EXITS: [3.6, 7.5, 12.5, 16.4],  // when each beat starts to leave; a click fast-forwards to the next one
+    END: 17.2,
+    FF_RATE: 9,                     // timeline speed while fast-forwarding after a click
+    MIN_START: 0.6,                 // seconds before input can advance
+    MIN_GAP_MS: 380,                // input closer together than this is ignored (double clicks)
+    FADE_MS: 900,                   // matches the #cold-open opacity transition
+    PUSH: 0.035,                    // total push-in over the whole open
+    EXIT_DUR: 0.45,
+    // Glitch: the redacted line tears for CUT_AT s, then a hard cut to black for CUT_DUR s,
+    // and the title's first letter drops on the very next frame (TITLE_T).
+    GLITCH_T: 7.5, CUT_AT: 0.57, CUT_DUR: 0.04, SLICE_HIT: 0.14,
+    TITLE_T: 8.11, LETTER_STAG: 0.07, LETTER_DUR: 0.55,
+    // beat cue times (seconds on the cold-open timeline)
+    AT: { words: 0.35, cap: 1.5, b2: 3.75, bar: 4.6, typed: 5.4, rule: 9.65, kick: 9.8, sub: 10.15, leak: 10.0, b4a: 12.65, b4b: 13.7 },
+    // baselines in composition space (rule sits below the title's descenders)
+    Y: { words: 285, cap: 338, b2: 285, typed: 362, kick: 172, title: 300, rule: 342, sub: 398, b4a: 458, b4b: 484 },
+    // The marker lands on the truth, never on BORD's own public line (that stays in plain sight)
+    TEXT: {
+        b1: 'Facility 6 closed last month.',
+        b1cap: 'a BORD detention center · cause of closure: structural failure',
+        b2: 'It held 214 children.',
+        b2pre: 'It held ',
+        b2red: '214 children',
+        b2typed: 'the rest of this intake ledger is restricted',
+        kick: 'CASE ADJUDICATOR · LEVEL 3 · SHIFT AUTHORIZED',
+        title: 'Night Processing',
+        sub: 'terminal NP-L3-07 · your stamp is on file',
+        b4a: 'Follow the directive on your left.',
+        b4b: 'Consult the Bureau Manual [TAB]. BORD is watching.',
+        hint: 'CLICK TO CONTINUE · ESC TO SKIP'
+    },
+    // what a screen reader hears per beat
+    SR: [
+        'Facility 6 closed last month. A BORD detention center. Cause of closure: structural failure.',
+        'It held 214 children. The figure is redacted. The rest of this intake ledger is restricted.',
+        'Night Processing. Case Adjudicator, Level 3. Shift authorized. Terminal NP-L3-07. Your stamp is on file.',
+        'Follow the directive on your left. Consult the Bureau Manual with TAB. BORD is watching.'
+    ]
+};
+const coSat = u => u < 0 ? 0 : u > 1 ? 1 : u;
+const coLerp = (a, b, u) => a + (b - a) * u;
+const coOutExpo = u => { u = coSat(u); return u >= 1 ? 1 : 1 - Math.pow(2, -10 * u); };
+const coOutBack = u => { const c = 1.70158; u = coSat(u) - 1; return 1 + (c + 1) * u * u * u + c * u * u; };
+const coInOut = u => { u = coSat(u); return u < .5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2; };
+const coOutCubic = u => 1 - Math.pow(1 - coSat(u), 3);
+const coCream = a => `rgba(${CO.CREAM},${a})`;
+
+// Quiet cold-open sounds: a marker swipe, the glitch tear, the title settling.
+// No-ops until audio is running; failures never touch the intro.
+function playColdOpenCue(kind) {
+    if (!audioCtx || audioCtx.state !== 'running') return;
+    try {
+        const mg = window._audioMasterGain || audioCtx.destination;
+        const now = audioCtx.currentTime;
+        if (kind === 'land') {
+            const osc = audioCtx.createOscillator(); osc.type = 'sine';
+            osc.frequency.setValueAtTime(72, now);
+            osc.frequency.exponentialRampToValueAtTime(36, now + 0.6);
+            const gn = audioCtx.createGain();
+            gn.gain.setValueAtTime(0.0001, now);
+            gn.gain.exponentialRampToValueAtTime(0.12, now + 0.02);
+            gn.gain.exponentialRampToValueAtTime(0.001, now + 0.95);
+            osc.connect(gn); gn.connect(mg); osc.start(now); osc.stop(now + 1);
+            return;
+        }
+        const tear = kind === 'tear', dur = tear ? 0.7 : 0.6;
+        const size = Math.floor(audioCtx.sampleRate * dur);
+        const buf = audioCtx.createBuffer(1, size, audioCtx.sampleRate), d = buf.getChannelData(0);
+        const blocks = Array.from({ length: Math.ceil(size / 512) + 1 }, () => Math.random() < 0.3 ? 1 : 0.15);
+        for (let i = 0; i < size; i++) {
+            const u = i / size;
+            const env = tear ? blocks[i >> 9] * (1 - u) : Math.sin(Math.PI * u) * 0.8;
+            d[i] = (Math.random() * 2 - 1) * env;
+        }
+        const src = audioCtx.createBufferSource(); src.buffer = buf;
+        const f = audioCtx.createBiquadFilter(); f.type = 'bandpass';
+        f.frequency.value = tear ? 1800 : 3200; f.Q.value = tear ? 0.7 : 1.2;
+        const gn = audioCtx.createGain(); gn.gain.value = tear ? 0.05 : 0.018;
+        src.connect(f); f.connect(gn); gn.connect(mg); src.start(now);
+    } catch (e) {
+        console.warn('Cold open sound failed:', e);
+    }
+}
+
+function createColdOpen() {
+    const cv = document.getElementById('cold-open');
+    const srEl = document.getElementById('cold-open-sr');
+    if (!cv || !cv.getContext) return null;
+    const g = cv.getContext('2d');
+    if (!g) return null;
+    const RM = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    const S = {
+        W: 0, H: 0, dpr: 0, k: 1, LW: CO.BASE_W, LH: CO.BASE_H,
+        T: 0, ff: -1, clock: 0, lastTs: -1, raf: 0, frame: 0,
+        shown: false, running: false, waiting: false, done: false, skipping: false,
+        lastInput: 0, beat: -1, onDone: null, buf: null, fired: new Set()
+    };
+
+    // Canvas text never triggers a font download on its own, so fetch them now
+    const fontsReady = (document.fonts && document.fonts.load)
+        ? Promise.all(CO.FONT_SPECS.map(s => document.fonts.load(s).catch(() => null)))
+        : Promise.resolve();
+
+    // Seeded so the marker edge and the dust are the same every run
+    let seed = 0x5eed;
+    const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+    const MARKER = Array.from({ length: 16 }, () => [rnd() * 2 - 1, rnd() * 2 - 1]);
+    const STREAKS = Array.from({ length: 5 }, () => [rnd(), 0.3 + rnd() * 0.6, rnd()]);
+    const DUST = Array.from({ length: 64 }, () => [rnd(), rnd(), rnd() * 6.28, 0.3 + rnd()]);
+    const GRAIN = [];
+    for (let q = 0; q < 4; q++) {
+        const c = document.createElement('canvas'); c.width = c.height = 160;
+        const x = c.getContext('2d'), d = x.createImageData(160, 160);
+        for (let i = 0; i < d.data.length; i += 4) {
+            const v = Math.random() * 255;
+            d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 255;
+        }
+        x.putImageData(d, 0, 0);
+        GRAIN.push(g.createPattern(c, 'repeat'));
+    }
+
+    function fit() {
+        const dpr = Math.min(window.devicePixelRatio || 1, CO.MAX_DPR); // three full-screen fills a frame
+        const W = Math.max(1, window.innerWidth), H = Math.max(1, window.innerHeight);
+        if (W === S.W && H === S.H && dpr === S.dpr) return;
+        S.W = W; S.H = H; S.dpr = dpr;
+        cv.width = Math.max(1, Math.round(W * dpr));
+        cv.height = Math.max(1, Math.round(H * dpr));
+        S.k = Math.min(W / CO.BASE_W, H / CO.BASE_H);
+        S.LW = W / S.k; S.LH = H / S.k;
+        S.buf = null;
+    }
+
+    // device px <- viewport <- push-in about the viewport centre <- 960x540 composition
+    function setBase(push) {
+        const s = S.dpr * S.k * push;
+        g.setTransform(s, 0, 0, s, S.dpr * S.k * S.LW / 2 - s * CO.BASE_W / 2, S.dpr * S.k * S.LH / 2 - s * CO.BASE_H / 2);
+    }
+    // the whole viewport, in composition units (before push-in, so it always covers)
+    function viewRect() {
+        return [CO.BASE_W / 2 - S.LW / 2, CO.BASE_H / 2 - S.LH / 2, S.LW, S.LH];
+    }
+
+    function setFont(style, size, family) {
+        g.font = [style, size + 'px', family].filter(Boolean).join(' ');
+    }
+    // Largest size up to `size` that keeps txt within maxW; leaves the font set
+    function fitFont(txt, style, size, family, maxW = CO.MAX_TEXT_W) {
+        setFont(style, size, family);
+        const w = g.measureText(txt).width;
+        if (w <= maxW) return size;
+        const s2 = Math.max(8, Math.floor(size * maxW / w));
+        setFont(style, s2, family);
+        return s2;
+    }
+    // Letter-spaced text drawn glyph by glyph (canvas letterSpacing is not everywhere)
+    function spaced(txt, x, y, tr, align = 'center') {
+        let tot = -tr;
+        for (const ch of txt) tot += g.measureText(ch).width + tr;
+        let cx = align === 'right' ? x - tot : x - tot / 2;
+        for (const ch of txt) { g.fillText(ch, cx, y); cx += g.measureText(ch).width + tr; }
+    }
+    // Monospace line typing itself from where the full line will sit, with a blinking underscore.
+    // `widest` lets stacked lines share one left edge, like a typed page.
+    function typeLine(txt, n, y, size, alpha, cursorCol, widest = txt) {
+        setFont('', size, CO.MONO);
+        const x = CO.BASE_W / 2 - g.measureText(widest).width / 2;
+        const shown = txt.slice(0, n);
+        g.fillStyle = coCream(alpha);
+        g.fillText(shown, x, y);
+        if (cursorCol && Math.floor(S.clock * 3.75) % 2 === 0) {
+            g.fillStyle = cursorCol;
+            g.fillText('_', x + g.measureText(shown).width, y);
+        }
+    }
+
+    // Words rising into place through per-word masks, with a short trailing ghost
+    function risingWords(txt, size, cy, t0, stag, dur, T, exitT) {
+        const ws = txt.split(' ');
+        const sp = g.measureText(' ').width, wd = ws.map(w => g.measureText(w).width);
+        const tot = wd.reduce((a, b) => a + b, 0) + sp * (ws.length - 1);
+        const ex = coInOut((T - exitT) / CO.EXIT_DUR);
+        const rise = size * 1.1, lift = ex * size * 1.2;
+        let x = CO.BASE_W / 2 - tot / 2;
+        ws.forEach((w, i) => {
+            const u = coSat((T - t0 - i * stag) / dur);
+            if (u > 0) {
+                const e = RM ? 1 : coOutExpo(u), dy = (1 - e) * rise - lift;
+                g.save();
+                g.beginPath(); g.rect(x - 6, cy - size * 1.07 - lift, wd[i] + 12, size * 1.45); g.clip();
+                for (let q = 2; q >= 0; q--) {
+                    g.globalAlpha = (q ? 0.22 : 1) * (1 - ex) * Math.min(1, u * 3);
+                    g.fillText(w, x, cy + dy + q * (1 - e) * size * 0.17);
+                }
+                g.restore();
+            }
+            x += wd[i] + sp;
+        });
+        g.globalAlpha = 1;
+    }
+
+    // Red redaction bar with an uneven marker edge, revealed left to right up to rw
+    function drawMarker(x0, size, bw, rw) {
+        const top = -size * 0.83, bot = size * 0.23, pad = 6, L = x0 - pad, R = x0 + bw + pad, n = MARKER.length;
+        g.save();
+        g.beginPath(); g.rect(L - 3, top - 6, rw + pad * 2 + 3, bot - top + 12); g.clip();
+        g.fillStyle = CO.RED;
+        g.beginPath();
+        for (let i = 0; i < n; i++) g.lineTo(coLerp(L, R, i / (n - 1)) + (i === 0 ? 2 : 0), top + MARKER[i][0] * 3);
+        for (let i = n - 1; i >= 0; i--) g.lineTo(coLerp(L, R, i / (n - 1)) - (i === n - 1 ? 3 : 0), bot + MARKER[i][1] * 3);
+        g.closePath(); g.fill();
+        g.fillStyle = 'rgba(70,6,10,.35)'; // heavier marker passes inside the bar
+        for (const [py, len, px] of STREAKS) g.fillRect(coLerp(L, R - (R - L) * len, px), coLerp(top + 5, bot - 6, py), (R - L) * len, 2);
+        g.restore();
+    }
+
+    function drawBeat1(T) {
+        if (T >= CO.EXITS[0] + CO.EXIT_DUR) return;
+        const size = fitFont(CO.TEXT.b1, '600', 58, CO.SANS);
+        g.fillStyle = coCream(1);
+        risingWords(CO.TEXT.b1, size, CO.Y.words, CO.AT.words, 0.16, 0.9, T, CO.EXITS[0]);
+        const u = coOutCubic((T - CO.AT.cap) / 0.7), ex = coInOut((T - CO.EXITS[0]) / CO.EXIT_DUR);
+        if (u <= 0 || ex >= 1) return;
+        setFont('', 14, CO.MONO);
+        g.fillStyle = coCream(0.55 * u * (1 - ex));
+        spaced(CO.TEXT.b1cap, CO.BASE_W / 2, CO.Y.cap + (1 - u) * 8 - ex * 60, 1.6);
+    }
+
+    function drawBeat2(T) {
+        // Keeps drawing through the glitch so the slices tear the redacted line itself
+        if (T < CO.AT.b2 || T >= CO.GLITCH_T + CO.CUT_AT) return;
+        const u = coOutCubic((T - CO.AT.b2) / 0.6), sc = RM ? 1 : coLerp(1.12, 1, u);
+        const size = fitFont(CO.TEXT.b2, '800', 70, CO.SANS);
+        g.save();
+        g.translate(CO.BASE_W / 2, CO.Y.b2); g.scale(sc, sc);
+        g.globalAlpha = u; g.fillStyle = coCream(1); g.textAlign = 'center';
+        g.fillText(CO.TEXT.b2, 0, 0);
+        const full = g.measureText(CO.TEXT.b2).width, pre = g.measureText(CO.TEXT.b2pre).width, bw = g.measureText(CO.TEXT.b2red).width;
+        const rw = bw * coInOut((T - CO.AT.bar) / 0.7);
+        if (rw > 0) drawMarker(-full / 2 + pre, size, bw, rw);
+        g.restore();
+        const tt = CO.TEXT.b2typed, n = Math.floor(coSat((T - CO.AT.typed) / 1.0) * tt.length);
+        if (n > 0) typeLine(tt, n, CO.Y.typed, 20, 0.75, coCream(0.75));
+    }
+
+    function drawTitle(T, fade) {
+        if (T < CO.TITLE_T) return;
+        const dim = fade * (1 - 0.22 * coSat((T - CO.EXITS[2]) / 0.8)); // steps back while the orders type
+        const title = CO.TEXT.title;
+        fitFont(title, '', 150, CO.SERIF, CO.BASE_W * 0.84);
+        const x0 = CO.BASE_W / 2 - g.measureText(title).width / 2;
+        for (let i = 0; i < title.length; i++) {
+            const ch = title[i];
+            if (ch === ' ') continue;
+            const u = coSat((T - CO.TITLE_T - i * CO.LETTER_STAG) / CO.LETTER_DUR);
+            if (u <= 0) continue;
+            const e = RM ? 1 : coOutBack(u), split = 1.3 + 3 * (1 - coOutCubic(u));
+            g.save();
+            g.translate(x0 + g.measureText(title.slice(0, i)).width, CO.Y.title + (1 - e) * -70);
+            g.rotate((1 - e) * -0.14);
+            g.globalAlpha = Math.min(1, u * 2.5) * dim;
+            g.globalCompositeOperation = 'lighter';
+            g.fillStyle = CO.GHOST_RED; g.fillText(ch, -split, 0);
+            g.fillStyle = CO.GHOST_GREY; g.fillText(ch, split, 0);
+            g.globalCompositeOperation = 'source-over';
+            g.fillStyle = coCream(1); g.fillText(ch, 0, 0);
+            g.restore();
+        }
+        const ku = coOutCubic((T - CO.AT.kick) / 0.7);
+        if (ku > 0) {
+            setFont('', 12, CO.MONO);
+            g.fillStyle = coCream(0.5 * ku * dim);
+            spaced(CO.TEXT.kick, CO.BASE_W / 2, CO.Y.kick + (1 - ku) * 6, 4);
+        }
+        const lw = 520 * coOutExpo((T - CO.AT.rule) / 0.8);
+        if (lw > 0) {
+            g.globalAlpha = dim; g.fillStyle = CO.RED;
+            g.fillRect(CO.BASE_W / 2 - lw / 2, CO.Y.rule, lw, 2.5);
+            g.globalAlpha = 1;
+        }
+        const su = coSat((T - CO.AT.sub) / 1.2);
+        if (su > 0) {
+            setFont('italic', 30, CO.SERIF);
+            g.fillStyle = coCream(0.85 * su * dim);
+            spaced(CO.TEXT.sub, CO.BASE_W / 2, CO.Y.sub, coLerp(14, 2.6, coOutCubic(su)));
+        }
+    }
+
+    // A warm-neutral paper light drifting across behind the title
+    function drawLeak(T, fade) {
+        const lu = (T - CO.AT.leak) / 6.4;
+        if (lu <= 0 || lu >= 1) return;
+        const lx = coLerp(-200, CO.BASE_W + 200, lu), a = 0.075 * Math.sin(lu * Math.PI) * fade;
+        const lg = g.createRadialGradient(lx, 160, 0, lx, 160, 420);
+        lg.addColorStop(0, `rgba(236,222,196,${a})`); lg.addColorStop(1, 'rgba(236,222,196,0)');
+        const [vx, vy, vw, vh] = viewRect();
+        g.globalCompositeOperation = 'lighter'; g.fillStyle = lg;
+        g.fillRect(vx, vy, vw, vh);
+        g.globalCompositeOperation = 'source-over';
+    }
+
+    function drawBeat4(T, fade) {
+        if (T < CO.EXITS[2]) return;
+        const A = CO.TEXT.b4a, B = CO.TEXT.b4b;
+        const na = Math.floor(coSat((T - CO.AT.b4a) / 0.95) * A.length);
+        const nb = Math.floor(coSat((T - CO.AT.b4b) / 1.3) * B.length);
+        const widest = A.length > B.length ? A : B;
+        if (na > 0) typeLine(A, na, CO.Y.b4a, 16, 0.6 * fade, nb === 0 ? coCream(0.6 * fade) : null, widest);
+        if (nb > 0) typeLine(B, nb, CO.Y.b4b, 16, 0.8 * fade, `rgba(179,18,28,${fade})`, widest);
+    }
+
+    function drawDust(T, fade) {
+        const [vx, vy, vw, vh] = viewRect(), t = S.clock, lift = T > CO.TITLE_T ? 1.4 : 1;
+        for (const d of DUST) {
+            const x = vx + (d[0] * vw + t * 8 * d[3]) % vw;
+            const y = vy + ((d[1] * vh + Math.sin(t * 0.5 + d[2]) * 20) % vh + vh) % vh;
+            g.fillStyle = coCream(0.18 * lift * fade * (0.5 + 0.5 * Math.sin(t * 2 + d[2])));
+            g.fillRect(x, y, 1.6, 1.6);
+        }
+    }
+
+    // Glitch cut: the redacted line tears into displaced slices with red + grey bands,
+    // the slices catch a paper-tone hit just before the end, then a hard cut to black
+    // (no full-frame flash; only the corner hint and the grain sit over the cut).
+    function drawGlitch(T) {
+        const el = T - CO.GLITCH_T;
+        if (el < 0 || el >= CO.CUT_AT + CO.CUT_DUR) return;
+        const W = cv.width, H = cv.height;
+        g.setTransform(1, 0, 0, 1, 0, 0);
+        if (el >= CO.CUT_AT) { g.fillStyle = CO.INK; g.fillRect(0, 0, W, H); return; }
+        if (RM) return;
+        const gi = el / CO.CUT_AT, hit = coSat((el - (CO.CUT_AT - CO.SLICE_HIT)) / CO.SLICE_HIT);
+        if (!S.buf || S.buf.width !== W || S.buf.height !== H) {
+            S.buf = document.createElement('canvas'); S.buf.width = W; S.buf.height = H;
+        }
+        const bx = S.buf.getContext('2d');
+        bx.clearRect(0, 0, W, H); bx.drawImage(cv, 0, 0);
+        for (let q = 0; q < 7; q++) {
+            const y = Math.floor(Math.random() * H * 0.96), h = Math.max(1, Math.min(H - y, Math.round(H * (0.01 + Math.random() * 0.07))));
+            const dx = (Math.random() - 0.5) * W * 0.14 * (0.4 + gi);
+            g.fillStyle = CO.INK; g.fillRect(0, y, W, h);
+            g.drawImage(S.buf, 0, y, W, h, dx, y, W, h);
+            if (hit > 0) { g.fillStyle = coCream(0.5 * hit); g.fillRect(dx, y, W, h); }
+        }
+        g.globalCompositeOperation = 'lighter';
+        for (let q = 0; q < 9; q++) {
+            const y = Math.random() * H, h = H * (0.015 + Math.random() * 0.075), dx = (Math.random() - 0.5) * W * 0.12 * gi;
+            g.fillStyle = q % 2 ? `rgba(200,24,34,${0.35 * gi})` : `rgba(150,146,140,${0.26 * gi})`;
+            g.fillRect(dx, y, W, h);
+        }
+        g.globalCompositeOperation = 'source-over';
+    }
+
+    function drawHint(T, fade) {
+        const a = 0.4 * coSat((T - 0.8) / 0.8) * fade;
+        if (a <= 0) return;
+        g.setTransform(S.dpr, 0, 0, S.dpr, 0, 0);
+        setFont('', 10, CO.MONO);
+        g.fillStyle = coCream(a);
+        spaced(CO.TEXT.hint, S.W - 20, S.H - 20, 1.4, 'right');
+    }
+
+    // Vignette and film grain over everything (grain lifts the blacks a touch too)
+    function drawFilm() {
+        const W = cv.width, H = cv.height;
+        g.setTransform(1, 0, 0, 1, 0, 0);
+        const vg = g.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.35, W / 2, H / 2, Math.hypot(W, H) * 0.55);
+        vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.62)');
+        g.fillStyle = vg; g.fillRect(0, 0, W, H);
+        const sc = S.dpr * 1.25, ox = Math.random() * 160 * sc, oy = Math.random() * 160 * sc;
+        g.save();
+        g.setTransform(sc, 0, 0, sc, -ox, -oy);
+        g.fillStyle = GRAIN[(S.frame >> 1) % 4];
+        g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.035;
+        g.fillRect(0, 0, W / sc + 170, H / sc + 170);
+        g.globalCompositeOperation = 'overlay'; g.globalAlpha = 0.14;
+        g.fillRect(0, 0, W / sc + 170, H / sc + 170);
+        g.restore();
+    }
+
+    function draw(T) {
+        g.setTransform(1, 0, 0, 1, 0, 0);
+        g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+        g.fillStyle = CO.INK; g.fillRect(0, 0, cv.width, cv.height);
+        if (S.running && !S.waiting && !S.skipping) {
+            const fade = 1 - coSat((T - CO.EXITS[3]) / (CO.END - CO.EXITS[3]));
+            setBase(RM ? 1 : 1 + CO.PUSH * coInOut(T / CO.END));
+            g.textBaseline = 'alphabetic'; g.textAlign = 'left';
+            drawBeat1(T);
+            drawBeat2(T);
+            drawLeak(T, fade);
+            drawTitle(T, fade);
+            drawBeat4(T, fade);
+            drawDust(T, fade);
+            drawGlitch(T);
+            drawHint(T, fade);
+        }
+        drawFilm();
+    }
+
+    // Each cue plays once, the first frame the timeline reaches it, whether it got there by
+    // playing or by a click fast-forward (which stops exactly on EXITS[1] = GLITCH_T).
+    const CUES = [
+        [CO.AT.bar, 'swipe'],
+        [CO.GLITCH_T, 'tear'],
+        [CO.TITLE_T + (CO.TEXT.title.length - 1) * CO.LETTER_STAG + 0.35, 'land']
+    ];
+    function cues(T) {
+        for (const [t, kind] of CUES) {
+            if (T < t || S.fired.has(kind)) continue;
+            S.fired.add(kind);
+            playColdOpenCue(kind);
+        }
+    }
+
+    function updateBeat(T) {
+        const beat = CO.EXITS.findIndex(e => T < e);
+        const b = beat < 0 ? CO.EXITS.length - 1 : beat;
+        if (b === S.beat) return;
+        S.beat = b;
+        if (srEl) srEl.textContent = CO.SR[b];
+    }
+
+    function frame(ts) {
+        S.raf = 0;
+        if (!S.shown) return;
+        const dt = S.lastTs < 0 ? 0 : Math.min(0.1, Math.max(0, (ts - S.lastTs) / 1000));
+        S.lastTs = ts; S.clock += dt; S.frame++;
+        fit();
+        if (S.running && !S.waiting && !S.done) {
+            const skimming = S.ff > S.T;
+            S.T = skimming ? Math.min(S.ff, S.T + dt * CO.FF_RATE) : S.T + dt;
+            if (S.ff <= S.T) S.ff = -1;
+            cues(S.T);
+            updateBeat(S.T);
+            if (S.T >= CO.END) finish();
+        }
+        draw(S.T);
+        S.raf = requestAnimationFrame(frame);
+    }
+
+    function finish() {
+        if (S.done) return;
+        S.done = true;
+        if (srEl) srEl.textContent = '';
+        cv.classList.add('gone');
+        state.coldOpenOpaque = false; // the room shows through from here on, so render it again
+        setTimeout(() => {
+            cv.style.display = 'none';
+            S.shown = false;
+            if (S.raf) { cancelAnimationFrame(S.raf); S.raf = 0; }
+            S.buf = null;
+        }, CO.FADE_MS + 50);
+        const cb = S.onDone;
+        S.onDone = null;
+        if (cb) cb();
+    }
+
+    return {
+        // Black cover under the fading title so the poster fades to black, not to the desk
+        cover() {
+            if (S.shown || S.done) return;
+            S.shown = true;
+            cv.classList.remove('gone');
+            cv.style.display = 'block';
+            state.coldOpenOpaque = true; // animate() skips the composer while nothing of it can be seen
+            fit();
+            S.lastTs = -1;
+            if (!S.raf) S.raf = requestAnimationFrame(frame);
+        },
+        // Run the timeline; onDone fires once, when it ends or is skipped
+        play(onDone) {
+            if (S.running || S.done) return;
+            this.cover();
+            S.onDone = onDone; S.running = true; S.waiting = true; S.T = 0; S.ff = -1;
+            let released = false;
+            const release = () => { if (!released) { released = true; S.waiting = false; } };
+            fontsReady.then(release, release);
+            setTimeout(release, CO.FONT_WAIT_MS);
+        },
+        // Click / key: fast-forward to where the current beat starts leaving
+        advance() {
+            if (!S.running || S.waiting || S.done || S.T < CO.MIN_START || S.ff > S.T) return;
+            const now = performance.now();
+            if (now - S.lastInput < CO.MIN_GAP_MS) return;
+            S.lastInput = now;
+            const target = CO.EXITS.find(e => e > S.T + 0.02);
+            if (target !== undefined) S.ff = target;
+        },
+        // ESC: cut to black and hand off at once
+        skip() {
+            if (!S.running || S.done) return;
+            S.skipping = true;
+            finish();
+        }
+    };
+}
+const coldOpen = createColdOpen();
 
 // ============================================================
 // WATCHER STATES
@@ -5028,12 +6002,13 @@ document.getElementById('start-btn').addEventListener('click', () => {
     // Short delay so a few 3D frames render before the title fades
     setTimeout(() => {
         const el = document.getElementById('title-screen');
+        if (coldOpen) coldOpen.cover(); // the poster fades to black; the cold open plays on it
         el.classList.add('fade-out');
 
         // After title fully fades (1.5s CSS transition), show intro sequence
         setTimeout(() => {
             el.style.display = 'none';
-            if (titleAnimId) cancelAnimationFrame(titleAnimId);
+            stopTitlePoster();
 
             // Show UI overlay but hide the case file -intro text plays first
             document.getElementById('ui-overlay').style.display = '';
@@ -5044,88 +6019,51 @@ document.getElementById('start-btn').addEventListener('click', () => {
             state.titleFading = false;
             state.introPlaying = true;
 
-            // Intro sequence -typewriter-style status messages
-            const introLines = [
-                "Night Processing. Terminal NP-L3-07. Shift authorized.",
-                "You are Case Adjudicator, Level 3. Your stamp is on file.",
-                "Tonight's cases all originate from Facility 6. Facility 6 was a BORD detention center. It was shut down last month.",
-                "BORD says structural failure. The families say otherwise.",
-                "Process the cases. Follow the directive on your left. Consult the Bureau Manual (TAB).",
-                "BORD is watching. Begin."
-            ];
-            const statusEl = document.getElementById('office-status');
-
-            let lineIdx = 0;
-            let _introCanAdvance = false;
-            let _introAdvanceTimer = null;
-
-            function advanceIntro() {
-                if (!_introCanAdvance) return;
-                _introCanAdvance = false;
-                if (_introAdvanceTimer) { clearTimeout(_introAdvanceTimer); _introAdvanceTimer = null; }
-                statusEl.classList.remove('visible');
-                setTimeout(showIntroLine, 400);
-            }
-
-            function showIntroLine() {
-                if (lineIdx >= introLines.length) {
-                    // Intro done -remove listener, forced first lookUp to teach the mechanic
-                    document.removeEventListener('keydown', _introKeyHandler);
-                    document.removeEventListener('click', _introClickHandler);
-                    statusEl.classList.remove('visible');
+            // Cold open (motion-design intro) over the scene: click or any key
+            // advances a beat, ESC skips it all. When it ends, hand off below.
+            let _introEnded = false;
+            function endIntro() {
+                if (_introEnded) return;
+                _introEnded = true;
+                // Intro done -remove listeners, forced first lookUp to teach the mechanic
+                document.removeEventListener('keydown', _introKeyHandler);
+                document.removeEventListener('click', _introClickHandler);
+                setTimeout(() => {
+                    // Force camera up
+                    state.introPlaying = false;
+                    state.isLookingUp = true;
+                    state.targetLook = 1;
+                    // Show eye meshes for lookUp
+                    workers.forEach(w => { w.userData.leftEye.visible = true; w.userData.rightEye.visible = true; });
+                    // After 3.5 seconds, bring camera back down and show case 1
                     setTimeout(() => {
-                        // Force camera up
-                        state.introPlaying = false;
-                        state.isLookingUp = true;
-                        state.targetLook = 1;
-                        // Show eye meshes for lookUp
-                        workers.forEach(w => { w.userData.leftEye.visible = true; w.userData.rightEye.visible = true; });
-                        // After 3 seconds, bring camera back down and show case 1
+                        state.isLookingUp = false;
+                        state.targetLook = 0;
+                        // Hide eye meshes for desk view
+                        workers.forEach(w => { w.userData.leftEye.visible = false; w.userData.rightEye.visible = false; });
                         setTimeout(() => {
-                            statusEl.classList.remove('visible');
-                            state.isLookingUp = false;
-                            state.targetLook = 0;
-                            // Hide eye meshes for desk view
-                            workers.forEach(w => { w.userData.leftEye.visible = false; w.userData.rightEye.visible = false; });
-                            setTimeout(() => {
-                                document.getElementById('look-hint').style.display = '';
-                                renderCase(getCurrentShiftCases()[0]);
-                                updateWatchers();
-                            }, 600);
-                        }, 3500);
-                    }, 800);
-                    return;
-                }
-                statusEl.innerHTML = introLines[lineIdx] + '<div style="font-size:9px; color:#555; margin-top:8px; letter-spacing:0.1em;">click to continue \u00B7 ESC to skip</div>';
-                statusEl.classList.add('visible');
-                statusEl.classList.remove('danger');
-                lineIdx++;
-                // Allow advance after 1200ms minimum read time (prevents accidental skip)
-                setTimeout(() => { _introCanAdvance = true; }, 1200);
-                // Auto-advance after 15 seconds if player doesn't click
-                _introAdvanceTimer = setTimeout(advanceIntro, 15000);
+                            document.getElementById('look-hint').style.display = '';
+                            renderCase(getCurrentShiftCases()[0]);
+                            updateWatchers();
+                        }, 600);
+                    }, 3500);
+                }, 800);
             }
 
-            // Click or any key advances intro -ignore held keys (e.repeat)
-            // ESC skips entire intro sequence
+            // Ignore held keys (e.repeat); ESC skips the whole cold open
             function _introKeyHandler(e) {
                 if (!state.introPlaying || e.repeat) return;
                 e.preventDefault();
-                if (e.key === 'Escape') {
-                    // Skip all remaining lines -jump to post-intro
-                    if (_introAdvanceTimer) { clearTimeout(_introAdvanceTimer); _introAdvanceTimer = null; }
-                    lineIdx = introLines.length;
-                    statusEl.classList.remove('visible');
-                    setTimeout(showIntroLine, 200);
-                } else {
-                    advanceIntro();
-                }
+                if (!coldOpen) return;
+                if (e.key === 'Escape') coldOpen.skip();
+                else coldOpen.advance();
             }
-            function _introClickHandler() { if (state.introPlaying) advanceIntro(); }
+            function _introClickHandler() { if (state.introPlaying && coldOpen) coldOpen.advance(); }
             document.addEventListener('keydown', _introKeyHandler);
             document.addEventListener('click', _introClickHandler);
 
-            setTimeout(showIntroLine, 800); // brief pause before first line
+            if (coldOpen) coldOpen.play(endIntro);
+            else endIntro();
         }, 1600); // slightly longer than the 1.5s CSS transition
     }, 100);
 });
@@ -6198,7 +7136,7 @@ document.getElementById('restart-btn').addEventListener('click', () => {
 
         setTimeout(() => {
             titleEl.style.display = 'none';
-            if (typeof titleAnimId !== 'undefined' && titleAnimId) cancelAnimationFrame(titleAnimId);
+            stopTitlePoster();
 
             // Show UI overlay (endings expect it)
             document.getElementById('ui-overlay').style.display = '';
@@ -6836,14 +7774,47 @@ function playHeavyFootsteps(count, callback) {
 // ============================================================
 const clock = new THREE.Clock();
 
+// The room behind the title poster: one composer frame from the chair, tilted between desk
+// and aisle (ROT_X) so the lamp-lit desk edge, lamp and terminal glow read against the dark
+// office (looking fully up the aisle is almost pure black; eyes stay off). Copied into
+// #title-room, where CSS blurs and dims it. Taken once the scene has settled and again after
+// a resize; the live 3D canvas stays covered.
+const TITLE_ROOM = { pending: true, DELAY: 0.35, SCALE: 0.5, ROT_X: -0.68 };
+function paintTitleRoom(t) {
+    TITLE_ROOM.pending = false;
+    const out = document.getElementById('title-room');
+    if (!out || !out.getContext) return;
+    const prevX = camera.rotation.x;
+    try {
+        camera.rotation.x = TITLE_ROOM.ROT_X;
+        noirPass.uniforms.time.value = t;
+        composer.render();
+        // Same task as the render, so the drawing buffer is still readable
+        const src = renderer.domElement;
+        out.width = Math.max(1, Math.round(window.innerWidth * TITLE_ROOM.SCALE));
+        out.height = Math.max(1, Math.round(window.innerHeight * TITLE_ROOM.SCALE));
+        const c = out.getContext('2d');
+        if (!c) return;
+        c.drawImage(src, 0, 0, out.width, out.height);
+        out.classList.add('ready');
+    } catch (e) {
+        console.warn('Title room frame failed; the plain wall stays:', e);
+    } finally {
+        camera.rotation.x = prevX;
+        renderer.clear();
+    }
+}
+
 function animate() {
     requestAnimationFrame(animate);
     const dt = Math.min(clock.getDelta(), 0.1); // clamp to 100ms max to prevent spiral on tab-switch
     const t = clock.getElapsedTime();
 
-    // Don't render scene until title is dismissed -just clear black
+    // Don't render the live scene until the title is dismissed; the poster's backdrop
+    // gets a single still of the room instead
     if (!state.started && !state.titleFading) {
-        renderer.clear();
+        if (TITLE_ROOM.pending && t > TITLE_ROOM.DELAY) paintTitleRoom(t);
+        else renderer.clear();
         return;
     }
 
@@ -6893,7 +7864,7 @@ function animate() {
     updateAudio();
 
     noirPass.uniforms.time.value = t;
-    composer.render();
+    if (!state.coldOpenOpaque) composer.render();
 }
 animate();
 
@@ -7156,7 +8127,7 @@ window.addEventListener('resize', () => {
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
     composer.setSize(window.innerWidth, window.innerHeight);
-    resizeTitleCanvas();
+    if (!state.started && !state.titleFading) TITLE_ROOM.pending = true; // retake the poster's backdrop
 });
 
 
