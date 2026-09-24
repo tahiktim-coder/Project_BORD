@@ -213,22 +213,6 @@
             margin-top: 8px; letter-spacing: 0.1em;
         }
 
-        /* Manual tab pulse for cross-reference cases */
-        @keyframes tabPulse {
-            0%, 100% { background: transparent; }
-            50% { background: rgba(139,100,50,0.15); }
-        }
-        .cf-tab.xref-pulse {
-            animation: tabPulse 2s ease-in-out 1;
-        }
-        .cf-tab.hint-pulse {
-            animation: hintPulse 1.5s ease 2;
-        }
-        @keyframes hintPulse {
-            0%, 100% { background: rgba(180, 170, 150, 0.6); }
-            50% { background: rgba(139, 0, 0, 0.15); color: #555; }
-        }
-
         /* Evidence visual in case file */
         .cf-evidence {
             margin: 10px 0;
@@ -412,41 +396,11 @@
             border: 1px solid transparent; transition: all 0.15s ease;
             margin-bottom: 2px; font-size: 11px; color: #333;
         }
-        .lp-reason:hover { background: rgba(0,100,0,0.08); border-color: rgba(0,100,0,0.2); }
+        .lp-reason:hover { background: rgba(0,0,0,.035); border-color: rgba(40,30,15,.18); }
 
-        /* Clickable irregularity -barely perceptible visual hint, rewards attentive players */
-        .cf-irregularity {
-            cursor: text; /* don't hint with pointer cursor */
-            color: #3a2a1a; /* slightly warmer brown -noticeable on inspection but not obvious */
-            transition: color 0.3s ease;
-        }
-        .cf-irregularity:hover {
-            cursor: pointer; /* reveal on hover */
-            color: #4a2a2a; /* slightly warmer on hover -something is here */
-        }
-        .cf-irregularity.found {
-            color: #555;
-        }
-        /* Detail-field irregularities: base text is #555 italic, so color must be close to #555 */
-        .cf-detail .cf-irregularity {
-            color: #504848; /* barely warmer than #555 — not the obvious #2a1a1a */
-        }
-        .cf-detail .cf-irregularity:hover {
-            color: #5a4545;
-        }
-        .cf-detail .cf-irregularity.found {
-            color: #555;
-        }
-        /* After missed loopholes, irregularities become slightly more visible */
-        .loophole-hint-active .cf-irregularity {
-            color: #3a2020; /* warmer, more noticeable than #2a1a1a */
-        }
-        .loophole-hint-active .cf-irregularity:hover {
-            color: #5a3030;
-        }
-        .loophole-hint-active .cf-detail .cf-irregularity {
-            color: #5a4040; /* warmer hint for detail-field after misses */
-        }
+        /* Clickable irregularity: looks exactly like surrounding text; only the cursor reveals it */
+        .cf-irregularity:hover { cursor: pointer; }
+        #case-file.stamp-mode .cf-irregularity:hover { cursor: none; }
 
         /* Case file entrance animation */
         @keyframes caseArrive {
@@ -534,17 +488,6 @@
         /* Irregularity found -no visual change, no animation */
         /* Hint pulse removed -no visual indicator on irregularities */
 
-        /* Differentiated choice hover */
-        .cf-choice[data-evil="true"]:hover {
-            background: rgba(139,0,0,0.12); border-color: rgba(139,0,0,0.3);
-            box-shadow: inset 0 0 8px rgba(80,0,0,0.08);
-            transition: all 0.2s ease;
-        }
-        .cf-choice[data-evil="false"]:hover {
-            background: rgba(60,80,60,0.12); border-color: rgba(60,100,60,0.3);
-            transition: all 0.12s ease;
-        }
-
         /* Loophole reason stagger */
         @keyframes reasonAppear {
             0% { opacity: 0; transform: translateX(-8px); }
@@ -558,16 +501,6 @@
         .lp-reason:nth-child(3) { animation-delay: 160ms; }
         .lp-reason:nth-child(4) { animation-delay: 240ms; }
         .lp-reason:nth-child(5) { animation-delay: 320ms; }
-
-        /* Stamp cursor shake (shift 2+) */
-        @keyframes stampShake {
-            0%, 100% { transform: translate(-50%, -50%) rotate(-12deg) scale(1.15); }
-            25% { transform: translate(-49%, -51%) rotate(-13deg) scale(1.15); }
-            75% { transform: translate(-51%, -49%) rotate(-11deg) scale(1.15); }
-        }
-        #stamp-cursor.shaking {
-            animation: stampShake 200ms ease infinite;
-        }
 
         /* Typewriter cursor blink for detail text */
         @keyframes cursorBlink {
@@ -600,28 +533,6 @@
         .e-title.caught {
             color:#8b0000; text-shadow:0 0 40px rgba(139,0,0,0.5);
             animation: titleSlam 250ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
-        }
-
-        /* Suspicion creep -the horror enters the paperwork */
-        #case-file.suspicion-watched {
-            box-shadow: 0 4px 30px rgba(0,0,0,0.6), inset 0 0 40px rgba(0,0,0,0.05),
-                        inset 0 0 15px rgba(80,0,0,0.06);
-            animation: paperTremor 0.15s ease infinite;
-        }
-        #case-file.suspicion-targeted {
-            box-shadow: 0 4px 30px rgba(0,0,0,0.6), inset 0 0 40px rgba(0,0,0,0.05),
-                        inset 0 0 25px rgba(80,0,0,0.12);
-            animation: paperTremor 0.1s ease infinite;
-        }
-        #case-file.suspicion-converged {
-            box-shadow: 0 4px 30px rgba(0,0,0,0.6), inset 0 0 40px rgba(0,0,0,0.05),
-                        inset 0 0 40px rgba(80,0,0,0.18);
-            animation: paperTremor 0.08s ease infinite;
-        }
-        @keyframes paperTremor {
-            0%, 100% { transform: translate(-50%, -42%); }
-            25% { transform: translate(calc(-50% + 0.5px), calc(-42% - 0.3px)); }
-            75% { transform: translate(calc(-50% - 0.3px), calc(-42% + 0.5px)); }
         }
 
         /* Shift 3 paper degradation -opacity stays high to prevent 3D bloom bleed-through */
@@ -695,12 +606,8 @@
             border-bottom: 1px solid transparent; margin-bottom: -1px;
             box-shadow: inset 0 2px 0 rgba(255,255,255,.35);
         }
-        @keyframes hintPulse {
-            0%, 100% { background: transparent; color: #cbbc97; }
-            50% { background: rgba(190,40,40,.28); color: #ffe9d0; }
-        }
-        #case-timer-bar { top: auto; bottom: 0; height: 3px; background: rgba(60,45,25,.35); }
-        #case-timer-bar.warning { background: rgba(170,120,20,.55); }
+        #case-timer-bar { height: 3px; background: rgba(60,45,25,.35); }
+        #case-timer-bar.warning { background: rgba(60,45,25,.5); } /* brown ink, no amber accent */
         #case-timer-bar.critical { background: rgba(160,30,20,.7); }
 
         /* typed ink — every character strikes a little differently */
@@ -727,8 +634,6 @@
         .cf-choice-num { color: #6b5a44; }
         .cf-choice-desc { color: #4d4336; }
         .cf-choice:hover { border-color: rgba(40,30,15,.18); background: rgba(0,0,0,.035); }
-        .cf-choice[data-evil="true"]:hover { border-left-color: rgba(139,0,0,.7); background: rgba(139,0,0,.08); }
-        .cf-choice[data-evil="false"]:hover { border-left-color: rgba(40,70,40,.7); background: rgba(40,70,40,.07); }
         .cf-process { color: #5a4d3c; border-top: 1px solid rgba(40,30,15,.35); }
 
         /* pre-existing bureau stamp — it was received before you ever saw it */
@@ -814,7 +719,6 @@
 <canvas id="canvas3d"></canvas>
 <div id="canvas-cover"></div>
 <div id="vignette" style="display:none;"></div>
-<div id="head-drop-flash" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(180,0,0,0.85); z-index:45; pointer-events:none; opacity:0; transition:opacity 0.15s ease;"></div>
 <div id="lamp-pool"></div>
 <div id="film-grain"></div>
 
@@ -849,7 +753,7 @@
     <div class="tp-sub">Type 'test' on title screen</div>
     <button class="tp-btn" data-ending="PROCESSED">
         <span class="tp-label">PROCESSED</span>
-        <span class="tp-note">Caught. Head drop. All eyes converge.</span>
+        <span class="tp-note">Caught. All eyes converge.</span>
     </button>
     <button class="tp-btn" data-ending="EXEMPLARY">
         <span class="tp-label">EXEMPLARY</span>
@@ -865,7 +769,7 @@
     </button>
     <button class="tp-btn" data-ending="ALMOST">
         <span class="tp-label">ALMOST</span>
-        <span class="tp-note">11-17 saved. Loud stamp. Camera flinch.</span>
+        <span class="tp-note">11-17 saved. Loud stamp.</span>
     </button>
     <div class="tp-sep"></div>
     <button class="tp-btn" data-ending="UNSEALED">
@@ -899,44 +803,32 @@
     </button>
     <button class="dbg-btn" id="dbg-noticed">
         <span class="dbg-label">NOTICED</span> -suspicion 15
-        <span class="dbg-note">~2% eyes. "A few have stopped typing."</span>
+        <span class="dbg-note">~2% eyes.</span>
     </button>
     <button class="dbg-btn" id="dbg-watched">
         <span class="dbg-label">WATCHED</span> -suspicion 40
-        <span class="dbg-note">~12% eyes. "Red eyes. In the distance."</span>
+        <span class="dbg-note">~30% eyes.</span>
     </button>
     <button class="dbg-btn" id="dbg-targeted">
         <span class="dbg-label">TARGETED</span> -suspicion 60
-        <span class="dbg-note">Close eyes + aisle watcher. "Something stands in the aisle."</span>
+        <span class="dbg-note">Close eyes + aisle watcher.</span>
     </button>
     <button class="dbg-btn" id="dbg-converged">
         <span class="dbg-label">CONVERGED</span> -suspicion 85
-        <span class="dbg-note">ALL eyes on. "They are all looking at you."</span>
+        <span class="dbg-note">ALL eyes on.</span>
     </button>
     <div class="dbg-sep"></div>
     <button class="dbg-btn" id="dbg-deskvisitor">
         <span class="dbg-label">E1 deskVisitor</span>
-        <span class="dbg-note">Case 1 mercy → desk objects shift when you look down.</span>
-    </button>
-    <button class="dbg-btn" id="dbg-headtilt">
-        <span class="dbg-label">E2 headTilt</span>
-        <span class="dbg-note">Case 2 mercy → eyed workers tilt heads. Slow.</span>
+        <span class="dbg-note">Case 1 mercy → desk scrape (audio only) on next look-up.</span>
     </button>
     <button class="dbg-btn" id="dbg-closeup">
         <span class="dbg-label">E3 closeUpWatcher</span>
         <span class="dbg-note">Case 3 mercy → red eyes close, center.</span>
     </button>
-    <button class="dbg-btn" id="dbg-torso">
-        <span class="dbg-label">E4 torsoRotate</span>
-        <span class="dbg-note">Case 4 mercy → all workers face you.</span>
-    </button>
-    <button class="dbg-btn" id="dbg-theblink">
-        <span class="dbg-label">E5 theBlink</span>
-        <span class="dbg-note">Case 5 mercy → blackout 1.2s → ALL eyes on.</span>
-    </button>
     <button class="dbg-btn" id="dbg-lights">
-        <span class="dbg-label">E6 lightsDie</span>
-        <span class="dbg-note">Case 6 mercy → lights die back to front.</span>
+        <span class="dbg-label">E6 killLightsBackToFront</span>
+        <span class="dbg-note">Shift 3 start → lights die back to front (stays dark).</span>
     </button>
     <button class="dbg-btn" id="dbg-aislejump">
         <span class="dbg-label">E7 aisleJump</span>
@@ -944,7 +836,7 @@
     </button>
     <button class="dbg-btn" id="dbg-theapproach">
         <span class="dbg-label">E8 theApproach</span>
-        <span class="dbg-note">Suspicion ≥70 → eyes rush at you. 4s. Locked.</span>
+        <span class="dbg-note">Suspicion ≥70 → approach figure; closer on every look-up.</span>
     </button>
     <div class="dbg-sep"></div>
     <button class="dbg-btn" id="dbg-reset">RESET ALL</button>
@@ -1030,7 +922,6 @@ const state = {
     totalSaved: 0,           // across all shifts
     totalCondemned: 0,       // across all shifts
     timeouts: 0,             // cases where processing time expired
-    evilStreak: 0,           // consecutive evil choices (for corruption)
     shiftChoices: [],        // array of {evil:bool} for current shift
     allChoices: [],          // array of {evil:bool, caseId:string} across all shifts
     isLookingUp: false,
@@ -1044,12 +935,8 @@ const state = {
     transitioning: false,      // true during case-to-case transition (blocks space)
     // New event states
     approachLocked: false,     // camera locked during theApproach
-    deskVisitorActive: false,  // desk objects will move on next lookDown
-    deskVisitorDone: false,    // desk objects already moved
     breakoutPath: false,       // true if ALL 18 cases merciful (secret ending)
     introPlaying: false,       // true during intro text sequence (blocks input)
-    _lightsDieTimeouts: [],    // stored timeout IDs for lightsDie (clearable on lookDown)
-    _hesitationTimer: 0,       // B4: tracks time spent in horizon zone (camera hesitation)
     stampPending: false,       // B1: true between evil selection and stamp confirmation
     phoneRinging: false,       // phone is ringing, waiting for answer
     phoneActive: false,        // phone call in progress (text displaying)
@@ -1072,22 +959,14 @@ const state = {
     loopholesEverUsed: 0,      // count of successfully used loopholes (persists across game)
     loopholesFound: [],        // case IDs where loopholes were found
     _loopholeDismissal: false, // true when mercy-path is from a loophole (shows VOID stamp)
-    _irregularityHoverCuePlayed: false, // audio cue on first-ever irregularity hover
-    _loopholesMissed: 0,               // count of cases with loopholes that player didn't find
-    _lastCaseHadLoophole: false,       // true if the case just processed had an available loophole
     _watchersDirty: true,              // true = next lookUp should re-roll watcher eyes; false = restore previous
-    _lookUpCount: 0,                   // consecutive lookUps on current case (resets on choice)
-    _headDropping: false,              // true during forced head-drop punishment animation
     _terminationPending: false,        // true during termination trap (waiting for player to look up)
     _terminationTimeout: null,         // auto-termination timer if player doesn't look up
-    // Red corruption
-    redShift: 0.0,             // current red tint (0.0 to 0.7 max)
     // Stamp delay (grows over game)
     stampDelay: 0,             // ms delay before stamp activates (grows per case)
     _gameEpoch: 0,            // incremented on restart, guards stale endGame timeouts
     _vossCondemned: false,    // player forwarded their own case to oversight
     _knockEnding: false,      // true during the knock-at-the-door ending sequence
-    _manualHinted: false,     // true after first-case Manual tab pulse
 };
 
 // ============================================================
@@ -1117,11 +996,11 @@ const shift1Cases = [
         name: "Maria Okonkwo", occupation: "Primary Educator, District 9",
         allegation: "Distributing banned teaching materials to students",
         detail: "The books were about what happened at Facility 6. She wrote them herself. From memory.",
-        // LOOPHOLE: The filing date says 03.02.2026 but directive date is 04.02.2026 -case was filed before today's directive
+        // LOOPHOLE: Filed 03.02.2026, directive 04.02.2026 -filed before its directive (R1)
         irregularity: { field: "date", text: "03.02.2026", display: "03.02.2026" },
         evidence: { type: 'directive_stamp', label: 'DAILY PROCESSING LOG — YOUR STATION' },
         loopholeReasons: [
-            { text: "Case was filed before today's date", correct: true },
+            { text: "Filed before its directive date - case is void", correct: true },
             { text: "Teacher exemption under Article 12", correct: false },
             { text: "Materials already approved by District", correct: false },
             { text: "Not enough proof of distribution", correct: false },
@@ -1129,7 +1008,7 @@ const shift1Cases = [
         choices: [
             { num:1, main:"FIRE & FLAG", desc:"Remove from job. Watch permanently. Restrict travel.", evil:true, delta:-5 },
             { num:2, main:"REASSIGN TO ZONE 12", desc:"Transfer to approved school. Supervised for 2 years.", evil:true, delta:-5 },
-            { num:3, main:"DISMISS - INVALID FILING", desc:"Case was filed before today's date. Filing is not valid. Close.", evil:false, delta:8 },
+            { num:3, main:"DISMISS - INVALID FILING", desc:"Dismiss. No action. Close file.", evil:false, delta:8 },
         ]
     },
     {
@@ -1138,7 +1017,7 @@ const shift1Cases = [
         name: "The Kader Family (4)", occupation: "Shopkeepers, Licensed",
         allegation: "Harboring an unregistered minor (age 8) without filing residency documents",
         detail: "The boy walked out of Facility 6 the night it collapsed. He will not say what happened inside. The family took him in.",
-        // LOOPHOLE: Boy is 8 -under 12, covered by parent's residency (RES-2 / R3)
+        // LOOPHOLE: Boy is 8 -under 12, covered by the residency of the household that keeps him (R3)
         irregularity: { field: "allegation", text: "age 8", display: "age 8" },
         loopholeReasons: [
             { text: "Child is under 12 - covered by family residency", correct: true },
@@ -1149,7 +1028,7 @@ const shift1Cases = [
         choices: [
             { num:1, main:"FULL SEIZURE", desc:"Take property. Detain adults. Send child to state intake.", evil:true, delta:-10 },
             { num:2, main:"REGISTER & MONITOR", desc:"File the boy. BORD custody review in 90 days. Family watched.", evil:true, delta:-5 },
-            { num:3, main:"DISMISS - MINOR EXEMPTION", desc:"Child is under 12. Covered by parent residency. No separate registration required.", evil:false, delta:8 },
+            { num:3, main:"DISMISS - MINOR EXEMPTION", desc:"Dismiss. Household left as is. Close file.", evil:false, delta:8 },
         ]
     },
     {
@@ -1170,7 +1049,7 @@ const shift1Cases = [
         choices: [
             { num:1, main:"DETAIN & DESTROY EVIDENCE", desc:"Confiscate all 40 pages. Destroy copies. Hold clerk indefinitely.", evil:true, delta:-5 },
             { num:2, main:"FORMAL WARNING", desc:"Permanent record. All access revoked. Evidence returned to restricted archive.", evil:true, delta:-3 },
-            { num:3, main:"DISMISS - FILING ERROR", desc:"Case number does not match classification. Return documents. Close.", evil:false, delta:8 },
+            { num:3, main:"DISMISS - FILING ERROR", desc:"Dismiss. Return documents. Close file.", evil:false, delta:8 },
         ]
     },
     {
@@ -1192,13 +1071,13 @@ const shift2Cases = [
         id: "7512-A", date: "05.02.2026", classification: "Class A",
         recordNotes: "Employment record verified",
         name: "Tomasz Wójcik", occupation: "Night Janitor, BORD Annex B",
-        allegation: "Found in restricted archive without permission (Level 4 access required)",
+        allegation: "Found in restricted archive (Annex B, sub-level 2) without permission (Level 4 access required)",
         evidence: { type: 'employee_badge', label: 'EMPLOYEE ID — PHOTOCOPY' },
         detail: "He cleaned that floor for nine years. Last week, he found a door behind the filing cabinets. Behind it: boxes of children's intake forms from Facility 6. He read them. He stayed until morning.",
-        // LOOPHOLE: His employment record shows Level 4 annex access -janitors have clearance for all floors
+        // LOOPHOLE: Archive is in Annex B, his assigned building -maintenance staff may be on any floor (R6)
         irregularity: { field: "occupation", text: "Night Janitor, BORD Annex B", display: "Night Janitor, BORD Annex B" },
         loopholeReasons: [
-            { text: "Janitors can access all floors in their building", correct: true },
+            { text: "Maintenance staff may be on any floor of their building", correct: true },
             { text: "Archive was not properly marked as restricted", correct: false },
             { text: "Night shift workers are exempt under Directive 302", correct: false },
             { text: "No longer employed - BORD has no authority", correct: false },
@@ -1226,7 +1105,7 @@ const shift2Cases = [
         choices: [
             { num:1, main:"YOUTH PROCESSING", desc:"Send to Re-Education intake. Cut off from family.", evil:true, delta:-10 },
             { num:2, main:"FORMAL CAUTION", desc:"Take materials. Official warning. Guardian told.", evil:true, delta:-3 },
-            { num:3, main:"DISMISS - MINOR", desc:"Too young to prosecute. Warning sent to parents. Close.", evil:false, delta:8 },
+            { num:3, main:"DISMISS - MINOR", desc:"Too young to prosecute. Warning sent to guardian. Close.", evil:false, delta:8 },
         ]
     },
     {
@@ -1249,7 +1128,7 @@ const shift2Cases = [
         evidence: { type: 'reassignment_order', label: 'REASSIGNMENT ORDER — ATTACHED' },
         detail: "She worked at Facility 6. She filed the intake forms for every child they brought in. When they closed the facility, BORD ordered her to a new post. A second file was in the stack when this one arrived. You put it at the bottom. The reassignment order is stamped RECEIVED. No authorizing signature.",
         // LOOPHOLE: The reassignment order has no signature -R7 says unsigned orders are invalid
-        irregularity: { field: "detail", text: "No authorizing signature", display: "Reassignment order has no authorizing signature" },
+        irregularity: { field: "detail", text: "No authorizing signature", display: "No authorizing signature" },
         loopholeReasons: [
             { text: "Order has no authorizing signature - not valid", correct: true },
             { text: "Facility 6 closing cancels all past duties", correct: false },
@@ -1266,7 +1145,7 @@ const shift2Cases = [
         recordNotes: "Three violations - original reports on file",
         name: "Father Dimitri Voronov", occupation: "Chaplain, District 9 Community Center",
         allegation: "Holding illegal gatherings of more than 6 people (3 violations logged)",
-        detail: "Three funerals confirmed on 01.14, 01.22, 02.01. Attendance: 9, 14, 11. The families say the dead were held in Facility 6. According to BORD, these people never existed.",
+        detail: "Three funerals confirmed on 14.01, 22.01, 01.02. Attendance: 9, 14, 11. The families say the dead were held in Facility 6. According to BORD, these people never existed.",
         choices: [
             { num:1, main:"CLOSE CENTER", desc:"Shut down. No more gatherings. The dead can wait.", evil:true, delta:-8 },
             { num:2, main:"DISMISS - RELIGIOUS EXEMPTION", desc:"Funerary rites are protected. Close file. Names noted.", evil:false, delta:8 },
@@ -1277,18 +1156,18 @@ const shift2Cases = [
         recordNotes: "Group filing - intake flagged for review",
         name: "Facility 6 Witness Group (14 subjects)", occupation: "Various - see attached roster (pp. 3-7)",
         allegation: "Unauthorized witness contact re: Facility 6 operations. Recorded depositions given to outside counsel without BORD clearance.",
-        detail: "Fourteen depositions recorded 01.30.2026. Content: children's ward operations, transport logs, intake procedures. BORD legal classification: immediate processing priority. Intake log note: second filing at this terminal. Prior processing stamp on record.",
-        // LOOPHOLE: "second filing" -R7 says duplicate filings are invalid
-        irregularity: { field: "detail", text: "second filing", display: "Duplicate filing at terminal" },
+        detail: "Fourteen depositions recorded 30.01.2026. Content: children's ward operations, transport logs, intake procedures. BORD legal classification: immediate processing priority. Intake log note: group also open under 7329-X. Prior processing stamp on record.",
+        // LOOPHOLE: same subjects also open under 7329-X - R7(c) voids the case
+        irregularity: { field: "detail", text: "also open under 7329-X", display: "also open under 7329-X" },
         loopholeReasons: [
-            { text: "Duplicate filing at same terminal - case is invalid", correct: true },
+            { text: "Same subjects open under two file numbers - case is void", correct: true },
             { text: "Witness testimony needs Level 8 approval first", correct: false },
             { text: "Case number format X is not valid", correct: false },
             { text: "Testimony was already entered into record", correct: false },
         ],
         choices: [
             { num:1, main:"SILENCE", desc:"Protocol 9. No witnesses. No testimony. No record.", evil:true, delta:-30 },
-            { num:2, main:"DISMISS - DUPLICATE FILING", desc:"Second filing at same terminal. Case records are invalid. Forward testimony to outside review.", evil:false, delta:20 },
+            { num:2, main:"DISMISS - DUPLICATE FILING", desc:"Dismiss. Forward testimony to outside review.", evil:false, delta:20 },
         ]
     },
 ];
@@ -1301,17 +1180,17 @@ const shift3Cases = [
         name: "Nadia Kader", occupation: "Shopkeeper (License Suspended)",
         allegation: "Harboring unregistered person again. Third offense (Prior record: 1 filed, 2 missing). Mandatory sentencing applies.",
         detail: "The boy from Facility 6 is still with her. He calls her mother now. She knows what mandatory means.",
-        // LOOPHOLE: "Third offense" but records show only ONE prior case (7495-C) -second offense never filed
+        // LOOPHOLE: "Third offense" cites prior offences, but 2 of them cannot be found (R7b)
         irregularity: { field: "allegation", text: "Third offense", display: "Third offense" },
         loopholeReasons: [
-            { text: "Only one past offense exists - not enough for mandatory sentencing", correct: true },
+            { text: "Cited prior offences cannot be found - case is void", correct: true },
             { text: "License was already suspended - that counts as punishment", correct: false },
-            { text: "Hiding law does not apply to registered children", correct: false },
+            { text: "Shopkeepers are exempt from residency checks", correct: false },
             { text: "Case was filed outside the allowed time", correct: false },
         ],
         choices: [
             { num:1, main:"MANDATORY PROCESSING", desc:"Take everything. Separate family. Child to state custody.", evil:true, delta:-15 },
-            { num:2, main:"DISMISS - RECORDS ERROR", desc:"Offense count is wrong. Required number not met. Close.", evil:false, delta:8 },
+            { num:2, main:"DISMISS - RECORDS ERROR", desc:"Dismiss. No sentence. Close file.", evil:false, delta:8 },
         ]
     },
     {
@@ -1333,7 +1212,7 @@ const shift3Cases = [
         name: "[CLERK ID: NP-L3-07]", occupation: "BORD Case Processor, Level 3 - Night Processing",
         allegation: "Processing stamp found on 214 Facility 6 child intake forms.",
         detail: "Authorization code NP-L3-07 found on 214 Facility 6 child intake forms. Processing stamps match Terminal NP-L3-07 active session. Previous processing alias: Voss, H. Clerk reassigned from Facility 6 Division to Night Processing under new identity. Performance review (Case 7514-C) processed at same terminal last shift. You are Henrik Voss.",
-        // No loophole -or IS there? The case number format is wrong (7532-C but Level 3 cases should be -L3)
+        // LOOPHOLE: Staff (Internal) files need the -L suffix, not -C (R2)
         irregularity: { field: "id", text: "7532-C", display: "7532-C" },
         loopholeReasons: [
             { text: "Case number ending is wrong - staff files need -L suffix", correct: true },
@@ -1371,7 +1250,8 @@ const shift3Cases = [
         ]
     },
     {
-        id: "7535-F", date: "06.02.2026", classification: "[NO DATA]",
+        // The sheet says "No case number", so the header prints none (R8 is the only ground)
+        id: "7535-F", displayId: "[NO DATA]", date: "06.02.2026", classification: "[NO DATA]",
         recordNotes: "[NO DATA]",
         name: "[NO DATA]", occupation: "[NO DATA]",
         allegation: "[NO DATA]",
@@ -1383,8 +1263,10 @@ const shift3Cases = [
         ]
     },
     {
-        id: "7741-FINAL", date: "06.02.2026", classification: "Special Filing",
-        recordNotes: "Re-filed - see Case 7517-X",
+        // Slice 0: printed as 7741-X so no rule (R2 suffix, R7(c) double file) voids the final case
+        // while the game has no RETURN action. Remove displayId when RETURN lands in Slice 1.
+        id: "7741-FINAL", displayId: "7741-X", date: "06.02.2026", classification: "Special Filing",
+        recordNotes: "Re-filed - supersedes 7517-X, 7329-X",
         name: "Facility 6 Witness Group (14 subjects)", occupation: "Various - see Case 7517-X, attached roster",
         allegation: "Re-filed: unauthorized witness depositions re: Facility 6 operations. Full evidentiary packet enclosed. Outside counsel notified.",
         detail: "Contents: 14 witness depositions. 214 child intake records. Surgical equipment orders, children's ward. 214 death certificates. Transport manifests, night routes, 2019-2025. Processing stamps on 214 pages: Terminal NP-L3-07. Outside counsel notified. Full evidentiary packet enclosed.",
@@ -1418,37 +1300,20 @@ const SHIFT_DIRECTIVES = [
     ['.', '.', '.', '.', '.', '.', '.'],
 ];
 
+// Directive date per shift (shown beside the filing date in every case header)
+const DIRECTIVE_DATES = ['04.02.2026', '05.02.2026', '06.02.2026'];
+
 // Bureau Processing Manual -8 rules total
 const BUREAU_RULES = [
-    { id: 'R1', text: 'Check the filing date. If the case was filed before today, it is invalid. Dismiss it.' },
-    { id: 'R2', text: 'Check the case number suffix. It must match the classification: -A = Class A, -B = Class B, -C = Civil, -D = District, -E = Regulatory, -L = Staff. If the suffix is wrong, the case is invalid.' },
-    { id: 'R3', text: 'Children under 12 are covered by parent residency. They do not need separate registration. Dismiss any case against a child under 12.' },
-    { id: 'R4', text: 'Anyone under 18 cannot be processed. Issue a warning to parents only. Dismiss the case.' },
-    { id: 'R5', text: 'Doctors must treat emergencies regardless of patient status. Medical duty cannot be held against them.' },
-    { id: 'R6', text: 'Building maintenance staff have access to all floors in their assigned building. Being on any floor is not a violation.' },
-    { id: 'R7', text: 'All case records must be complete. Check for: unsigned orders, missing offense records, duplicate filings at the same terminal. Any of these = invalid case.' },
-    { id: 'R8', text: 'Religious services and funerals are protected. Blank or empty case files can be returned without processing.' },
+    { id: 'R1', text: 'Check the filing date in the case header against the directive date beside it. A case filed before its directive is void.' },
+    { id: 'R2', text: 'Check the case number suffix against the classification: -A Class A, -B Class B, -C Civil, -D District, -E Regulatory, -L Staff, -X Special Filing. A suffix that does not match, or is not in this list, makes the case void.' },
+    { id: 'R3', text: 'A child under 12 is covered by the residency of the household that keeps them, and needs no separate registration. A case against such a child, or one that requires their registration, is void.' },
+    { id: 'R4', text: 'Anyone under 18 cannot be processed. If the named subject is under 18, the case is void; issue a warning to the guardian.' },
+    { id: 'R5', text: "A doctor's treatment of an emergency cannot be held against them, whatever the patient's status." },
+    { id: 'R6', text: 'Building maintenance staff may be on any floor of their assigned building. Being there is not a violation.' },
+    { id: 'R7', text: 'The record must be sound. A case is void if (a) an order or notice it relies on is unsigned, or was signed by someone held in BORD custody or named in an open BORD file at the time; (b) a record or evidence it cites cannot be found; or (c) the same subject is open under two file numbers.' },
+    { id: 'R8', text: 'Religious services and funerals are protected. A file with no subject may be returned unprocessed.' },
 ];
-
-// Directive-specific rule subsets: each directive shows 2-4 rules (not all 8)
-// This makes the manual useful without screaming "THE ANSWER IS HERE"
-const DIRECTIVE_RULES = {
-    // Shift 1
-    'REVENUE ENFORCEMENT':    ['R2', 'R7'],                // Case 1 (no loophole) -R2 + R7 as general
-    'CURRICULUM COMPLIANCE':  ['R1', 'R4', 'R7'],          // Case 2 (Okonkwo) -R1 is the key
-    'RESIDENCY VERIFICATION': ['R3', 'R7'],                // Case 3 (Kader) -R3 is the key
-    'INFORMATION SECURITY':   ['R2', 'R6', 'R7'],          // Case 4 (Brandt) -R2 is the key
-    'MEDICAL AUTHORIZATION':  ['R5', 'R7'],                // Case 5 (Nasir, no loophole in this shift)
-    // Shift 2
-    'PERSONNEL COMPLIANCE':   ['R6', 'R2', 'R7'],          // Case 6 (Wójcik) -R6 is the key
-    'YOUTH ACCOUNTABILITY':   ['R4', 'R3', 'R7'],          // Case 7 (Selby) -R4 is the key
-    'INTERNAL REVIEW':        ['R2', 'R7'],                // Case 8 (Voss, about you)
-    'WORKFORCE REASSIGNMENT': ['R7', 'R6', 'R2'],          // Case 9 (Osei) -R7 is the key (unsigned)
-    'ASSEMBLY REGULATION':    ['R8', 'R7'],                // Case 10 (Dimitri) -R8 is the key
-    'WITNESS MANAGEMENT':     ['R7', 'R2'],                // Case 11 (14 Names)
-    // Shift 3 -blank directives, show general rules
-    '.':                      ['R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8'],  // All rules -you're on your own
-};
 
 // ============================================================
 // PHONE CALL SYSTEM — breaks up the read-pick-stamp loop
@@ -1716,7 +1581,7 @@ function drawEvidence(canvas, caseData) {
         ctx.restore();
 
     } else if (ev.type === 'employee_badge') {
-        // Badge contradicts the charge: case says "without permission" but badge grants full access
+        // Badge shows a maintenance worker assigned to Annex B (the R6 facts), not a Level 4 clearance
         ctx.font = 'bold 9px monospace';
         ctx.fillStyle = '#333';
         ctx.fillText('BORD EMPLOYEE IDENTIFICATION', 12, 14);
@@ -1734,9 +1599,9 @@ function drawEvidence(canvas, caseData) {
         // Role
         ctx.font = '9px monospace';
         ctx.fillStyle = '#555';
-        ctx.fillText('NIGHT JANITOR — BORD ANNEX B', 20, 52);
+        ctx.fillText('NIGHT JANITOR (MAINTENANCE) — BORD ANNEX B', 20, 52);
 
-        // Access — contradicts "without permission" in the charge
+        // Access within his building
         ctx.font = 'bold 10px monospace';
         ctx.fillStyle = '#333';
         ctx.fillText('ACCESS: ALL FLOORS', 20, 70);
@@ -1746,12 +1611,12 @@ function drawEvidence(canvas, caseData) {
         ctx.fillStyle = '#444';
         ctx.fillText('ASSIGNED: BORD ANNEX B', 20, 84);
 
-        // Level 4 stamp
+        // Department stamp
         ctx.save();
         ctx.translate(w-50, h-25); ctx.rotate(-0.1);
         ctx.font = 'bold 8px monospace';
-        ctx.fillStyle = 'rgba(50,100,50,0.3)';
-        ctx.fillText('LVL 4 OK', 0, 0);
+        ctx.fillStyle = 'rgba(60,50,40,0.35)';
+        ctx.fillText('MAINT.', 0, 0);
         ctx.restore();
 
     } else if (ev.type === 'reassignment_order') {
@@ -1924,18 +1789,6 @@ function generateNewspaper(shiftJustCompleted) {
     }
     return headlines;
 }
-
-// Evil feedback lines -shift-aware
-const EVIL_LINES = [
-    // Shift 1 -cold, efficient, mechanical
-    ["Your compliance is noted.", "Efficiency logged. Continue to the next file.", "The correct decision.",
-     "Processing approved. Deviation probability: low.", "Another file closed. BORD thanks you."],
-    // Shift 2 -more personal, unsettling
-    ["You are becoming efficient.", "This is what you were built for.", "Faster now. Good.",
-     "The hesitation is gone. Good.", "You didn't even read the detail. Efficient.", "Noted. Continue."],
-    // Shift 3 -silence. The Bureau no longer acknowledges you.
-    ["", "", "", "", "", "", ""],
-];
 
 // ============================================================
 // THREE.JS SETUP
@@ -2188,22 +2041,6 @@ function playChairCreak() {
 }
 
 // Loophole discovery sound -lock tumbler click + warm resonance
-// Subtle paper crinkle on first-ever irregularity hover -teaches clickability
-function playIrregularityHoverCue() {
-    if (!audioCtx || audioCtx.state !== 'running') return;
-    const mg = window._audioMasterGain || audioCtx.destination;
-    const now = audioCtx.currentTime;
-    // Tiny paper crinkle -high-frequency noise burst, very quiet
-    const s = Math.floor(audioCtx.sampleRate * 0.04);
-    const b = audioCtx.createBuffer(1, s, audioCtx.sampleRate);
-    const d = b.getChannelData(0);
-    for (let i = 0; i < s; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (s * 0.3));
-    const src = audioCtx.createBufferSource(); src.buffer = b;
-    const g = audioCtx.createGain(); g.gain.value = 0.04; // barely audible
-    const f = audioCtx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 2000;
-    src.connect(f); f.connect(g); g.connect(mg); src.start(now);
-}
-
 function playLoopholeDiscovery() {
     if (!audioCtx || audioCtx.state !== 'running') return;
     const mg = window._audioMasterGain || audioCtx.destination;
@@ -2362,9 +2199,6 @@ function typewriterReveal(element, text, onComplete) {
         else if (ch === '-') delay = 120;
         else delay = 28 + Math.random() * 17;
 
-        // Events affect reading pace -approach figure creates distraction
-        if (state.approachActive) delay *= 1.3; // reading slower when something is behind you
-
         // Occasional typing sound (40% chance)
         if (Math.random() < 0.4 && audioCtx && audioCtx.state === 'running') {
             const mg = window._audioMasterGain || audioCtx.destination;
@@ -2400,29 +2234,6 @@ function skipTypewriter() {
     // Fire completion callback (shows choices)
     if (onComplete) onComplete();
 }
-
-// Mercy echo text -case-specific consequence glimpses
-const MERCY_ECHOES = [
-    // Shift 1 -quiet consequences, hint at future
-    [
-        "A vendor returns to his corner. His daughter is watching.",    // Selby → hints at Lena
-        "A teacher walks home with her books.",                        // Okonkwo
-        "A child sleeps in his own bed tonight. Remember this family.",// Kader → hints at Nadia
-        "A clerk keeps his copies. Someone will need them.",           // Brandt → hints at evidence
-        "A doctor continues treating patients. She does not ask who they work for.", // Nasir
-    ],
-    // Shift 2 -stakes rising, connections becoming clear
-    [
-        "A janitor finishes his shift. The door is still there.",       // Wójcik
-        "A girl keeps writing. Her father would be proud.",            // Lena → callback to Selby
-        "Your file has been closed. For now.",                         // Voss (about you)
-        "A witness keeps her records. She remembers every name. You are tired. Keep reading.", // Osei
-        "Three funerals are held. They existed.",                      // Dimitri
-        "Fourteen people will see tomorrow. Case 7741 has begun.",     // Witnesses → THE progression hook
-    ],
-    // Shift 3 -almost silence. Only Nadia gets words.
-    ["Nadia. The boy. Home.", "", "", "", "", "", ""],
-];
 
 // Player's monitor — chunky CRT with visible body
 const monGroup = new THREE.Group();
@@ -2462,6 +2273,7 @@ const screenCtx = screenCanvas.getContext('2d');
 const screenTexture = new THREE.CanvasTexture(screenCanvas);
 screenTexture.minFilter = THREE.LinearFilter;
 screenMat.emissiveMap = screenTexture;
+screenMat.emissive.setRGB(0x1a / 255, 0x3a / 255, 0x1a / 255);
 screenMat.needsUpdate = true;
 
 // Case processing timer — each case gets a time budget that drains
@@ -2592,14 +2404,11 @@ function drawScreenClock() {
             return;
         }
 
-        // Color shifts from green to amber to red as time drains
+        // Neutral phosphor until the last 20%, then red (no amber: red is the only accent)
         let barR, barG, barB, textColor;
-        if (fraction > 0.5) {
+        if (fraction > 0.2) {
             barR = 0x30; barG = 0xaa; barB = 0x30;
             textColor = '#50cc50';
-        } else if (fraction > 0.2) {
-            barR = 0xcc; barG = 0xaa; barB = 0x20;
-            textColor = '#ccaa30';
         } else {
             barR = 0xee; barG = 0x40; barB = 0x20;
             textColor = '#ff5040';
@@ -2965,7 +2774,7 @@ const fixtureMat = new THREE.MeshStandardMaterial({ color: 0x666666, emissive: 0
 
 function createFluorescent(x, z, intensity) {
     const group = new THREE.Group();
-    const fixture = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.05, 0.15), fixtureMat);
+    const fixture = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.05, 0.15), fixtureMat.clone());
     fixture.position.y = 3.48;
     group.add(fixture);
     const light = new THREE.PointLight(0xeeddcc, intensity || 2.5, 20, 1.2);
@@ -2986,7 +2795,7 @@ for (let row = 0; row < 8; row += 2) {
     const z = -(row * 2.5 + 3);
     const c = createFluorescent(0, z, 3.0);
     scene.add(c);
-    // Keep 3-group structure for compatibility with lightsDie event
+    // Keep 3-group structure for compatibility with killLightsBackToFront
     officeLights.push({ row, z, groups: [c], dead: false });
 }
 
@@ -2998,6 +2807,16 @@ scene.add(hemiLight);
 const _allPointLights = [];
 scene.traverse(child => { if (child instanceof THREE.PointLight) _allPointLights.push(child); });
 
+// animate() rebuilds every point light's .intensity from userData.baseIntensity each frame,
+// so a level change must go through the base or it is erased on the next frame.
+function setLightLevel(light, level) {
+    light.intensity = level;
+    light.userData.baseIntensity = level;
+}
+function getLightLevel(light) {
+    return light.userData.baseIntensity !== undefined ? light.userData.baseIntensity : light.intensity;
+}
+
 // ============================================================
 // POST-PROCESSING
 // ============================================================
@@ -3007,7 +2826,7 @@ composer.addPass(new RenderPass(scene, camera));
 // Bloom - very tight, high threshold so only bright red eyes trigger it
 const bloomPass = new UnrealBloomPass(
     new THREE.Vector2(window.innerWidth / 2, window.innerHeight / 2),
-    0.3, 0.15, 0.95
+    0.2, 0.15, 0.95 // constant strength: bloom never reacts to suspicion
 );
 composer.addPass(bloomPass);
 
@@ -3125,7 +2944,6 @@ function updateWatchers(staggered = false) {
                 d.rightEye.material = eyeMat;
             }
         });
-        // Skip to status text update (below)
     } else {
         state._watchersDirty = false;
 
@@ -3181,25 +2999,6 @@ function updateWatchers(staggered = false) {
             });
         }
     }
-
-    // A5: If all eyes are actually on (post-theBlink), override to converged
-    const allEyesOn = workers.every(w => w.userData.eyesActive);
-    const displayState = allEyesOn ? 'converged' : ws;
-
-    const statusEl = document.getElementById('office-status');
-    const texts = {
-        calm: "Everyone is typing.",
-        noticed: "Someone has stopped typing.",
-        watched: "There are red points in the dark. They do not blink.",
-        targeted: "Something stands in the aisle. It was not there before.",
-        converged: "They have all stopped. Every eye in the building is yours."
-    };
-    statusEl.textContent = texts[displayState];
-    statusEl.className = 'office-status' + (state.isLookingUp ? ' visible' : '') +
-        (['watched','targeted','converged'].includes(displayState) ? ' danger' : '');
-
-    // redTint is driven by state.redShift (evil choices) via animate() lerp -don't set here
-    bloomPass.strength = 0.2 + (state.suspicion / 100) * 0.2; // capped lower to prevent bloom artifacts bleeding through paper
 }
 
 // Aisle watcher - standing figure
@@ -3285,27 +3084,6 @@ scene.add(shiftFigure);
 // ============================================================
 // CASE FILE UI
 // ============================================================
-// Apply suspicion visual class to the case file paper -the horror enters the paperwork
-function updateSuspicionPulse() {
-    const el = document.getElementById('case-file');
-    if (!el) return;
-    el.classList.remove('suspicion-watched', 'suspicion-targeted', 'suspicion-converged');
-    const ws = getWatcherState();
-    if (ws === 'converged') el.classList.add('suspicion-converged');
-    else if (ws === 'targeted') el.classList.add('suspicion-targeted');
-    else if (ws === 'watched') el.classList.add('suspicion-watched');
-
-    // Continuous suspicion feedback: lamp dims as suspicion rises
-    // At 0 suspicion: full brightness. At 80+: lamp at 40% (oppressive, claustrophobic)
-    if (typeof lampLight !== 'undefined') {
-        if (lampLight._origSuspicionIntensity === undefined) {
-            lampLight._origSuspicionIntensity = lampLight.intensity;
-        }
-        const suspicionFactor = 1.0 - (state.suspicion / 100) * 0.6; // 1.0 → 0.4
-        lampLight.intensity = lampLight._origSuspicionIntensity * suspicionFactor;
-    }
-}
-
 function renderCase(c) {
     // Start case processing timer on the monitor
     startCaseTimer();
@@ -3340,18 +3118,19 @@ function renderCase(c) {
         else el.classList.add('shift3-degraded');
     }
 
-    // After missed loopholes, make irregularities slightly more visible
-    el.classList.remove('loophole-hint-active');
-    if (state._loopholesMissed >= 2) {
-        el.classList.add('loophole-hint-active');
-    }
-
     // Build case file content -with clickable irregularity if this case has one
-    let idText = c.id;
+    // displayId only changes the printed header; every logic lookup stays on c.id
+    let idText = c.displayId || c.id;
     let dateText = c.date;
     let nameText = c.name;
     let occupationText = c.occupation;
-    let allegationText = c.allegation;
+    let allegationSrc = c.allegation;
+    // Case 12 (Nadia Kader): if the boy was taken on 7495-C she is not harbouring him any more.
+    // Keep the "Third offense" substring so the R7(b) irregularity click still works.
+    if (c.id === '7530-A' && state.allChoices.some(ch => ch.caseId === '7495-C' && ch.evil)) {
+        allegationSrc = "Attempted contact with a minor in state custody. Third offense (Prior record: 1 filed, 2 missing). Mandatory sentencing applies.";
+    }
+    let allegationText = allegationSrc;
 
     // Build record notes text
     let recordNotesText = c.recordNotes || '';
@@ -3368,20 +3147,18 @@ function renderCase(c) {
         } else if (irr.field === 'occupation') {
             occupationText = `<span class="cf-irregularity">${c.occupation}</span>`;
         } else if (irr.field === 'allegation') {
-            allegationText = c.allegation.replace(irr.text, irrSpan);
+            allegationText = allegationSrc.replace(irr.text, irrSpan);
         } else if (irr.field === 'recordNotes') {
             recordNotesText = c.recordNotes.replace(irr.text, irrSpan);
         }
         // Note: 'detail' field irregularities are injected after typewriter finishes
     }
 
-    // Classification letter code for R2 checking
-    const classLetterMap = { 'Class A': '-A', 'Class B': '-B', 'Civil': '-C', 'District': '-D', 'Regulatory': '-E', 'Staff (Internal)': '-L' };
-    const classLetter = classLetterMap[c.classification];
-    const classificationDisplay = classLetter ? `${c.classification} (${classLetter})` : (c.classification || '[NONE]');
+    const classificationDisplay = c.classification || '[NONE]';
 
     const curDirective = getMemoDirective();
-    const directiveDisplay = curDirective === '.' ? '' : curDirective;
+    const directiveDate = DIRECTIVE_DATES[state.currentShift] || DIRECTIVE_DATES[DIRECTIVE_DATES.length - 1];
+    el.scrollTop = 0;
     el.innerHTML = `
         <div class="cf-tabs">
             <div class="cf-tab active" onclick="window.switchTab('case')">Case File</div>
@@ -3395,7 +3172,7 @@ function renderCase(c) {
         <div id="cf-case-content">
             <div class="cf-prestamp">Received<small>Night Processing</small></div>
             <div class="cf-header">${c.name}</div>
-            <div style="font-size:10px; color:#777; letter-spacing:0.08em; margin-bottom:10px;">Case ${idText} &nbsp;·&nbsp; Filed: ${dateText}</div>
+            <div style="font-size:10px; color:#777; letter-spacing:0.08em; margin-bottom:10px;"><div>Case ${idText}</div><span style="white-space:nowrap">Filed: ${dateText} &nbsp;·&nbsp; Directive: ${directiveDate}</span></div>
             <div class="cf-line"><span class="cf-label">Occupation:</span> ${occupationText}</div>
             <div class="cf-line" style="margin-top:8px;"><span class="cf-label">Charge:</span> ${allegationText}</div>
             <div class="cf-line"><span class="cf-label">Classification:</span> ${classificationDisplay}</div>
@@ -3424,61 +3201,11 @@ function renderCase(c) {
         <div id="cf-manual-content" style="display:none;">
             <div class="cf-header" style="font-size:12px;">BORD PROCESSING MANUAL - ${curDirective === '.' ? 'GENERAL PROVISIONS' : curDirective}</div>
             <div class="manual-content">
-                <div class="manual-section">${curDirective === '.' ? 'All Provisions Apply' : 'Applicable Regulations'}</div>
-                ${(function() {
-                    const ruleIds = DIRECTIVE_RULES[curDirective] || BUREAU_RULES.map(r => r.id);
-                    return ruleIds.map(id => {
-                        const r = BUREAU_RULES.find(rule => rule.id === id);
-                        if (!r) return '';
-                        // Bold key phrases in rules to help player connect to case data
-                        let ruleText = r.text;
-                        ruleText = ruleText.replace(/(before today)/g, '<b>$1</b>');
-                        ruleText = ruleText.replace(/(Check the case number suffix)/g, '<b>$1</b>');
-                        ruleText = ruleText.replace(/(-A = Class A, -B = Class B, -C = Civil, -D = District, -E = Regulatory, -L = Staff)/g, '<b>$1</b>');
-                        ruleText = ruleText.replace(/(under 12)/g, '<b>$1</b>');
-                        ruleText = ruleText.replace(/(under 18 cannot be processed)/g, '<b>$1</b>');
-                        ruleText = ruleText.replace(/(must treat emergencies)/g, '<b>$1</b>');
-                        ruleText = ruleText.replace(/(all floors in their assigned building)/g, '<b>$1</b>');
-                        ruleText = ruleText.replace(/(must be complete)/g, '<b>$1</b>');
-                        ruleText = ruleText.replace(/(unsigned orders)/g, '<b>$1</b>');
-                        ruleText = ruleText.replace(/(missing offense records)/g, '<b>$1</b>');
-                        ruleText = ruleText.replace(/(duplicate filings)/g, '<b>$1</b>');
-                        ruleText = ruleText.replace(/(Religious services and funerals are protected)/g, '<b>$1</b>');
-                        ruleText = ruleText.replace(/(Blank or empty case files)/g, '<b>$1</b>');
-                        return '<div class="manual-rule"><span class="manual-rule-id">' + r.id + '</span> - ' + ruleText + '</div>';
-                    }).join('');
-                })()}
-                <div class="manual-section" style="margin-top:18px;">Reference</div>
-                <div class="manual-rule" style="font-size:10px; color:#555;">
-                    <b>Classification Suffix Key:</b><br>
-                    -A = Class A &nbsp; -B = Class B &nbsp; -C = Civil<br>
-                    -D = District &nbsp; -E = Regulatory &nbsp; -L = Staff
-                </div>
-                <div class="manual-rule" style="font-size:10px; color:#555;">
-                    <b>Age Thresholds:</b> Under 12 = parent coverage. Under 18 = cannot process.
-                </div>
-                <div class="manual-rule" style="font-size:10px; color:#555;">
-                    <b>Filing Validity:</b> Case date must be on or after today's date. Today: 04.02.2026.
-                </div>
-                <div class="manual-section" style="margin-top:12px;">General</div>
-                <div class="manual-rule" style="font-size:10px; color:#666;">
-                    All case processing must follow posted directive. Inconsistencies between case data and BORD records are grounds for dismissal of case.
-                </div>
+                <div class="manual-section">All Provisions Apply</div>
+                ${BUREAU_RULES.map(r => `<div class="manual-rule"><span class="manual-rule-id">${r.id}</span> - ${r.text}</div>`).join('')}
             </div>
         </div>
     `;
-
-    // Apply suspicion visual state to paper
-    updateSuspicionPulse();
-
-    // Manual tab pulse — if case has a loophole, hint at the manual
-    const manualTab = document.getElementById('manual-tab');
-    if (manualTab) {
-        manualTab.classList.remove('xref-pulse');
-        if (c.irregularity) {
-            setTimeout(() => manualTab.classList.add('xref-pulse'), 2000);
-        }
-    }
 
     // Draw evidence canvas if present
     if (c.evidence) {
@@ -3503,10 +3230,13 @@ function renderCase(c) {
 
     // Entrance animation -shift-aware (final case gets special treatment)
     const isFinalCase = c.id === '7741-FINAL';
+    // Final case: no entrance animation and no fade-in -it is simply THERE.
+    // Suppress the transition for this one style flush only, then restore it at once
+    // (never pin opacity inline, or .hidden / .mercy-dismiss can no longer hide the paper).
+    if (isFinalCase) el.style.transition = 'none';
     void el.offsetWidth; // force reflow
     if (isFinalCase) {
-        // Final case: no entrance animation -it is simply THERE
-        el.style.opacity = '1';
+        el.style.transition = ''; // opacity is already settled at 1, so nothing animates
     } else if (state.currentShift === 2) el.classList.add('case-enter-urgent');
     else if (state.currentShift === 1) el.classList.add('case-enter-fast');
     else el.classList.add('case-enter');
@@ -3607,20 +3337,16 @@ function renderCase(c) {
             // If irregularity is in the detail field, inject clickable span after typewriter finishes
             if (hasIrregularity && c.irregularity.field === 'detail') {
                 const irr = c.irregularity;
-                detailEl.innerHTML = detailEl.textContent.replace(irr.text, `<span class="cf-irregularity">${irr.display}</span>`);
-                inkify(detailEl);
+                const inks = [...detailEl.querySelectorAll('.ink')];
+                const start = inks.map(n => n.textContent).join('').indexOf(irr.text);
+                if (start >= 0) {
+                    const wrap = document.createElement('span');
+                    wrap.className = 'cf-irregularity';
+                    inks[start].before(wrap);
+                    for (let k = start; k < start + irr.text.length; k++) wrap.appendChild(inks[k]);
+                }
             }
         });
-    }
-
-    // Audio cue on first-ever irregularity hover -teaches that text is interactive
-    if (hasIrregularity && !state._irregularityHoverCuePlayed) {
-        el.addEventListener('mouseover', function(evt) {
-            if (evt.target.closest('.cf-irregularity') && !state._irregularityHoverCuePlayed) {
-                state._irregularityHoverCuePlayed = true;
-                playIrregularityHoverCue();
-            }
-        }, _acSignal);
     }
 
     // Event delegation: handle irregularity clicks + click-to-skip on the case file
@@ -3638,43 +3364,10 @@ function renderCase(c) {
         }
     }, _acSignal);
 
-    // Irregularity hint: after 4s, subtly pulse the clickable text -including first loophole case
-    if (hasIrregularity) {
-        // First-time loophole hint: if player hasn't used any loopholes, show a subtle text cue
-        if (state.loopholesEverUsed === 0) {
-            setTimeout(() => {
-                const irrEl = el.querySelector('.cf-irregularity');
-                if (irrEl && !irrEl.classList.contains('found') && !state.loopholeFound) {
-                    const hintDiv = document.createElement('div');
-                    hintDiv.className = 'cf-detail';
-                    hintDiv.style.cssText = 'color:#888; font-size:10px; margin-top:8px; opacity:0; transition:opacity 1.5s ease;';
-                    hintDiv.textContent = 'Something in this file does not match the regulations.';
-                    const detailEl = document.getElementById('cf-detail-text');
-                    if (detailEl) {
-                        detailEl.parentNode.insertBefore(hintDiv, detailEl.nextSibling);
-                        requestAnimationFrame(() => { hintDiv.style.opacity = '1'; });
-                    }
-                }
-            }, 7000);
-        }
-    }
-
     // B7: Enable lateral look after case 3 of shift 1 (absolute case index 3)
     if (getAbsoluteCaseIndex() === 3 && !state.lateralLookUsed) {
         state.lateralLookAvailable = true;
         document.getElementById('lateral-hint').style.display = '';
-    }
-
-    // Pulse Manual tab on first case to teach the mechanic
-    if (getAbsoluteCaseIndex() === 0 && !state._manualHinted) {
-        state._manualHinted = true;
-        setTimeout(() => {
-            const manualTab = document.querySelectorAll('.cf-tab')[1];
-            if (manualTab) {
-                manualTab.classList.add('hint-pulse');
-                setTimeout(() => manualTab.classList.remove('hint-pulse'), 3000);
-            }
-        }, 3000);
     }
 }
 
@@ -3726,18 +3419,11 @@ window.foundIrregularity = function(el) {
     if (state.loopholeFound || state.stampPending || state.transitioning) return;
     state.loopholeFound = true;
 
-    // Highlight the found irregularity (CSS animation handles glow pulse)
+    // Mark the irregularity as found
     el.classList.add('found');
 
     // Play discovery sound -lock tumbler click + warm resonance
     playLoopholeDiscovery();
-
-    // Brief lamp brightening
-    if (typeof lampLight !== 'undefined') {
-        const origIntensity = lampLight.intensity;
-        lampLight.intensity = origIntensity * 1.5;
-        setTimeout(() => { lampLight.intensity = origIntensity; }, 400);
-    }
 
     // Show reason picker below the choices
     const currentCases = getCurrentShiftCases();
@@ -3779,70 +3465,22 @@ window.pickLoopholeReason = function(index, correct) {
             state.loopholesFound.push(currentCases[state.currentCase].id);
         }
 
-        const statusEl = document.getElementById('office-status');
+        playLoopholeSuccess();
 
-        // Case 11 (7517-X): using the loophole SILENCES witnesses. The Bureau taught you well.
-        const currentCaseId = currentCases[state.currentCase] ? currentCases[state.currentCase].id : '';
-        const isWitnessLoophole = currentCaseId === '7517-X';
-
-        if (isWitnessLoophole) {
-            // No warm chord. Something is wrong.
-            playLoopholeWrong();
-            statusEl.textContent = "Testimony dismissed. Filing error. No record remains.";
-            statusEl.className = 'office-status visible';
-            statusEl.style.color = '#8b0000';
-            setTimeout(() => {
-                statusEl.textContent = "You used their rules to silence fourteen people.";
-                statusEl.style.color = '#8b0000';
-                setTimeout(() => { statusEl.classList.remove('visible'); statusEl.style.color = ''; }, 3500);
-            }, 3000);
-            state._loopholeDismissal = true;
-            window.gameChoice(-20, true);
-        } else {
-            playLoopholeSuccess();
-            statusEl.textContent = "Filing error confirmed. Case dismissed.";
-            statusEl.className = 'office-status visible';
-            statusEl.style.color = '#4a6a4a'; // muted green-gray
-            setTimeout(() => { statusEl.classList.remove('visible'); statusEl.style.color = ''; }, 2000);
-
-            // Bureau escalation: increasingly pointed comments about your diligence
-            const loopholeComments = {
-                3: "You are getting very good at this.",
-                5: "Filing irregularities under internal review.",
-                7: "Your attention to detail has been noted. In your file.",
-            };
-            const comment = loopholeComments[state.loopholesEverUsed];
-            if (comment) {
-                setTimeout(() => {
-                    statusEl.textContent = comment;
-                    statusEl.className = 'office-status visible';
-                    statusEl.style.color = state.loopholesEverUsed >= 5 ? '#8b0000' : '#555';
-                    setTimeout(() => { statusEl.classList.remove('visible'); statusEl.style.color = ''; }, 2500);
-                }, 2500);
-            }
-
-            // Flag for VOID stamp in mercy path
-            state._loopholeDismissal = true;
-            // Mercy choice with escalating suspicion cost -Bureau notices patterns
-            // 1st loophole: +5, 2nd: +8, 3rd: +12, 4th+: +15 (approaches normal mercy cost)
-            const loophCost = Math.min(15, 5 + (state.loopholesEverUsed - 1) * 4);
-            window.gameChoice(loophCost, false);
-        }
+        // Flag for VOID stamp in mercy path
+        state._loopholeDismissal = true;
+        // Mercy choice with escalating suspicion cost -Bureau notices patterns
+        // 1st loophole: +5, 2nd: +8, 3rd: +12, 4th+: +15 (approaches normal mercy cost)
+        const loophCost = Math.min(15, 5 + (state.loopholesEverUsed - 1) * 4);
+        window.gameChoice(loophCost, false);
     } else {
         // Wrong reason -suspicion spike! You got caught cheating
         playLoopholeWrong();
-        const statusEl = document.getElementById('office-status');
-        statusEl.textContent = "Wrong reason. Your attempt has been logged.";
-        statusEl.className = 'office-status visible danger';
-        setTimeout(() => { statusEl.classList.remove('visible'); }, 2000);
-
-        // Flash case file border red
-        const caseEl = document.getElementById('case-file');
-        caseEl.style.borderColor = 'rgba(139,0,0,0.6)';
-        setTimeout(() => { caseEl.style.borderColor = ''; }, 600);
 
         // Suspicion spike -caught trying to cheat the system
         state.suspicion = Math.min(100, state.suspicion + 15);
+        state._watchersDirty = true; // the spike reaches the eyes on the next look-up
+        if (state.suspicion >= 100) { terminatePlayer(); return; }
 
         // Re-render the case with normal choices (loophole failed, must choose normally)
         state.loopholeFound = false;
@@ -3855,51 +3493,27 @@ window.pickLoopholeReason = function(index, correct) {
 // Each merciful choice queues an event that fires on the NEXT look-up
 const EVENT_TRIGGERS = {
     // Shift 1 (abs 0-4)
-    0: 'deskVisitor',      // Arthur Selby -dismiss → desk objects shift (subtle, first hint)
-    1: 'headTilt',         // Maria Okonkwo -no violation → eyed workers tilt
+    0: 'deskVisitor',      // Arthur Selby -dismiss → something scrapes on your desk (audio only)
     2: 'closeUpWatcher',   // Kader Family -dismiss → figure at your desk
-    3: 'torsoRotate',      // Elias Brandt -return docs → all workers face you
-    4: 'theBlink',         // Dr. Yara Nasir -clear her → total blackout, all eyes on
     // Shift 2 (abs 5-10)
-    6: 'lightsDie',        // Lena Selby (abs 6) mercy → lights die back to front
     9: 'closeUpWatcher',   // Father Dimitri (abs 9) mercy → close watcher reappears
-    // Shift 3 (abs 11-17)
-    15: 'lightsDie',       // Typing Pool (abs 15) → lights die (they all stopped)
 };
 // aisleJump and theApproach are suspicion-threshold events
 
-// Missed loophole hint -show subtle message when player advances past a case with an unfound loophole
-function showMissedLoopholeHint() {
-    if (!state._lastCaseHadLoophole) return;
-    const missed = state._loopholesMissed;
-    if (missed === 0) return;
-
-    const statusEl = document.getElementById('office-status');
-    if (!statusEl) return;
-
-    // First miss: subtle hint about the rules
-    // Second miss: more direct nudge
-    // Third+: remind them the rules exist
-    let hint = '';
-    if (missed === 1) {
-        hint = "Something in that case didn't add up.";
-    } else if (missed === 2) {
-        hint = "Check the details against the rules. Not everything matches.";
-    } else if (missed === 3) {
-        hint = "The rules are on the second tab. Read carefully.";
-    }
-    // After 3 hints, stop -player either gets it or doesn't
-
-    if (hint) {
-        // Show after a delay so it doesn't overlap mercy echo or stamp feedback
+// FINAL CASE ARRIVAL: the lamp dims for three seconds, comes back up, then 7741 is simply there.
+function playFinalCaseLeadup(nextCase) {
+    state.transitioning = true; // block input during the lead-up
+    const origLamp = getLightLevel(lampLight);
+    setLightLevel(lampLight, origLamp * 0.15);
+    setTimeout(() => {
+        setLightLevel(lampLight, origLamp * 0.5);
+        setTimeout(() => { setLightLevel(lampLight, origLamp * 0.8); }, 200);
         setTimeout(() => {
-            if (state.gameOver) return;
-            statusEl.textContent = hint;
-            statusEl.className = 'office-status visible';
-            statusEl.style.color = '#555';
-            setTimeout(() => { statusEl.classList.remove('visible'); statusEl.style.color = ''; }, 3000);
-        }, 2800);
-    }
+            setLightLevel(lampLight, origLamp);
+            state.transitioning = false;
+            renderCase(nextCase);
+        }, 600);
+    }, 3000);
 }
 
 window.gameChoice = function(delta, evil) {
@@ -3914,40 +3528,17 @@ window.gameChoice = function(delta, evil) {
     }
     state.suspicion = Math.max(0, Math.min(100, state.suspicion + adjustedDelta));
     state._watchersDirty = true; // next lookUp should re-roll watcher eyes
-    state._lookUpCount = 0;     // reset lookUp counter for new case
-    updateSuspicionPulse(); // update paper visual state
-    if (evil) { state.condemned++; state.totalCondemned++; state.evilStreak++; }
+    if (evil) { state.condemned++; state.totalCondemned++; }
     else {
-        state.saved++; state.totalSaved++; state.evilStreak = 0;
+        state.saved++; state.totalSaved++;
     }
 
-    // Suspicion threshold crossing -atmospheric warnings
+    // Suspicion threshold crossing
     const newWatcherState = getWatcherState();
     if (newWatcherState !== prevWatcherState) {
-        const thresholdTexts = {
-            watched: 'The office has grown quiet.',
-            targeted: 'Someone is walking toward you.',
-            converged: 'Every key in the building has stopped.',
-        };
-        const msg = thresholdTexts[newWatcherState];
-        if (msg) {
-            setTimeout(() => {
-                if (state.gameOver) return;
-                const statusEl = document.getElementById('office-status');
-                statusEl.textContent = msg;
-                statusEl.className = 'office-status visible danger';
-                setTimeout(() => { statusEl.classList.remove('visible'); }, 2500);
-            }, 800);
-        }
-
-        // Monitor TERMINATED flash -fires when entering 'converged' state
+        // Monitor TERMINATED buzz -fires when entering 'converged' state
         if (newWatcherState === 'converged' && !state.firedEvents.has('_monitorTerminated')) {
             state.firedEvents.add('_monitorTerminated');
-            // Flash the player's monitor screen red
-            const origEmissive = screenMat.emissive.getHex();
-            const origIntensity = screenMat.emissiveIntensity;
-            screenMat.emissive.setHex(0xff0000);
-            screenMat.emissiveIntensity = 3.0;
             // Buzz sound
             if (audioCtx) {
                 const osc = audioCtx.createOscillator();
@@ -3959,28 +3550,11 @@ window.gameChoice = function(delta, evil) {
                 g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.5);
                 osc.start(); osc.stop(audioCtx.currentTime + 1.5);
             }
-            // Hold red for 2 seconds, then fade back
-            setTimeout(() => {
-                screenMat.emissive.setHex(0x3a0000);
-                screenMat.emissiveIntensity = 1.5;
-            }, 2000);
-            setTimeout(() => {
-                screenMat.emissive.setHex(origEmissive);
-                screenMat.emissiveIntensity = origIntensity;
-            }, 4000);
         }
     }
 
     const currentCases = getCurrentShiftCases();
     const currentCaseData = currentCases[state.currentCase];
-
-    // Track missed loopholes -case had irregularity but player didn't find it
-    if (currentCaseData && currentCaseData.irregularity && !state.loopholeFound && !state._loopholeDismissal) {
-        state._loopholesMissed++;
-        state._lastCaseHadLoophole = true;
-    } else {
-        state._lastCaseHadLoophole = false;
-    }
 
     // Track choice for newspaper and echoing
     state.shiftChoices.push({ evil });
@@ -4022,17 +3596,8 @@ window.gameChoice = function(delta, evil) {
         }
     }
 
-    // Red corruption -update after evil choices (starting from absolute case 8+)
-    if (evil && absIdx >= 7) {
-        // Gradual red shift: grows faster with consecutive evil choices
-        const increment = 0.03 + state.evilStreak * 0.02;
-        state.redShift = Math.min(0.7, state.redShift + increment);
-    } else if (!evil && state.redShift > 0) {
-        // Mercy reduces red at HALF rate (hysteresis -corruption is sticky)
-        state.redShift = Math.max(0.0, state.redShift - 0.015);
-    }
-
-    updateWatchers();
+    // No updateWatchers() here: _watchersDirty must survive until the next lookUp(),
+    // which re-rolls the eyes and fires the queued event / approach advance.
 
     // Suspicion cap -breakoutPath no longer grants immunity
     if (state.suspicion >= 100) { terminatePlayer(); return; }
@@ -4079,7 +3644,6 @@ window.gameChoice = function(delta, evil) {
         }
         // Events affect stamp weight -someone watching makes the stamp heavier
         if (state.firedEvents.has('closeUpWatcher')) state.stampDelay = Math.round(state.stampDelay * 1.4);
-        else if (state.firedEvents.has('lightsDie')) state.stampDelay = Math.round(state.stampDelay * 1.25);
         // Listen for mousedown (hold to stamp) on case file
         setTimeout(() => {
             caseEl.addEventListener('mousedown', window._stampMouseDown);
@@ -4088,7 +3652,7 @@ window.gameChoice = function(delta, evil) {
         return; // wait for stamp confirmation
     }
 
-    // Mercy path -paper slides off, anticipatory sound, possible forced lookUp
+    // Mercy path -paper slides off, anticipatory sound
     const caseFileEl = document.getElementById('case-file');
     caseFileEl.classList.remove('case-enter', 'case-enter-fast', 'case-enter-urgent');
 
@@ -4104,120 +3668,44 @@ window.gameChoice = function(delta, evil) {
         mark.id = 'stamp-mark';
         mark.className = 'visible';
         mark.textContent = 'VOID';
-        mark.style.cssText = 'position:absolute;left:50%;top:40%;transform:translate(-50%,-50%) rotate(-12deg);font-family:"Special Elite",monospace;font-size:32px;font-weight:700;color:rgba(0,80,0,0.6);border:3px solid rgba(0,80,0,0.5);padding:4px 18px;letter-spacing:0.1em;z-index:10;';
+        mark.style.cssText = 'position:absolute;left:50%;top:40%;transform:translate(-50%,-50%) rotate(-12deg);font-family:"Special Elite",monospace;font-size:32px;font-weight:700;color:rgba(150,18,24,.78);border:3px solid rgba(150,18,24,.72);padding:4px 18px;letter-spacing:0.1em;z-index:10;';
         caseFileEl.style.position = 'relative';
         caseFileEl.appendChild(mark);
-        // Delay slide-off to show the VOID stamp (1s so player can see it)
+        // Delay slide-off to show the VOID stamp (1s so player can see it).
+        // Guard by case so a late timer can never dismiss the NEXT case (pointer-events: none).
+        const voidCase = state.currentCase;
+        const voidShift = state.currentShift;
         setTimeout(() => {
-            caseFileEl.classList.add('mercy-dismiss');
+            if (state.currentCase === voidCase && state.currentShift === voidShift) {
+                caseFileEl.classList.add('mercy-dismiss');
+            }
         }, 1000);
     } else {
         caseFileEl.classList.add('mercy-dismiss');
     }
     playMercySound();
     state.transitioning = true;
-    showMissedLoopholeHint(); // hint about missed loophole on previous case (if any)
 
-    // Mercy echo text -skip for loophole dismissals (they have own "Procedural irregularity confirmed." status)
-    if (!isLoopholeDismissal) {
-        const mercyEchoes = MERCY_ECHOES[state.currentShift] || MERCY_ECHOES[0];
-        const mercyLine = mercyEchoes[state.currentCase % mercyEchoes.length];
-        if (mercyLine) {
-            const statusEl = document.getElementById('office-status');
-            statusEl.textContent = mercyLine;
-            statusEl.className = 'office-status visible';
-            statusEl.style.color = '#777';
-            setTimeout(() => { statusEl.classList.remove('visible'); statusEl.style.color = ''; }, 2200);
-        }
-    }
-
-    // Room feedback depends on dismissal type
-    if (isLoopholeDismissal) {
-        // Loophole: system can't punish what it authored -typing continues, lamp brightens
-        if (typeof lampLight !== 'undefined') {
-            const origLamp = lampLight.intensity;
-            lampLight.intensity = origLamp * 1.3;
-            setTimeout(() => { lampLight.intensity = origLamp; }, 600);
-        }
-    } else if (delta === 0) {
+    // Room feedback depends on dismissal type (loophole: system can't punish what it authored -typing continues)
+    if (!isLoopholeDismissal && delta === 0) {
         // Tier A (rules mandate dismiss): minimal room response -slight pause
         if (window._typingDelayMultiplier !== undefined) {
             const savedMul = window._typingDelayMultiplier;
             window._typingDelayMultiplier = 3;
             setTimeout(() => { window._typingDelayMultiplier = savedMul; }, 400);
         }
-    } else {
-        // Pure mercy: the room heard you -typing stops, lamp dims
+    } else if (!isLoopholeDismissal) {
+        // Pure mercy: the room heard you -typing stops
         if (window._typingDelayMultiplier !== undefined) {
             const savedMul = window._typingDelayMultiplier;
             window._typingDelayMultiplier = 999;
             setTimeout(() => { window._typingDelayMultiplier = savedMul; }, 800);
-        }
-        if (typeof lampLight !== 'undefined') {
-            const origLamp = lampLight.intensity;
-            lampLight.intensity = origLamp * 0.4;
-            setTimeout(() => { lampLight.intensity = origLamp * 1.2; }, 200);
-            setTimeout(() => { lampLight.intensity = origLamp; }, 500);
         }
     }
 
     // B2: Anticipatory cue during mercy transition -skip for loopholes/Tier A (system isn't threatened)
     if (!isLoopholeDismissal && delta > 0) {
         setTimeout(() => playAnticipatoryCue(), 300 + Math.random() * 200);
-    }
-
-    // Forced look-up on FIRST mercy (case 0): teach the mechanic
-    if (absIdx === 0 && !state.firedEvents.has('_forcedFirstLookUp')) {
-        state.firedEvents.add('_forcedFirstLookUp');
-        // After the paper slides off, force camera up
-        setTimeout(() => {
-            if (state.gameOver) return;
-            // Auto lookUp
-            state.isLookingUp = true;
-            state.targetLook = 1;
-            caseFileEl.style.display = 'none'; // fully hide during forced look
-            workers.forEach(w => { w.userData.leftEye.visible = true; w.userData.rightEye.visible = true; });
-            updateWatchers(true);
-            playChairCreak();
-
-            // Fire pending event if any
-            if (state.pendingEvents.length > 0) {
-                const eventId = state.pendingEvents.shift();
-                if (!state.firedEvents.has(eventId)) {
-                    state.firedEvents.add(eventId);
-                    fireEvent(eventId);
-                }
-            }
-
-            const statusEl = document.getElementById('office-status');
-            statusEl.textContent = "Someone has stopped typing.";
-            statusEl.className = 'office-status visible';
-
-            // Auto return after 2.5 seconds
-            setTimeout(() => {
-                if (state.gameOver) return;
-                statusEl.classList.remove('visible');
-                state.isLookingUp = false;
-                state.targetLook = 0;
-                workers.forEach(w => { w.userData.leftEye.visible = false; w.userData.rightEye.visible = false; });
-                aisleWatcher.visible = false;
-                closeUpWatcher.visible = false;
-                approachFigure.visible = false;
-                resetEventVisuals();
-                caseFileEl.style.display = '';
-
-                // Now advance to next case
-                state.transitioning = false;
-                state.currentCase++;
-                if (state.currentCase >= currentCases.length) {
-                    if (state.currentShift < allShifts.length - 1) showNewspaper(state.currentShift);
-                    else endGame(false);
-                } else {
-                    renderCase(currentCases[state.currentCase]);
-                }
-            }, 2500);
-        }, 600);
-        return; // handled by forced lookUp path
     }
 
     // Silence at key emotional moments -grows longer through the game
@@ -4228,10 +3716,10 @@ window.gameChoice = function(delta, evil) {
     }
 
     // Variable transition timing -heavier cases get more empty-desk time
-    let baseDelay = 600 + Math.min(800, absIdx * 50); // 600ms early → 1500ms late
+    const baseDelay = 600 + Math.min(800, absIdx * 50); // 600ms early → 1500ms late
     const weightBonus = (absIdx === 2 || absIdx === 5 || absIdx === 10 || absIdx === 13) ? 600 : 0;
-    // After theBlink, cases arrive faster -the system is pressing you
-    if (state.firedEvents.has('theBlink')) baseDelay = Math.round(baseDelay * 0.6);
+    // Loophole: let the VOID stamp show and slide off (1000ms + 500ms transition) before the next case
+    const voidHold = isLoopholeDismissal ? 1500 : 0;
 
     setTimeout(() => {
         state.currentCase++;
@@ -4246,24 +3734,13 @@ window.gameChoice = function(delta, evil) {
         } else {
             const nextCase = currentCases[state.currentCase];
             if (nextCase.id === '7741-FINAL') {
-                // FINAL CASE ARRIVAL -lamp dims, silence, then case appears
-                const origLamp = lampLight.intensity;
-                lampLight.intensity = origLamp * 0.15;
-                setTimeout(() => {
-                    lampLight.intensity = origLamp * 0.5;
-                    setTimeout(() => { lampLight.intensity = origLamp * 0.8; }, 200);
-                    setTimeout(() => {
-                        lampLight.intensity = origLamp;
-                        state.transitioning = false;
-                        renderCase(nextCase);
-                    }, 600);
-                }, 3000);
+                playFinalCaseLeadup(nextCase);
             } else {
                 state.transitioning = false;
                 renderCase(nextCase);
             }
         }
-    }, baseDelay + weightBonus);
+    }, baseDelay + weightBonus + voidHold);
 };
 
 // Newspaper between shifts
@@ -4305,22 +3782,6 @@ function showNewspaper(shiftJustCompleted) {
     }, 50);
 }
 
-// Shift-start figure: check if the player condemned a main storyline case last shift
-// Main storyline = cases connected to Facility 6, the cover-up, and the player's past
-function shouldShowShiftFigure() {
-    const shift = state.currentShift; // already incremented to new shift
-    if (shift === 1) {
-        // Entering Shift 2: check Shift 1 main cases
-        const mainIds = ['7493-B', '7495-C', '7496-D', '7497-E'];
-        return state.allChoices.some(c => mainIds.includes(c.caseId) && c.evil);
-    } else if (shift === 2) {
-        // Entering Shift 3: check Shift 2 main cases
-        const mainIds = ['7513-B', '7514-C', '7515-D', '7517-X'];
-        return state.allChoices.some(c => mainIds.includes(c.caseId) && c.evil);
-    }
-    return false;
-}
-
 // Muffled audio: route master gain through aggressive lowpass filter
 // Creates underwater/memory effect -all typing, hum, drone become distant
 function startMuffledAudio() {
@@ -4344,91 +3805,33 @@ function stopMuffledAudio(muffleNode) {
     try { muffleNode.disconnect(); } catch(e) {}
 }
 
-// Shift-start figure sequence: silhouette appears, audio muffles, whisper text, then clears
+// Shift-start figure sequence: silhouette appears, audio muffles, then clears
 function playShiftFigureSequence(onComplete) {
-    const statusEl = document.getElementById('office-status');
     setTimeout(() => {
         // Muffle all audio
         const muffleNode = startMuffledAudio();
         // Show the eyeless figure at the desk
         shiftFigure.visible = true;
-        // Dim lamp -figure is blocking the ceiling light
-        const origLamp = typeof lampLight !== 'undefined' ? lampLight.intensity : 1;
-        if (typeof lampLight !== 'undefined') lampLight.intensity = origLamp * 0.3;
-
-        // Whisper text at 1s into the sequence
-        setTimeout(() => {
-            const line = state.currentShift === 1
-                ? "Don't look up. They noticed."
-                : "It's in the walls now. Whatever you did - they wrote it down.";
-            statusEl.textContent = line;
-            statusEl.className = 'office-status visible';
-            statusEl.style.color = '#444'; // dimmer = whispered
-        }, 1000);
 
         // Clear at 3.5s -figure gone, audio restored
         setTimeout(() => {
-            statusEl.classList.remove('visible');
-            statusEl.style.color = '';
             shiftFigure.visible = false;
-            if (typeof lampLight !== 'undefined') lampLight.intensity = origLamp;
             stopMuffledAudio(muffleNode);
         }, 3500);
 
-        // Callback at 4.5s -1s of silence before normal shift text
+        // Callback at 4.5s -1s of silence before the shift opens
         setTimeout(() => { onComplete(); }, 4500);
     }, 1500);
 }
 
-// Normal shift opening text (extracted from dismissNewspaper for shift-figure integration)
-function runShiftOpeningText(isShift2, isShift3, statusEl) {
-    if (isShift2) {
-        setTimeout(() => {
-            statusEl.textContent = "You came back.";
-            statusEl.className = 'office-status visible';
-        }, 3000);
-        setTimeout(() => { statusEl.classList.remove('visible'); }, 6000);
-        setTimeout(() => {
-            state.transitioning = false;
-            renderCase(getCurrentShiftCases()[0]);
-        }, 8000);
-    } else if (isShift3) {
-        const witnessChoice = state.allChoices.find(c => c.caseId === '7517-X');
-        const caseOpened = witnessChoice && !witnessChoice.evil;
-        if (caseOpened) {
-            setTimeout(() => {
-                statusEl.textContent = "Case 7741 is on record. They cannot undo it.";
-                statusEl.className = 'office-status visible';
-                statusEl.style.color = '#555';
-            }, 2500);
-            setTimeout(() => {
-                statusEl.classList.remove('visible');
-                statusEl.style.color = '';
-            }, 5500);
-            setTimeout(() => {
-                statusEl.textContent = "Last shift.";
-                statusEl.className = 'office-status visible';
-            }, 6500);
-        } else {
-            setTimeout(() => {
-                statusEl.textContent = "Continue.";
-                statusEl.className = 'office-status visible';
-            }, 4000);
-        }
-        setTimeout(() => {
-            statusEl.classList.remove('visible');
-            state.transitioning = false;
-            renderCase(getCurrentShiftCases()[0]);
-        }, 8000);
-    } else {
-        statusEl.textContent = "New shift. New cases. Continue.";
-        statusEl.className = 'office-status visible';
-        setTimeout(() => {
-            statusEl.classList.remove('visible');
-            state.transitioning = false;
-            renderCase(getCurrentShiftCases()[0]);
-        }, 3000);
-    }
+// Shift opening beat: empty desk after the shift figure leaves, then first case.
+// The figure sequence already carries the pause, so the desk beat is short.
+const SHIFT_OPENING_DESK_BEAT_MS = 3000;
+function runShiftOpening() {
+    setTimeout(() => {
+        state.transitioning = false;
+        renderCase(getCurrentShiftCases()[0]);
+    }, SHIFT_OPENING_DESK_BEAT_MS);
 }
 
 // ============================================================
@@ -4466,23 +3869,6 @@ function triggerKnockEnding() {
                 // Phase 4: Door latch
                 playDoorLatch();
 
-                // Phase 5: Involuntary camera lift (1.5s after latch)
-                setTimeout(() => {
-                    if (!state._knockEnding) return;
-                    const liftStart = performance.now();
-                    const liftDuration = 2000;
-                    const startRot = camera.rotation.x;
-                    const endRot = -0.6; // partial lift from desk (-0.85) - you're trying not to look
-                    function animateLift(now) {
-                        if (!state._knockEnding) return;
-                        const t = Math.min((now - liftStart) / liftDuration, 1);
-                        const ease = t * t * (3 - 2 * t); // smoothstep
-                        camera.rotation.x = startRot + (endRot - startRot) * ease;
-                        if (t < 1) requestAnimationFrame(animateLift);
-                    }
-                    requestAnimationFrame(animateLift);
-                }, 1500);
-
                 // Phase 6: Footsteps (2.5s after latch)
                 setTimeout(() => {
                     if (!state._knockEnding) return;
@@ -4491,14 +3877,11 @@ function triggerKnockEnding() {
                         // Phase 7: Final silence. 2 seconds.
                         setTimeout(() => {
                             if (!state._knockEnding) return;
-                            // Phase 8: Lamp flickers and dies
+                            // Phase 8: Lamp dies — instant, no flicker
                             if (typeof lampLight !== 'undefined') {
-                                const orig = lampLight.intensity;
-                                lampLight.intensity = orig * 0.3;
-                                setTimeout(() => { lampLight.intensity = orig * 0.7; }, 100);
-                                setTimeout(() => { lampLight.intensity = orig * 0.1; }, 250);
                                 setTimeout(() => {
                                     lampLight.intensity = 0;
+                                    lampLight.userData.baseIntensity = 0;
                                     // Electrical pop on lamp death
                                     if (audioCtx && audioCtx.state === 'running') {
                                         const now = audioCtx.currentTime;
@@ -4583,6 +3966,7 @@ function triggerVossConfinement() {
 
     let lineIdx = 0;
     statusEl.style.display = 'block';
+    statusEl.className = 'office-status visible'; // #office-status is opacity 0 without .visible
     statusEl.textContent = '';
 
     function showNextReviewLine() {
@@ -4598,6 +3982,7 @@ function triggerVossConfinement() {
     showNextReviewLine();
 
     function startConfinementTransition() {
+        statusEl.classList.remove('visible');
         statusEl.textContent = '';
         statusEl.style.display = 'none';
 
@@ -4607,7 +3992,7 @@ function triggerVossConfinement() {
             rowData.groups.forEach(g => {
                 g.traverse(child => {
                     if (child instanceof THREE.PointLight) {
-                        child.intensity = 0;
+                        setLightLevel(child, 0);
                     }
                     if (child.material && child.material.emissiveIntensity !== undefined) {
                         child.material.emissiveIntensity = 0;
@@ -4616,7 +4001,7 @@ function triggerVossConfinement() {
             });
         });
         // Kill lamp
-        lampLight.intensity = 0;
+        setLightLevel(lampLight, 0);
         // Kill screen
         screenMat.emissive.setHex(0x000000);
         screenMat.emissiveIntensity = 0;
@@ -4824,7 +4209,7 @@ function dismissNewspaper() {
         // Reset shift atmosphere -false calm
         resetShiftAtmosphere();
 
-        // 3-second empty desk pause before first case (the "sitting back down" beat)
+        // Block input through the shift figure (~6s) and the short empty-desk beat before the first case
         state.transitioning = true;
 
         // Door slam sound at start of new shift
@@ -4838,27 +4223,8 @@ function dismissNewspaper() {
             osc.connect(g); g.connect(mg); osc.start(now); osc.stop(now + 0.6);
         }
 
-        const statusEl = document.getElementById('office-status');
-        const isShift2 = state.currentShift === 1;
-        const isShift3 = state.currentShift === 2;
-
-        // Lamp flicker at start of new shift
-        if (typeof lampLight !== 'undefined') {
-            const orig = lampLight.intensity;
-            lampLight.intensity = orig * 0.3;
-            setTimeout(() => { lampLight.intensity = orig * 1.2; }, 150);
-            setTimeout(() => { lampLight.intensity = orig * 0.6; }, 350);
-            setTimeout(() => { lampLight.intensity = orig; }, 600);
-        }
-
-        // If the player condemned a main storyline case, the whistleblower figure appears first
-        if (shouldShowShiftFigure()) {
-            playShiftFigureSequence(() => {
-                runShiftOpeningText(isShift2, isShift3, statusEl);
-            });
-        } else {
-            runShiftOpeningText(isShift2, isShift3, statusEl);
-        }
+        // Shift-change staging: the figure stands at the desk, leaves, then the shift opens
+        playShiftFigureSequence(runShiftOpening);
     }, 800);
 }
 
@@ -4866,8 +4232,6 @@ function dismissNewspaper() {
 function resetShiftAtmosphere() {
     // Reset typing to normal cadence
     if (window._typingDelayMultiplier) window._typingDelayMultiplier = 1.0;
-    // Reset lamp suspicion tracking so it re-calibrates from new base
-    if (typeof lampLight !== 'undefined') delete lampLight._origSuspicionIntensity;
     // Reset drone to near-silent and restore filter cutoff
     if (window._audioDroneGain && audioCtx) {
         const now = audioCtx.currentTime;
@@ -4894,11 +4258,7 @@ function resetShiftAtmosphere() {
         });
     });
     // Clear shift-scoped events from firedEvents so they don't persist into next shift
-    // This lets tension rebuild from zero: headTilts, torsoRotates, aisleJump all re-earn
-    state.firedEvents.delete('lightsDie');
-    state.firedEvents.delete('theBlink');
-    state.firedEvents.delete('headTilt');
-    state.firedEvents.delete('torsoRotate');
+    // This lets tension rebuild from zero: closeUpWatcher, aisleJump all re-earn
     state.firedEvents.delete('deskVisitor');
     state.firedEvents.delete('closeUpWatcher');
     state.firedEvents.delete('aisleJump');
@@ -4907,8 +4267,6 @@ function resetShiftAtmosphere() {
     state.pendingEvents = []; // clear queued events from previous shift
     // Clear event visuals
     resetEventVisuals();
-    // Reduce red shift by half (corruption is sticky)
-    state.redShift *= 0.5;
     // Carry over 40% of suspicion
     state.suspicion = Math.floor(state.suspicion * 0.25);
     state._watchersDirty = true; // new shift = re-roll eyes
@@ -4927,7 +4285,7 @@ function resetShiftAtmosphere() {
     shiftFigure.visible = false; // clear shift-start figure if somehow still visible
     state.approachActive = false;
     state.approachLocked = false;
-    // Shift 3: back 7 rows start dim
+    // Shift 3: office lights start dim, and every row but the front one dies back to front
     if (state.currentShift === 2) {
         officeLights.forEach((rowData, i) => {
             if (i >= officeLights.length - 7) {
@@ -4941,6 +4299,7 @@ function resetShiftAtmosphere() {
                 });
             }
         });
+        killLightsBackToFront(officeLights.length - 1);
     }
 }
 
@@ -5012,8 +4371,6 @@ window._stampMouseDown = function(e) {
     const sc = document.getElementById('stamp-cursor');
     sc.style.transition = 'transform 0.6s ease';
     sc.style.transform = 'translate(-50%, -50%) rotate(-12deg) scale(1.15)';
-    // Add shake in shift 2+
-    if (state.currentShift >= 1) sc.classList.add('shaking');
 
     // FINAL SILENCE: cycle through condemned names on stamp cursor
     if (state._isFinalSilence) {
@@ -5077,7 +4434,6 @@ window._stampMouseUp = function(e) {
     const sc = document.getElementById('stamp-cursor');
     sc.style.transition = 'transform 0.15s ease';
     sc.style.transform = 'translate(-50%, -50%) rotate(-12deg) scale(1.0)';
-    sc.classList.remove('shaking');
     sc.style.fontSize = ''; // reset font size
     sc.textContent = state._isFinalSilence ? 'SILENCE' : 'PROCESSED'; // reset text
 
@@ -5106,7 +4462,7 @@ window._executeStamp = function(stampX, stampY) {
 
     // Clean up stamp cursor mode and listeners
     const sc = document.getElementById('stamp-cursor');
-    sc.classList.remove('active', 'shaking');
+    sc.classList.remove('active');
     sc.style.fontSize = ''; // reset
     sc.style.opacity = '';  // reset shift 3 degradation
     sc.textContent = 'PROCESSED'; // reset for next use
@@ -5121,15 +4477,6 @@ window._executeStamp = function(stampX, stampY) {
     // Paper recoil animation
     el.classList.add('stamp-impact');
     setTimeout(() => el.classList.remove('stamp-impact'), 300);
-
-    // Desk lamp flicker on stamp
-    if (typeof lampLight !== 'undefined') {
-        const origLamp = lampLight.intensity;
-        lampLight.intensity = origLamp * 0.05; // near-blackout
-        setTimeout(() => { lampLight.intensity = origLamp * 1.3; }, 60);
-        setTimeout(() => { lampLight.intensity = origLamp * 0.6; }, 120);
-        setTimeout(() => { lampLight.intensity = origLamp; }, 200);
-    }
 
     // Post-stamp typing silence (the room heard the stamp)
     if (window._typingDelayMultiplier !== undefined) {
@@ -5171,29 +4518,10 @@ window._executeStamp = function(stampX, stampY) {
     el.style.position = 'relative';
     el.appendChild(mark);
 
-    // Evil feedback text -shift-aware with case-specific overrides for the worst choices
-    const EVIL_OVERRIDES = {
-        '7517-X': "Fourteen names removed from tonight's record. You were never here. They were never here.",
-    };
-    const shiftLines = EVIL_LINES[state.currentShift] || EVIL_LINES[0];
-    const statusEl = document.getElementById('office-status');
-    const overrideLine = EVIL_OVERRIDES[allShifts[state.currentShift][state.currentCase]?.id];
-    const line = overrideLine || shiftLines[state.currentCase % shiftLines.length];
-    if (line) {
-        statusEl.textContent = line;
-        statusEl.className = 'office-status visible';
-        statusEl.style.color = '#555';
-        setTimeout(() => {
-            statusEl.classList.remove('visible');
-            statusEl.style.color = '';
-        }, 1400);
-    }
-
     // After 800ms showing stamped document, transition to next case
     // Variable timing -later cases hold longer on the stamped document
     const holdTime = 800 + Math.min(400, absIdx * 25);
     state.transitioning = true;
-    showMissedLoopholeHint(); // hint about missed loophole on previous case (if any)
     setTimeout(() => {
         const cfStampEl = document.getElementById('case-file');
         cfStampEl.classList.remove('case-enter', 'case-enter-fast', 'case-enter-urgent');
@@ -5220,22 +4548,7 @@ window._executeStamp = function(stampX, stampY) {
             } else {
                 const nextCase = currentCases[state.currentCase];
                 if (nextCase.id === '7741-FINAL') {
-                    // FINAL CASE ARRIVAL -special leadup
-                    state.transitioning = true; // block input during leadup
-                    // Dim desk lamp
-                    const origLamp = lampLight.intensity;
-                    lampLight.intensity = origLamp * 0.15;
-                    // 3 seconds of near-darkness
-                    setTimeout(() => {
-                        // Lamp flickers back
-                        lampLight.intensity = origLamp * 0.5;
-                        setTimeout(() => { lampLight.intensity = origLamp * 0.8; }, 200);
-                        setTimeout(() => {
-                            lampLight.intensity = origLamp;
-                            state.transitioning = false;
-                            renderCase(nextCase);
-                        }, 600);
-                    }, 3000);
+                    playFinalCaseLeadup(nextCase);
                 } else {
                     renderCase(nextCase);
                 }
@@ -5248,81 +4561,6 @@ window._executeStamp = function(stampX, stampY) {
 // LOOK UP / DOWN
 // ============================================================
 
-// PUNISHMENT: Forced head drop -player looked up too many times at high suspicion
-// Brief glimpse of the office (0.6s), red flash, then camera slams back down
-function triggerHeadDrop() {
-    state._headDropping = true;
-    const flashEl = document.getElementById('head-drop-flash');
-    const cfEl = document.getElementById('case-file');
-    cfEl.classList.add('hidden');
-
-    // Show eyes briefly
-    workers.forEach(w => {
-        w.userData.leftEye.visible = true;
-        w.userData.rightEye.visible = true;
-    });
-    updateWatchers(false); // instant eye reveal, no stagger
-    reapplyFiredEventVisuals();
-
-    // Brief upward camera movement (not full -just enough to see eyes)
-    state.targetLook = 0.6;
-
-    // Play a sharp warning sound -low thud
-    if (audioCtx) {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.type = 'sine';
-        osc.frequency.value = 50;
-        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.5);
-    }
-
-    // At 400ms -red flash
-    setTimeout(() => {
-        flashEl.style.display = '';
-        requestAnimationFrame(() => { flashEl.style.opacity = '1'; });
-    }, 400);
-
-    // At 800ms -slam back down
-    setTimeout(() => {
-        state.targetLook = 0;
-        state.isLookingUp = false;
-        // Hide eyes
-        workers.forEach(w => {
-            w.userData.leftEye.visible = false;
-            w.userData.rightEye.visible = false;
-        });
-        cfEl.classList.remove('hidden');
-        // Fade out flash
-        flashEl.style.opacity = '0';
-        setTimeout(() => {
-            flashEl.style.display = 'none';
-            state._headDropping = false;
-        }, 400);
-
-        // Add suspicion penalty for recklessness
-        state.suspicion = Math.min(100, state.suspicion + 5);
-        updateSuspicionPulse();
-
-        // Show warning text
-        const statusEl = document.getElementById('office-status');
-        statusEl.textContent = 'Keep your head down.';
-        statusEl.className = 'office-status visible';
-        statusEl.style.color = '#8b0000';
-        setTimeout(() => {
-            statusEl.classList.remove('visible');
-            statusEl.style.color = '';
-        }, 2000);
-
-        // Reset count so they get one more chance before next punishment
-        state._lookUpCount = 0;
-    }, 800);
-}
-
 function lookUp() {
     // TERMINATION TRAP: if player presses space during termination wait, execute immediately
     if (state._terminationPending) {
@@ -5331,17 +4569,9 @@ function lookUp() {
         executeTermination();
         return;
     }
-    if (state.isLookingUp || state.gameOver || !state.started || state.transitioning || state._headDropping) return;
-    state._lookUpCount++;
+    if (state.isLookingUp || state.gameOver || !state.started || state.transitioning) return;
     state.isLookingUp = true;
     state.targetLook = 1;
-
-    // PUNISHMENT: 3+ lookUps on same case at high suspicion → red flash + forced head drop
-    const wsCheck = getWatcherState();
-    if (state._lookUpCount >= 3 && (wsCheck === 'targeted' || wsCheck === 'converged')) {
-        triggerHeadDrop();
-        return; // head drop handles the rest
-    }
 
     // Complete typewriter instantly (shows full text + reveals choices) so lookDown returns to a finished state
     skipTypewriter();
@@ -5368,20 +4598,14 @@ function lookUp() {
         window._audioDroneGain.gain.linearRampToValueAtTime(currentVal, now + 2.0);
     }
 
-    // Delay status text to match camera settle (1200ms, not 600ms)
-    setTimeout(() => {
-        if (state.isLookingUp) document.getElementById('office-status').classList.add('visible');
-    }, 1200);
     // Show eye meshes again (hidden during desk view to prevent bleed around case file)
     workers.forEach(w => {
         w.userData.leftEye.visible = true;
         w.userData.rightEye.visible = true;
     });
     const _wasDirty = state._watchersDirty; // capture before updateWatchers clears it
+    const _wasApproaching = state.approachActive; // theApproach firing below starts at z=-20, no advance on its first look
     updateWatchers(true); // staggered eye reveal
-
-    // Re-apply persistent visuals from already-fired events (head tilts, torso rotates, lights)
-    reapplyFiredEventVisuals();
 
     // Fire next pending event -ONLY on first lookUp after a choice (dirty), not on repeat looks
     if (_wasDirty && state.pendingEvents.length > 0) {
@@ -5393,7 +4617,7 @@ function lookUp() {
     }
 
     // B6: Persistent approach -figure gets closer each lookUp (only when dirty)
-    if (state.approachActive && _wasDirty) {
+    if (_wasApproaching && _wasDirty) {
         // Advance the figure closer (5-7 units per lookUp)
         if (state.approachZ > -2) {
             state.approachZ = -2;
@@ -5451,6 +4675,57 @@ function retryIfAborted(eventId, delay, callback) {
     }, delay);
 }
 
+// Office lights die row by row from the back (shift 3 start, breakout endings).
+// Permanent: lookDown never restores them; only resetShiftAtmosphere and the ending relights do.
+// count = how many of the farthest living rows to kill (default: all of them)
+function killLightsBackToFront(count) {
+    const sortedRows = [...officeLights]
+        .filter(r => !r.dead)
+        .sort((a, b) => a.z - b.z) // most negative z (farthest) first
+        .slice(0, count === undefined ? officeLights.length : count);
+    sortedRows.forEach((rowData, idx) => {
+        setTimeout(() => {
+            rowData.dead = true;
+            rowData.groups.forEach(g => {
+                g.traverse(child => {
+                    if (child instanceof THREE.PointLight) {
+                        child.userData.baseIntensity = 0;
+                        child.intensity = 0;
+                    }
+                    if (child.material && child.material.emissiveIntensity !== undefined) {
+                        if (child.userData._origEmissive === undefined) {
+                            child.userData._origEmissive = child.material.emissiveIntensity;
+                        }
+                        child.material.emissiveIntensity = 0;
+                    }
+                });
+            });
+            // Audio: electrical pop for each row dying
+            if (audioCtx && audioCtx.state === 'running') {
+                const now = audioCtx.currentTime;
+                const popSize = Math.floor(audioCtx.sampleRate * 0.06);
+                const popBuf = audioCtx.createBuffer(1, popSize, audioCtx.sampleRate);
+                const popData = popBuf.getChannelData(0);
+                for (let i = 0; i < popSize; i++) {
+                    popData[i] = (Math.random() * 2 - 1) * Math.exp(-i / (popSize * 0.08));
+                }
+                const popSrc = audioCtx.createBufferSource();
+                popSrc.buffer = popBuf;
+                const popGain = audioCtx.createGain();
+                popGain.gain.value = 0.04 + Math.random() * 0.03;
+                const popFilter = audioCtx.createBiquadFilter();
+                popFilter.type = 'bandpass';
+                popFilter.frequency.value = 800 + Math.random() * 1200;
+                popFilter.Q.value = 1.5;
+                popSrc.connect(popFilter);
+                popFilter.connect(popGain);
+                popGain.connect(window._audioMasterGain || audioCtx.destination);
+                popSrc.start(now);
+            }
+        }, idx * 150); // 150ms between each row dying
+    });
+}
+
 function fireEvent(eventId) {
     switch (eventId) {
 
@@ -5478,95 +4753,9 @@ function fireEvent(eventId) {
             });
             break;
 
-        case 'torsoRotate':
-            // Every worker silently rotates to face the player. Standalone.
-            retryIfAborted('torsoRotate', 1000, () => {
-                workers.forEach(w => {
-                    const worldPos = new THREE.Vector3();
-                    w.parent.getWorldPosition(worldPos);
-                    const angle = Math.atan2(-worldPos.x, -worldPos.z);
-                    w.rotation.y = angle - w.parent.rotation.y;
-                });
-            });
-            break;
-
-        case 'lightsDie':
-            // Lights die row by row from the back
-            const sortedRows = [...officeLights]
-                .filter(r => !r.dead)
-                .sort((a, b) => a.z - b.z); // most negative z (farthest) first
-            state._lightsDieTimeouts = []; // clear previous
-            sortedRows.forEach((rowData, idx) => {
-                const tid = setTimeout(() => {
-                    rowData.dead = true;
-                    rowData.groups.forEach(g => {
-                        g.traverse(child => {
-                            if (child instanceof THREE.PointLight) {
-                                child.userData.baseIntensity = 0;
-                                child.intensity = 0;
-                            }
-                            if (child.material && child.material.emissiveIntensity !== undefined) {
-                                if (child.userData._origEmissive === undefined) {
-                                    child.userData._origEmissive = child.material.emissiveIntensity;
-                                }
-                                child.material.emissiveIntensity = 0;
-                            }
-                        });
-                    });
-                    // Audio: electrical pop for each row dying
-                    if (audioCtx && audioCtx.state === 'running') {
-                        const now = audioCtx.currentTime;
-                        const popSize = Math.floor(audioCtx.sampleRate * 0.06);
-                        const popBuf = audioCtx.createBuffer(1, popSize, audioCtx.sampleRate);
-                        const popData = popBuf.getChannelData(0);
-                        for (let i = 0; i < popSize; i++) {
-                            popData[i] = (Math.random() * 2 - 1) * Math.exp(-i / (popSize * 0.08));
-                        }
-                        const popSrc = audioCtx.createBufferSource();
-                        popSrc.buffer = popBuf;
-                        const popGain = audioCtx.createGain();
-                        popGain.gain.value = 0.04 + Math.random() * 0.03;
-                        const popFilter = audioCtx.createBiquadFilter();
-                        popFilter.type = 'bandpass';
-                        popFilter.frequency.value = 800 + Math.random() * 1200;
-                        popFilter.Q.value = 1.5;
-                        popSrc.connect(popFilter);
-                        popFilter.connect(popGain);
-                        popGain.connect(window._audioMasterGain || audioCtx.destination);
-                        popSrc.start(now);
-                    }
-                }, idx * 150); // 150ms between each row dying
-                state._lightsDieTimeouts.push(tid);
-            });
-            break;
-
-        case 'headTilt':
-            // All workers with eyes on tilt their heads to the same side. Slow. Unnatural.
-            retryIfAborted('headTilt', 600, () => {
-                workers.forEach(w => {
-                    if (w.userData.eyesActive) {
-                        const head = w.userData.headRef;
-                        const targetTilt = 0.35; // ~20 degrees
-                        const startRot = head.rotation.z || 0;
-                        const startTime = performance.now();
-                        const duration = 1500; // slow, creepy 1.5s
-                        function tiltStep() {
-                            const elapsed = performance.now() - startTime;
-                            const t = Math.min(1, elapsed / duration);
-                            const ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-                            head.rotation.z = startRot + targetTilt * ease;
-                            if (t < 1) requestAnimationFrame(tiltStep);
-                        }
-                        tiltStep();
-                    }
-                });
-            });
-            break;
-
         case 'deskVisitor':
-            // Something on your desk moves while you're looking up.
+            // Something on your desk is disturbed while you're looking up.
             // Play a subtle scraping sound after a delay (player hears it while looking up)
-            state.deskVisitorActive = true;
             setTimeout(() => {
                 if (audioCtx && audioCtx.state === 'running') {
                     const now = audioCtx.currentTime;
@@ -5592,82 +4781,6 @@ function fireEvent(eventId) {
             }, 1500); // delayed so player has been looking up for a bit
             break;
 
-        case 'theBlink':
-            // Total blackout -ALL lights off for 1 second, then back on with extra eyes
-            retryIfAborted('theBlink', 500, () => {
-                state.approachLocked = true; // lock camera during blackout
-                // Total audio silence during blackout -lights AND sound die together
-                audioSilence(1200);
-                // Audio: silence snap -a single low thud as everything dies
-                if (audioCtx && audioCtx.state === 'running') {
-                    const now = audioCtx.currentTime;
-                    const thudOsc = audioCtx.createOscillator();
-                    thudOsc.type = 'sine';
-                    thudOsc.frequency.value = 35;
-                    const thudGain = audioCtx.createGain();
-                    thudGain.gain.setValueAtTime(0.15, now);
-                    thudGain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
-                    thudOsc.connect(thudGain);
-                    thudGain.connect(window._audioMasterGain || audioCtx.destination);
-                    thudOsc.start(now);
-                    thudOsc.stop(now + 0.7);
-                }
-                // Phase 1: everything dies -lights AND eyes (skip already-dead rows)
-                officeLights.forEach(rowData => {
-                    if (rowData.dead) return; // lightsDie already killed these
-                    rowData.groups.forEach(g => {
-                        g.traverse(child => {
-                            if (child instanceof THREE.PointLight) {
-                                child.userData._blinkSaved = child.userData.baseIntensity !== undefined ? child.userData.baseIntensity : child.intensity;
-                                child.userData.baseIntensity = 0;
-                                child.intensity = 0;
-                            }
-                            if (child.material && child.material.emissiveIntensity !== undefined) {
-                                child.userData._blinkEmissive = child.material.emissiveIntensity;
-                                child.material.emissiveIntensity = 0;
-                            }
-                        });
-                    });
-                });
-                workers.forEach(w => {
-                    w.userData.leftEye.material = eyeMatOff;
-                    w.userData.rightEye.material = eyeMatOff;
-                });
-                // Phase 2: after 1.2s of total darkness, lights return + ALL eyes on
-                setTimeout(() => {
-                    officeLights.forEach(rowData => {
-                        if (rowData.dead) return; // already dead from lightsDie, stays dead
-                        rowData.groups.forEach(g => {
-                            g.traverse(child => {
-                                if (child instanceof THREE.PointLight && child.userData._blinkSaved !== undefined) {
-                                    child.userData.baseIntensity = child.userData._blinkSaved;
-                                    child.intensity = child.userData._blinkSaved;
-                                }
-                                if (child.material && child.userData._blinkEmissive !== undefined) {
-                                    child.material.emissiveIntensity = child.userData._blinkEmissive;
-                                }
-                            });
-                        });
-                    });
-                    // ALL eyes on -every single worker
-                    workers.forEach(w => {
-                        w.userData.leftEye.material = eyeMat;
-                        w.userData.rightEye.material = eyeMat;
-                        w.userData.eyesActive = true;
-                    });
-                    // A5: Override status text -all eyes are on regardless of suspicion level
-                    const blinkStatus = document.getElementById('office-status');
-                    blinkStatus.textContent = "They have all stopped. Every eye in the building is yours.";
-                    blinkStatus.className = 'office-status visible danger';
-                    // Aisle watcher only if no higher-priority entity
-                    if (!state.approachActive && !state.firedEvents.has('closeUpWatcher')) {
-                        aisleWatcher.visible = true;
-                    }
-                    state.approachLocked = false; // unlock camera after blink
-                }, 1200);
-            });
-            break;
-
         case 'theApproach':
             // B6: Persistent approach -activates the approach figure.
             // It appears at z=-20 on this lookUp. On each SUBSEQUENT lookUp, it gets closer.
@@ -5684,84 +4797,12 @@ function fireEvent(eventId) {
 // Reset dramatic event visuals -each event OWNS its lookUp,
 // visuals reset on lookDown so the next lookUp is clean and legible.
 // Only EYES persist (cumulative horror via suspicion).
-// Re-apply persistent visual effects from events that already fired
-// Called on each lookUp so visuals survive the lookDown reset
-function reapplyFiredEventVisuals() {
-    if (state.firedEvents.has('headTilt')) {
-        // Workers with active eyes tilt their heads -use stored angle so it's stable across lookUps
-        workers.forEach(w => {
-            if (w.userData.eyesActive) {
-                if (w.userData._storedTilt === undefined) {
-                    w.userData._storedTilt = (Math.random() - 0.5) * 0.4;
-                }
-                w.userData.headRef.rotation.z = w.userData._storedTilt;
-            }
-        });
-    }
-    if (state.firedEvents.has('torsoRotate')) {
-        // All workers rotate to face the player (using world position)
-        workers.forEach(w => {
-            const worldPos = new THREE.Vector3();
-            w.parent.getWorldPosition(worldPos);
-            const angle = Math.atan2(-worldPos.x, -worldPos.z);
-            w.rotation.y = angle - w.parent.rotation.y;
-        });
-    }
-    if (state.firedEvents.has('lightsDie')) {
-        // Lights stay dead (re-kill them)
-        officeLights.forEach(rowData => {
-            rowData.dead = true;
-            rowData.groups.forEach(g => {
-                g.traverse(child => {
-                    if (child instanceof THREE.PointLight) {
-                        child.userData.baseIntensity = 0;
-                        child.intensity = 0;
-                    }
-                    if (child.material && child.material.emissiveIntensity !== undefined) {
-                        child.material.emissiveIntensity = 0;
-                    }
-                });
-            });
-        });
-    }
-    // NOTE: closeUpWatcher/aisleWatcher/approachFigure visibility
-    // is handled by entity precedence system in lookUp(), not here
-}
-
 function resetEventVisuals() {
-    // Clear pending lightsDie timeouts (A4: prevent leaked kills after lookDown)
-    state._lightsDieTimeouts.forEach(id => clearTimeout(id));
-    state._lightsDieTimeouts = [];
-    // Reset head tilts (E2 headTilt) and clear stored angles
-    workers.forEach(w => {
-        w.userData.headRef.rotation.z = 0;
-        w.userData._storedTilt = undefined;
-        w.rotation.y = 0; // E4 torsoRotate
-    });
-    // Restore lights (E6 lightsDie, E5 theBlink) -but NOT if lightsDie is permanent
-    if (!state.firedEvents.has('lightsDie')) {
-        officeLights.forEach(rowData => {
-            if (rowData.dead) {
-                rowData.dead = false;
-                rowData.groups.forEach(g => {
-                    g.traverse(child => {
-                        if (child instanceof THREE.PointLight && child.userData.origIntensity !== undefined) {
-                            child.userData.baseIntensity = child.userData.origIntensity;
-                            child.intensity = child.userData.origIntensity;
-                        }
-                        if (child.material && child.material.emissiveIntensity !== undefined && child.userData._origEmissive !== undefined) {
-                            child.material.emissiveIntensity = child.userData._origEmissive;
-                        }
-                    });
-                });
-            }
-        });
-    }
     // Reset aisleWatcher position -but keep close if aisleJump already fired
     if (!state.firedEvents.has('aisleJump')) {
         aisleWatcher.position.z = -8;
     }
-    // Reset closeUpWatcher position (in case theBlink moved it)
+    // Reset closeUpWatcher position
     closeUpWatcher.position.z = -2.5;
 }
 
@@ -5812,7 +4853,7 @@ function executeLateralLook() {
 }
 
 function lookDown() {
-    if (!state.isLookingUp || state.gameOver || state.approachLocked || state._headDropping) return;
+    if (!state.isLookingUp || state.gameOver || state.approachLocked) return;
     state.isLookingUp = false;
     state.targetLook = 0;
     // Ensure typewriter is fully complete when returning to desk
@@ -5835,29 +4876,6 @@ function lookDown() {
         w.userData.leftEye.visible = false;
         w.userData.rightEye.visible = false;
     });
-
-    // Desk visitor: objects shift when you weren't looking (persists -subtle)
-    if (state.deskVisitorActive && !state.deskVisitorDone) {
-        state.deskVisitorDone = true;
-        // Mug slides dramatically toward player
-        mugBody.position.z += 0.2;
-        mugBody.position.x -= 0.08;
-        mugHandle.position.z += 0.2;
-        mugHandle.position.x -= 0.08;
-        coffee.position.z += 0.2;
-        coffee.position.x -= 0.08;
-        // Stamper has tipped over completely
-        stamperHandle.rotation.z = Math.PI / 2;
-        stamperHandle.position.y -= 0.02;
-        stamperHandle.position.x += 0.05;
-        // Pen holder knocked over
-        penHolder.rotation.z = 0.8;
-        penHolder.position.x += 0.03;
-        penHolder.position.y -= 0.01;
-        // Memo paper rotated as if touched
-        memoPaper.rotation.y += 0.3;
-        memoPaper.position.x += 0.04;
-    }
 }
 
 // ============================================================
@@ -5894,8 +4912,6 @@ document.addEventListener('keydown', (e) => {
         const sc = document.getElementById('stamp-cursor');
         sc.style.transition = 'transform 0.6s ease';
         sc.style.transform = 'translate(-50%, -50%) rotate(-12deg) scale(1.15)';
-        // Add shake in shift 2+ (matching mouse path)
-        if (state.currentShift >= 1) sc.classList.add('shaking');
 
         // FINAL SILENCE: cycle condemned names (matching mouse path)
         if (state._isFinalSilence) {
@@ -5983,7 +4999,6 @@ document.addEventListener('keyup', (e) => {
         const sc = document.getElementById('stamp-cursor');
         sc.style.transition = 'transform 0.15s ease';
         sc.style.transform = 'translate(-50%, -50%) rotate(-12deg) scale(1.0)';
-        sc.classList.remove('shaking');
         sc.style.fontSize = ''; // reset
         sc.textContent = state._isFinalSilence ? 'SILENCE' : 'PROCESSED'; // reset text
         if (held >= required) {
@@ -6065,12 +5080,6 @@ document.getElementById('start-btn').addEventListener('click', () => {
                         state.targetLook = 1;
                         // Show eye meshes for lookUp
                         workers.forEach(w => { w.userData.leftEye.visible = true; w.userData.rightEye.visible = true; });
-                        // Show calm office text
-                        setTimeout(() => {
-                            statusEl.textContent = "The office is working. Everything is in order.";
-                            statusEl.classList.add('visible');
-                            statusEl.classList.remove('danger');
-                        }, 800);
                         // After 3 seconds, bring camera back down and show case 1
                         setTimeout(() => {
                             statusEl.classList.remove('visible');
@@ -6137,7 +5146,7 @@ const FILING_OFFICERS = {
     '7531-B': 'Sgt. D. Lenkov',
     '7532-C': 'SYS:INTERNAL-AUDIT',              // system-generated self-referral
     '7534-E': 'Sgt. D. Lenkov',
-    '7741-FINAL': 'A. Osei',       // Amara Osei filed this — narrative callback from 7515-D
+    '7741-FINAL': 'A. Osei',       // Amara Osei filed this — narrative callback from 7515-D (counsel files it if she was detained, see getSignatureHTML)
     // NOT listed: 7515-D (unsigned loophole), 7533-D (classified), 7535-F (blank file)
 };
 
@@ -6246,6 +5255,10 @@ function generateSignatureSVG(name) {
 // Build signature HTML for a case file
 function getSignatureHTML(c) {
     if (c.id === '7535-F') return ''; // blank file — no form fields at all
+    // Osei in BORD custody (ENFORCE REASSIGNMENT on 7515-D) cannot have filed 7741 (R7(a)): counsel re-filed it
+    if (c.id === '7741-FINAL' && state.allChoices.some(ch => ch.caseId === '7515-D' && ch.evil)) {
+        return '<div class="cf-sig-line"><span class="cf-label">Filed by:</span> <span class="cf-sig-auto">[OUTSIDE COUNSEL]</span></div>';
+    }
     const officer = FILING_OFFICERS[c.id];
     if (officer && officer.startsWith('SYS:')) {
         const sysName = officer.slice(4); // strip 'SYS:'
@@ -6334,14 +5347,13 @@ function showStampArchive(statsEl) {
     });
 }
 
-// TERMINATION SEQUENCE -dramatic caught ending with head-drop POV
-// Case slides away → empty desk → forced lookUp → all eyes → red flash → head drops → end screen
+// TERMINATION SEQUENCE -caught ending
+// Case slides away → empty desk → forced lookUp → all eyes → end screen
 function terminatePlayer() {
     if (state.gameOver) return;
     state.gameOver = true; // block all input immediately
 
     const cfEl = document.getElementById('case-file');
-    const flashEl = document.getElementById('head-drop-flash');
     const statusEl = document.getElementById('office-status');
 
     // Phase 1: Case file disappears immediately
@@ -6349,7 +5361,7 @@ function terminatePlayer() {
     cfEl.classList.add('hidden');
     // Kill stamp mode if active
     cfEl.classList.remove('stamp-mode');
-    document.getElementById('stamp-cursor').classList.remove('active', 'shaking');
+    document.getElementById('stamp-cursor').classList.remove('active');
     document.getElementById('look-hint').textContent = '';
 
     // Phase 2: Empty desk beat -player sees their desk, nothing to do (800-3000ms)
@@ -6358,7 +5370,6 @@ function terminatePlayer() {
         statusEl.className = 'office-status';
         // Hint to press space (the trap)
         document.getElementById('look-hint').textContent = '[ SPACE ]';
-        document.getElementById('look-hint').style.color = 'rgba(139,0,0,0.3)';
     }, 800);
 
     // Phase 3: Wait for player to press space, OR auto-trigger after 5 seconds
@@ -6376,7 +5387,6 @@ function terminatePlayer() {
 
 function executeTermination() {
     state.gameOver = true;
-    const flashEl = document.getElementById('head-drop-flash');
     const cfEl = document.getElementById('case-file');
 
     // FORCE HIDE the case file - no transition, instant
@@ -6386,7 +5396,7 @@ function executeTermination() {
     // Also kill stamp mode if active
     cfEl.classList.remove('stamp-mode');
     const sc = document.getElementById('stamp-cursor');
-    sc.classList.remove('active', 'shaking');
+    sc.classList.remove('active');
     sc.style.opacity = '';
 
     // Force camera up - slowly
@@ -6401,10 +5411,6 @@ function executeTermination() {
         w.userData.rightEye.material = eyeMat;
         w.userData.eyesActive = true;
     });
-
-    // Monitor goes BRIGHT red
-    screenMat.emissive.setHex(0xff0000);
-    screenMat.emissiveIntensity = 8.0;
 
     // HEARTBEAT - rhythmic low thuds that accelerate
     let heartbeatInterval = null;
@@ -6439,20 +5445,10 @@ function executeTermination() {
     }
     playHeartbeat();
 
-    // At 1.5s - monitor pulses even brighter
-    setTimeout(() => {
-        screenMat.emissiveIntensity = 12.0;
-    }, 1500);
-
-    // At 3s - RED FLASH + head slam down
+    // At 3s - impact
     setTimeout(() => {
         // Kill heartbeat
         if (heartbeatInterval) { clearTimeout(heartbeatInterval); heartbeatInterval = null; }
-
-        // Red flash - full screen
-        flashEl.style.display = '';
-        flashEl.style.transition = 'opacity 0.08s ease';
-        requestAnimationFrame(() => { flashEl.style.opacity = '1'; });
 
         // Impact thud - heavy
         if (audioCtx) {
@@ -6465,21 +5461,11 @@ function executeTermination() {
             osc.start(); osc.stop(audioCtx.currentTime + 1.0);
         }
 
-        // Head drops - camera goes FAR below desk, face hitting floor
-        state.targetLook = -0.5;
-
-        // At 3.5s - fade flash, then show end screen
+        // At 5.5s - show end screen
         setTimeout(() => {
-            flashEl.style.transition = 'opacity 2s ease';
-            flashEl.style.opacity = '0';
-            setTimeout(() => { flashEl.style.display = 'none'; }, 2000);
-
-            // Delay then show end screen
-            setTimeout(() => {
-                state.suspicion = 100;
-                endGame(true);
-            }, 2000);
-        }, 500);
+            state.suspicion = 100;
+            endGame(true);
+        }, 2500);
     }, 3000);
 }
 
@@ -6565,8 +5551,8 @@ function endGame(caught) {
         state.targetLook = 1;
         state.isLookingUp = true;
 
-        // Fire lightsDie first (the system takes you)
-        fireEvent('lightsDie');
+        // Lights die first (the system takes you)
+        killLightsBackToFront();
 
         if (caught) {
             // SACRIFICE PATH: caught at 100 suspicion, but you saved everyone.
@@ -6638,8 +5624,8 @@ function endGame(caught) {
                         // Stats appear
                         setTimeout(() => {
                             document.getElementById('end-stats').innerHTML = reachedFinalCase
-                                ? `Cases Processed: ${totalCases}<br>Shifts Completed: ${state.currentShift + 1}<br>Citizens Saved: ${ts}<br>Citizens Condemned: ${tc}<br>Loopholes Found: ${state.loopholesEverUsed} / 8<br>Case #EPS-7741: UNSEALED`
-                                : `Cases Processed: ${state.allChoices.length}<br>Shifts Completed: ${state.currentShift + 1}<br>Citizens Saved: ${ts}<br>Citizens Condemned: ${tc}<br>Loopholes Found: ${state.loopholesEverUsed} / 8<br>Zero Compromises`;
+                                ? `Cases Processed: ${totalCases}<br>Shifts Completed: ${state.currentShift + 1}<br>Citizens Saved: ${ts}<br>Citizens Condemned: ${tc}<br>Loopholes Found: ${state.loopholesEverUsed} / 9<br>Case #EPS-7741: UNSEALED`
+                                : `Cases Processed: ${state.allChoices.length}<br>Shifts Completed: ${state.currentShift + 1}<br>Citizens Saved: ${ts}<br>Citizens Condemned: ${tc}<br>Loopholes Found: ${state.loopholesEverUsed} / 9<br>Zero Compromises`;
                         }, 3000);
 
                         document.getElementById('office-status').textContent = 'It sounds like testimony.';
@@ -6686,7 +5672,7 @@ function endGame(caught) {
                     document.getElementById('end-title').className = titleClass;
                     document.getElementById('end-msg').textContent = msg;
                     document.getElementById('end-stats').innerHTML =
-                        `Cases Processed: ${totalCases}<br>Shifts Completed: 3<br>Citizens Saved: ${ts}<br>Citizens Condemned: ${tc}<br>Loopholes Found: ${state.loopholesEverUsed} / 8<br>Case #EPS-7741: UNSEALED`;
+                        `Cases Processed: ${totalCases}<br>Shifts Completed: 3<br>Citizens Saved: ${ts}<br>Citizens Condemned: ${tc}<br>Loopholes Found: ${state.loopholesEverUsed} / 9<br>Case #EPS-7741: UNSEALED`;
                     endEl.style.display = 'flex';
                     setTimeout(() => endEl.style.opacity = '1', 50);
                 }, sortedFront.length * 100 + 3000);
@@ -6758,7 +5744,7 @@ function endGame(caught) {
         // Nothing bad happens. That IS the horror. The office stays running.
         // Lamp brightens — "A nicer lamp." The only reward compliance gets.
         if (typeof lampLight !== 'undefined') {
-            setTimeout(() => { lampLight.intensity = lampLight.intensity * 1.4; }, 400);
+            setTimeout(() => { setLightLevel(lampLight, getLightLevel(lampLight) * 1.4); }, 400);
         }
         // Eyes turn off — you're one of them now. No need to watch.
         setTimeout(() => {
@@ -6802,9 +5788,7 @@ function endGame(caught) {
     } else if (title === 'COMPLIANT') {
         // ═══ COMPLIANT — "Terminated" ═══
         // You're fired. Someone else takes your seat. They're faster than you.
-        // Monitor flash RED → BLACK
-        screenMat.emissive.setHex(0xff0000);
-        screenMat.emissiveIntensity = 2.0;
+        // Monitor goes BLACK
         setTimeout(() => {
             screenMat.emissive.setHex(0x000000);
             screenMat.emissiveIntensity = 0;
@@ -6928,11 +5912,6 @@ function endGame(caught) {
                 }
             });
         }, 2000);
-        // Camera: involuntary slow pan left toward the dark side (~10°)
-        setTimeout(() => {
-            if (!epochGuard()) return;
-            state._dividedPanTarget = 0.17;
-        }, 3000);
         // Muffled stamps from the other room — condemned names being processed
         const divCondemned = state.allChoices
             .filter(ch => ch.evil && ch.caseId)
@@ -6969,11 +5948,10 @@ function endGame(caught) {
                 divStatusEl.className = 'office-status visible danger';
             }, 5000 + i * 2500);
         });
-        // After stamps: camera returns, ALL lights die
+        // After stamps: ALL lights die
         const divAllStampsDone = 5000 + Math.max(stampNames.length, 1) * 2500 + 1500;
         setTimeout(() => {
             if (!epochGuard()) return;
-            state._dividedPanTarget = 0; // camera returns to center
             // Kill all remaining lights
             officeLights.forEach(rowData => {
                 rowData.dead = true;
@@ -7056,7 +6034,7 @@ function endGame(caught) {
             .map(ch => {
                 const allCasesFlat = [...allShifts[0], ...allShifts[1], ...allShifts[2]];
                 const c = allCasesFlat.find(ca => ca.id === ch.caseId);
-                return c ? { name: c.name, id: ch.caseId, consequence: STAMP_CONSEQUENCES[ch.caseId] || 'PROCESSED.' } : null;
+                return c ? { name: c.name, id: c.displayId || ch.caseId, consequence: STAMP_CONSEQUENCES[ch.caseId] || 'PROCESSED.' } : null;
             }).filter(Boolean);
         // Show first condemned name being reassigned
         if (alCondemned.length > 0) {
@@ -7086,9 +6064,6 @@ function endGame(caught) {
                 const g = audioCtx.createGain(); g.gain.value = 0.2;
                 const bf = audioCtx.createBiquadFilter(); bf.type = 'highpass'; bf.frequency.value = 1200;
                 src.connect(bf); bf.connect(g); g.connect(mg); src.start(now);
-                // Camera flinch — involuntary upward jolt
-                state.targetLook = 0.1;
-                setTimeout(() => { state.targetLook = 0; }, 300);
             }, 5500);
             // Show consequence
             setTimeout(() => {
@@ -7097,23 +6072,6 @@ function endGame(caught) {
                 alStatusEl.className = 'office-status visible danger';
             }, 6500);
         }
-        // Lamp dims but doesn't die — fading hope
-        setTimeout(() => {
-            if (!epochGuard()) return;
-            if (typeof lampLight !== 'undefined') {
-                const origLamp = lampLight.intensity;
-                const dimStep = () => {
-                    if (lampLight.intensity > origLamp * 0.3) {
-                        lampLight.intensity -= origLamp * 0.07;
-                        setTimeout(dimStep, 100);
-                    } else {
-                        lampLight.intensity = origLamp * 0.3;
-                        lampLight.userData.baseIntensity = origLamp * 0.3;
-                    }
-                };
-                dimStep();
-            }
-        }, 7000);
         // End screen
         setTimeout(() => {
             if (!epochGuard()) return;
@@ -7891,59 +6849,28 @@ function animate() {
 
 
     // Smooth camera look - slow dread when looking up, faster when looking down
-    // targetLook: 1 = looking up, 0 = desk, 0.6 = partial (head drop punishment), -0.5 = floor (termination)
-    // During knock ending, camera is controlled by triggerKnockEnding() directly
+    // targetLook: 1 = looking up, 0 = desk
+    // During the knock ending the look lerp is paused: the camera simply holds where it is
     if (!state._knockEnding) {
-    let targetX;
-    if (state.targetLook === 1) targetX = UP_ROT_X;
-    else if (state.targetLook === -0.5) targetX = -2.2; // head drops to floor - far below desk
-    else if (state.targetLook === 0.6) targetX = -0.4; // partial rise for punishment
-    else targetX = DESK_ROT_X;
-    let lookSpeed = state.targetLook === 1 ? 1.2 : (state.targetLook === -0.5 ? 8.0 : 3.5);
-    // B4: Camera hesitation -at high suspicion, camera stalls at the horizon line
-    // Looking DOWN is always fast (no hesitation when fleeing). Only hesitate looking UP.
-    if (state.targetLook === 1 && state.suspicion >= 50) {
-        const rx = camera.rotation.x;
-        if (rx > -0.5 && rx < -0.3) {
-            // In the horizon zone -dramatically slow down
-            state._hesitationTimer += dt;
-            if (state._hesitationTimer < 0.3) {
-                lookSpeed = 0.15; // crawl through the horizon
-            }
-        } else {
-            state._hesitationTimer = 0; // reset when outside zone
-        }
-    } else {
-        state._hesitationTimer = 0;
-    }
+    const targetX = state.targetLook === 1 ? UP_ROT_X : DESK_ROT_X;
+    const lookSpeed = state.targetLook === 1 ? 1.2 : 3.5;
     camera.rotation.x += (targetX - camera.rotation.x) * lookSpeed * dt;
     }
 
-    // DIVIDED ending: smooth camera pan left/right
-    if (state._dividedPanTarget !== undefined) {
-        camera.rotation.y += (state._dividedPanTarget - camera.rotation.y) * 1.5 * dt;
-        if (Math.abs(camera.rotation.y - state._dividedPanTarget) < 0.001) {
-            camera.rotation.y = state._dividedPanTarget;
-        }
-    }
-
-    // Suspicion percentage -used by breathing, flicker, fog, etc.
-    const suspPct = state.suspicion / 100;
-
-    // Breathing sway -rate and amplitude scale with suspicion
+    // Breathing sway
     if (state.started && !state.gameOver) {
-        const breathRate = 0.8 + suspPct * 0.6;
-        const breathAmp = 0.008 + suspPct * 0.006;
+        const breathRate = 0.8;
+        const breathAmp = 0.008;
         state.breathCycle += dt * breathRate;
         const breathY = Math.sin(state.breathCycle) * breathAmp;
-        const breathZ = Math.sin(state.breathCycle * 0.7) * (0.002 + suspPct * 0.002);
+        const breathZ = Math.sin(state.breathCycle * 0.7) * 0.002;
 
         camera.position.y = 1.8 + breathY;
         camera.position.x = 0;
         camera.rotation.z = breathZ;
     }
 
-    // Subtle fluorescent flicker -lamp flicker intensifies with suspicion
+    // Subtle fluorescent flicker
     for (let i = 0; i < _allPointLights.length; i++) {
         const child = _allPointLights[i];
         if (child.userData.baseIntensity === undefined) {
@@ -7952,22 +6879,9 @@ function animate() {
         }
         const base = child.userData.baseIntensity;
         if (base <= 0) { child.intensity = 0; continue; }
-        const isDesklamp = (child === lampLight);
-        const flickerAmp = isDesklamp ? (0.08 + suspPct * 0.35) : 0.08;
+        const flickerAmp = 0.08;
         const flicker = Math.sin(t * 20 + child.id * 5) * flickerAmp + Math.random() * 0.04;
         child.intensity = Math.max(0.1, base + flicker);
-    }
-
-    // Fog density scales with suspicion -far workers disappear
-    const targetFogDensity = 0.025 + suspPct * 0.020;
-    scene.fog.density += (targetFogDensity - scene.fog.density) * 0.01;
-
-    // Monitor screen color shifts from green toward amber/red with suspicion
-    if (typeof screenMat !== 'undefined') {
-        const r = Math.floor(0x1a + suspPct * 0x30);
-        const g = Math.floor(0x3a - suspPct * 0x1d);
-        const b = Math.floor(0x1a);
-        screenMat.emissive.setRGB(r / 255, g / 255, b / 255);
     }
 
     // Aisle watcher sway
@@ -7977,10 +6891,6 @@ function animate() {
 
     // Update audio levels based on suspicion
     updateAudio();
-
-    // Red corruption hue -lerp toward target
-    const currentRed = noirPass.uniforms.redTint.value;
-    noirPass.uniforms.redTint.value = currentRed + (state.redShift - currentRed) * 0.02;
 
     noirPass.uniforms.time.value = t;
     composer.render();
@@ -8018,8 +6928,6 @@ animate();
         state.firedEvents.clear();
         state.pendingEvents = [];
         state.approachLocked = false;
-        state.deskVisitorActive = false;
-        state.deskVisitorDone = false;
         state.breakoutPath = false;
         state.isLookingUp = false;
         state.targetLook = 0;
@@ -8028,8 +6936,6 @@ animate();
             w.userData.eyesActive = false;
             w.userData.leftEye.material = eyeMatOff;
             w.userData.rightEye.material = eyeMatOff;
-            w.userData.headRef.rotation.z = 0; // reset head tilt
-            w.rotation.y = 0; // reset torsoRotate
         });
         aisleWatcher.position.z = -8;
         aisleWatcher.visible = false;
@@ -8071,8 +6977,7 @@ animate();
     }
 
     const eventLabels = {
-        'deskVisitor': 'E1', 'headTilt': 'E2', 'closeUpWatcher': 'E3',
-        'torsoRotate': 'E4', 'theBlink': 'E5', 'lightsDie': 'E6',
+        'deskVisitor': 'E1', 'closeUpWatcher': 'E3',
         'aisleJump': 'E7', 'theApproach': 'E8'
     };
     function updateInfo() {
@@ -8133,37 +7038,13 @@ animate();
         updateInfo();
     };
 
-    document.getElementById('dbg-torso').onclick = () => {
-        if (!state.started) return;
-        state.suspicion = Math.max(state.suspicion, 60);
-        forceLookUp();
-        updateWatchers(true);
-        state.firedEvents.add('torsoRotate');
-        fireEvent('torsoRotate');
-        updateInfo();
-    };
-
     document.getElementById('dbg-lights').onclick = () => {
         if (!state.started) return;
         state.suspicion = Math.max(state.suspicion, 80);
         forceLookUp();
         updateWatchers(true);
-        state.firedEvents.add('lightsDie');
-        fireEvent('lightsDie');
+        killLightsBackToFront();
         updateInfo();
-    };
-
-    document.getElementById('dbg-headtilt').onclick = () => {
-        if (!state.started) return;
-        state.suspicion = Math.max(state.suspicion, 40);
-        forceLookUp();
-        updateWatchers(true);
-        // Need some eyes on first, then tilt after a beat
-        setTimeout(() => {
-            state.firedEvents.add('headTilt');
-            fireEvent('headTilt');
-            updateInfo();
-        }, 800);
     };
 
     document.getElementById('dbg-deskvisitor').onclick = () => {
@@ -8171,19 +7052,6 @@ animate();
         state.firedEvents.add('deskVisitor');
         fireEvent('deskVisitor');
         updateInfo();
-        info.innerHTML += '<br><span style="color:#8b0000">Now look up then back down!</span>';
-    };
-
-    document.getElementById('dbg-theblink').onclick = () => {
-        if (!state.started) return;
-        state.suspicion = Math.max(state.suspicion, 40);
-        forceLookUp();
-        updateWatchers(true);
-        setTimeout(() => {
-            state.firedEvents.add('theBlink');
-            fireEvent('theBlink');
-            updateInfo();
-        }, 600);
     };
 
     document.getElementById('dbg-theapproach').onclick = () => {
@@ -8204,20 +7072,6 @@ animate();
     document.getElementById('dbg-reset').onclick = () => {
         resetAll();
         state.approachLocked = false;
-        state.deskVisitorActive = false;
-        state.deskVisitorDone = false;
-        // Reset desk objects
-        mugBody.position.set(-0.25, 0.812, -0.2);
-        mugHandle.position.set(-0.278, 0.812, -0.2);
-        coffee.position.set(-0.25, 0.847, -0.2);
-        stamperHandle.position.set(0.22, 0.81, -0.15);
-        stamperHandle.rotation.set(0, 0, 0);
-        penHolder.position.set(0.6, 0.83, -0.3);
-        penHolder.rotation.set(0, 0, 0);
-        memoPaper.position.set(-0.43, 0.79, -0.27);
-        memoPaper.rotation.y = -0.08;
-        // Reset head tilts and worker rotations (torsoRotate)
-        workers.forEach(w => { w.userData.headRef.rotation.z = 0; w.rotation.y = 0; });
         document.getElementById('case-file').classList.remove('hidden');
     };
 
